@@ -1,4 +1,5 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect} from 'react';
+import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3}from 'lucide-react';
 
 const FontStyles=()=>(<style>{`
@@ -345,13 +346,17 @@ return(<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} sty
 const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'}};
 
 function ModeMenu({currentMode,onChange,allowed}){
-const[open,setOpen]=useState(false);const ref=useRef(null);
+const[open,setOpen]=useState(false);
+const[menuPos,setMenuPos]=useState({top:0,left:0});
+const ref=useRef(null);const btnRef=useRef(null);
 useEffect(()=>{const h=(e)=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};if(open)document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[open]);
 const Icon=MODE_META[currentMode].icon;
+const handleOpen=()=>{if(btnRef.current){const r=btnRef.current.getBoundingClientRect();setMenuPos({top:r.bottom+4,left:r.left});}setOpen(o=>!o);};
 return(<div className="relative" ref={ref}>
-<button onClick={()=>setOpen(o=>!o)} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] ff-body" style={{background:open?C.surfaceAlt:'transparent',color:C.ink2,border:`1px solid ${open?C.border:'transparent'}`}}><Icon size={12}/><span>{MODE_META[currentMode].short}</span><ChevronDown size={11} style={{opacity:0.6}}/></button>
-{open&&(<div className="absolute z-30 mt-1 anim-fade-in" style={{top:'100%',left:0,width:252,background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,boxShadow:'0 10px 28px -8px rgba(31,27,22,0.18)'}}>
-{allowed.map(m=>{const M=MODE_META[m];const I=M.icon;const active=m===currentMode;return(<button key={m} onClick={()=>{onChange(m);setOpen(false);}} className="w-full text-left px-3 py-2.5 ff-body text-[12px] flex items-start gap-2.5" style={{background:active?C.greenSoft:'transparent',borderBottom:`1px solid ${C.border}55`}}><I size={13} style={{marginTop:2,color:active?C.green:C.ink2}}/><div className="flex-1"><div style={{color:C.ink,fontWeight:500}}>{M.label}</div><div style={{color:C.muted,fontSize:10.5,marginTop:1}}>{M.blurb}</div></div>{active&&<Check size={12} style={{color:C.green,marginTop:3}}/>}</button>);})}</div>)}
+<button ref={btnRef} onClick={handleOpen} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] ff-body" style={{background:open?C.surfaceAlt:'transparent',color:C.ink2,border:`1px solid ${open?C.border:'transparent'}`}}><Icon size={12}/><span>{MODE_META[currentMode].short}</span><ChevronDown size={11} style={{opacity:0.6}}/></button>
+{open&&ReactDOM.createPortal(<div className="anim-fade-in" style={{position:'fixed',top:menuPos.top,left:menuPos.left,width:252,background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,boxShadow:'0 10px 28px -8px rgba(31,27,22,0.18)',zIndex:9999}}>
+{allowed.map(m=>{const M=MODE_META[m];const I=M.icon;const active=m===currentMode;return(<button key={m} onClick={()=>{onChange(m);setOpen(false);}} className="w-full text-left px-3 py-2.5 ff-body text-[12px] flex items-start gap-2.5" style={{background:active?C.greenSoft:'transparent',borderBottom:`1px solid ${C.border}55`}}><I size={13} style={{marginTop:2,color:active?C.green:C.ink2}}/><div className="flex-1"><div style={{color:C.ink,fontWeight:500}}>{M.label}</div><div style={{color:C.muted,fontSize:10.5,marginTop:1}}>{M.blurb}</div></div>{active&&<Check size={12} style={{color:C.green,marginTop:3}}/>}</button>);})}
+</div>,document.body)}
 </div>);
 }
 
