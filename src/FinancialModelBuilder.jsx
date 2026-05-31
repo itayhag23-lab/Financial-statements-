@@ -723,7 +723,7 @@ headers:{'Content-Type':'application/json'},
 body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
 });
 const data=await res.json();
-if(data.error){setError('API: '+data.error.message);setLoading(false);return;}
+if(data.error){setError('API: '+(data.error.message||data.error));setLoading(false);return;}
 const reply=data?.content?.[0]?.text;
 if(!reply){setError('No response received.');setLoading(false);return;}
 setMsgs(prev=>[...prev,{role:'assistant',text:reply}]);
