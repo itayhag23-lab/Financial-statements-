@@ -1,97 +1,273 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, MessageSquare, GitBranch, BarChart3, Share2, FileText, ArrowRight, Check, TrendingUp } from 'lucide-react';
-import { C, FONTS } from '../brand/theme';
+import {
+  Sparkles, MessageSquare, GitBranch, BarChart3, Share2, FileText,
+  ArrowRight, Check, Shield, Lock, TrendingUp, Zap, Award,
+} from 'lucide-react';
+import { FONTS } from '../brand/theme';
 import { Logo, KoalaMark } from '../brand/Logo';
 
-const maxW = { maxWidth: 1180, marginLeft: 'auto', marginRight: 'auto' };
-const serif = { fontFamily: FONTS.display };
+// ── Enterprise palette ──────────────────────────────────────────────────────
+const P = {
+  bgDark:     '#070D1A',
+  bgDarkCard: '#0F172A',
+  bgDarkAlt:  '#1C2333',
+  bg:         '#FFFFFF',
+  bgAlt:      '#F8FAFC',
+  bgSlate:    '#F1F5F9',
+  border:     '#E2E8F0',
+  borderDark: 'rgba(255,255,255,0.07)',
+  ink:        '#0F172A',
+  ink2:       '#334155',
+  muted:      '#64748B',
+  faint:      '#94A3B8',
+  accent:     '#10B981',
+  accentDark: '#059669',
+  accentSoft: 'rgba(16,185,129,0.1)',
+  accentGlow: 'rgba(16,185,129,0.2)',
+  blue:       '#3B82F6',
+  blueSoft:   'rgba(59,130,246,0.1)',
+  amber:      '#F59E0B',
+  red:        '#EF4444',
+};
+
+const maxW = { maxWidth: 1200, marginLeft: 'auto', marginRight: 'auto' };
+const disp = { fontFamily: FONTS.display };
 const body = { fontFamily: FONTS.body };
+const mono = { fontFamily: FONTS.num };
 
-function Eyebrow({ children, color = C.gold }) {
-  return <div style={{ ...body, color, letterSpacing: '0.22em', textTransform: 'uppercase', fontSize: 11, fontWeight: 600 }}>{children}</div>;
+// ── Sparkline ───────────────────────────────────────────────────────────────
+function Spark({ data, color, w = 52, h = 22 }) {
+  const max = Math.max(...data), min = Math.min(...data), range = max - min || 1;
+  const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
-// Stylised product preview — a faux statement card with a mini area chart.
-function ProductMock() {
-  const pts = [22, 30, 28, 44, 52, 70];
-  const w = 260, h = 70, max = 80;
-  const path = pts.map((v, i) => `${(i / (pts.length - 1)) * w},${h - (v / max) * h}`).join(' ');
-  const area = `0,${h} ${path} ${w},${h}`;
+// ── High-fidelity dashboard mock ────────────────────────────────────────────
+function DashboardMock() {
+  const periods   = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const revenue   = [840, 920, 1050, 1180, 1340, 1520];
+  const netIncome = [92, 128, 158, 201, 254, 320];
+  const cw = 380, ch = 68, maxR = 1600, maxN = 340;
+  const revPts = revenue.map((v, i) => `${(i / (revenue.length - 1)) * cw},${ch - (v / maxR) * ch}`).join(' ');
+  const revArea = `0,${ch} ${revPts} ${cw},${ch}`;
+  const niPts  = netIncome.map((v, i) => `${(i / (netIncome.length - 1)) * cw},${ch - (v / maxN) * ch}`).join(' ');
+
+  const kpis = [
+    { label: 'ARR',           value: '$7.85M', change: '↑18.2%', spk: [680,710,760,820,890,970,1050], sc: P.accent },
+    { label: 'EBITDA Margin', value: '17.1%',  change: '↑3.0 pp', spk: [12.1,13.4,14.2,15.1,15.8,16.2,17.1], sc: P.blue },
+    { label: 'Net Income',    value: '$891K',  change: '↑24.7%', spk: [74,93,114,144,178,228,305], sc: P.accent },
+    { label: 'Cash Runway',   value: '34 mo',  change: 'Healthy', spk: [28,29,30,31,33,34,34], sc: P.amber },
+  ];
+
+  const rows = [
+    { label: 'Revenue',              q: ['$840K','$920K','$1,050K','$1,180K'], bold: true,  neg: false, accent: P.accent },
+    { label: '  Cost of Revenue',    q: ['($336K)','($368K)','($420K)','($472K)'], bold: false, neg: true,  accent: null },
+    { label: 'Gross Profit',         q: ['$504K','$552K','$630K','$708K'],   bold: true,  neg: false, accent: P.accent },
+    { label: '  Operating Expenses', q: ['($399K)','($414K)','($459K)','($498K)'], bold: false, neg: true,  accent: null },
+    { label: 'EBITDA',               q: ['$105K','$138K','$171K','$210K'],   bold: true,  neg: false, accent: P.accent },
+    { label: 'Net Income',           q: ['$92K','$128K','$158K','$201K'],    bold: true,  neg: false, accent: P.blue },
+  ];
+
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, boxShadow: '0 40px 80px -32px rgba(31,27,22,0.35)', padding: 22, transform: 'rotate(-1.2deg)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <KoalaMark size={22} />
-          <span style={{ ...serif, fontWeight: 600, fontSize: 16, color: C.ink }}>Coffee Shop — Base</span>
+    <div style={{
+      background: P.bgDarkCard,
+      borderRadius: 14,
+      overflow: 'hidden',
+      border: `1px solid ${P.accentGlow}`,
+      boxShadow: `0 0 0 1px ${P.accentSoft}, 0 60px 120px -30px rgba(0,0,0,0.85), 0 0 80px ${P.accentGlow}`,
+      maxWidth: 560,
+      width: '100%',
+    }}>
+      {/* macOS title bar */}
+      <div style={{ background: P.bgDark, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: `1px solid ${P.borderDark}` }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
         </div>
-        <span style={{ ...body, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: C.gold }}>FY25–29</span>
+        <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginLeft: 6, flex: 1 }}>
+          Acme Corp — Financial Model · FY 2025–2026
+        </div>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['Base', 'Optimistic', 'Stress'].map((s, i) => (
+            <span key={s} style={{ ...body, fontSize: 9, padding: '2px 7px', borderRadius: 4, background: i === 0 ? P.accent : 'rgba(255,255,255,0.07)', color: i === 0 ? P.bgDark : 'rgba(255,255,255,0.35)', fontWeight: i === 0 ? 700 : 400, cursor: 'default' }}>{s}</span>
+          ))}
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
-        {[['Revenue', '$1.42M', C.ink], ['Net margin', '11.4%', C.green], ['Runway', '28 mo', C.ink]].map(([l, v, col]) => (
-          <div key={l} style={{ background: C.bg, border: `1px solid ${C.borderSoft}`, borderRadius: 10, padding: '9px 11px' }}>
-            <div style={{ ...body, fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.muted }}>{l}</div>
-            <div style={{ fontFamily: FONTS.num, fontSize: 16, fontWeight: 600, color: col, marginTop: 3 }}>{v}</div>
+
+      {/* Tab bar */}
+      <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0 14px', display: 'flex', borderBottom: `1px solid ${P.borderDark}` }}>
+        {['Income Statement', 'Cash Flow', 'Balance Sheet', 'Analytics'].map((t, i) => (
+          <div key={t} style={{ ...body, fontSize: 10.5, padding: '8px 12px', color: i === 0 ? P.accent : 'rgba(255,255,255,0.3)', fontWeight: i === 0 ? 600 : 400, borderBottom: `2px solid ${i === 0 ? P.accent : 'transparent'}`, cursor: 'default', whiteSpace: 'nowrap' }}>{t}</div>
+        ))}
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: `1px solid ${P.borderDark}` }}>
+        {kpis.map(({ label, value, change, spk, sc }, i) => (
+          <div key={label} style={{ padding: '10px 12px', borderRight: i < 3 ? `1px solid ${P.borderDark}` : 'none' }}>
+            <div style={{ ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <div>
+                <div style={{ ...mono, fontSize: 15, fontWeight: 600, color: '#F1F5F9', letterSpacing: '-0.02em' }}>{value}</div>
+                <div style={{ ...body, fontSize: 9, color: sc, marginTop: 2 }}>{change}</div>
+              </div>
+              <Spark data={spk} color={sc} />
+            </div>
           </div>
         ))}
       </div>
-      <svg width="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ display: 'block' }}>
-        <defs>
-          <linearGradient id="mockg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={C.gold} stopOpacity="0.35" />
-            <stop offset="100%" stopColor={C.gold} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polygon points={area} fill="url(#mockg)" />
-        <polyline points={path} fill="none" stroke={C.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+
+      {/* Chart */}
+      <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${P.borderDark}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div style={{ ...body, fontSize: 9.5, color: 'rgba(255,255,255,0.35)' }}>Revenue & Net Income — H1 2025</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[[P.accent, 'Revenue'], [P.blue, 'Net Income']].map(([c, l]) => (
+              <span key={l} style={{ ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 10, height: 2, background: c, display: 'inline-block', borderRadius: 1 }} />{l}
+              </span>
+            ))}
+          </div>
+        </div>
+        <svg width="100%" viewBox={`0 0 ${cw} ${ch}`} preserveAspectRatio="none" style={{ display: 'block', height: 52 }}>
+          <defs>
+            <linearGradient id="dg-rev" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={P.accent} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={P.accent} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points={revArea} fill="url(#dg-rev)" />
+          <polyline points={revPts} fill="none" stroke={P.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <polyline points={niPts}  fill="none" stroke={P.blue}   strokeWidth="1.4" strokeDasharray="4,3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+          {periods.map(p => <span key={p} style={{ ...body, fontSize: 8, color: 'rgba(255,255,255,0.18)' }}>{p}</span>)}
+        </div>
+      </div>
+
+      {/* Data table */}
+      <div>
+        <div style={{ display: 'flex', padding: '5px 14px', background: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${P.borderDark}` }}>
+          <div style={{ flex: 1, ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Line item</div>
+          {['Q1 25', 'Q2 25', 'Q3 25', 'Q4 25'].map(q => <div key={q} style={{ width: 62, textAlign: 'right', ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>{q}</div>)}
+        </div>
+        {rows.map(({ label, q, bold, neg, accent: rowAccent }) => (
+          <div key={label} style={{ display: 'flex', padding: `${bold ? 6 : 4}px 14px`, background: bold ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: `1px solid ${P.borderDark}` }}>
+            <div style={{ flex: 1, ...body, fontSize: 9.5, color: bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : 'rgba(255,255,255,0.75)') : 'rgba(255,255,255,0.38)', fontWeight: bold ? 600 : 400 }}>{label}</div>
+            {q.map((v, vi) => (
+              <div key={vi} style={{ width: 62, textAlign: 'right', ...mono, fontSize: 9.5, color: v.startsWith('(') ? P.red : bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : '#F1F5F9') : 'rgba(255,255,255,0.4)', fontWeight: bold ? 600 : 400 }}>{v}</div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* AI bar */}
+      <div style={{ padding: '9px 14px', background: 'rgba(16,185,129,0.06)', borderTop: `1px solid rgba(16,185,129,0.14)`, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 18, height: 18, borderRadius: '50%', background: P.accent, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ ...body, fontSize: 9, fontWeight: 800, color: P.bgDark }}>AI</span>
+        </span>
+        <span style={{ ...body, fontSize: 9.5, color: 'rgba(255,255,255,0.38)', fontStyle: 'italic', flex: 1 }}>
+          "What if headcount increases 30% in Q3?"
+        </span>
+        <span style={{ ...body, fontSize: 9.5, color: P.accent, fontWeight: 600, cursor: 'default', whiteSpace: 'nowrap' }}>Ask AI →</span>
+      </div>
     </div>
   );
 }
 
+// ── Integration badges ──────────────────────────────────────────────────────
+const INTEGRATIONS = [
+  { name: 'QuickBooks', abbr: 'QB', color: '#2CA01C' },
+  { name: 'Xero',       abbr: 'Xe', color: '#13B5EA' },
+  { name: 'NetSuite',   abbr: 'NS', color: '#FF6C2C' },
+  { name: 'Salesforce', abbr: 'SF', color: '#00A1E0' },
+  { name: 'Stripe',     abbr: 'St', color: '#6772E5' },
+  { name: 'Excel',      abbr: 'Ex', color: '#217346' },
+];
+
+function IntegrationBadge({ name, abbr, color }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 8, border: `1px solid ${P.border}`, background: P.bg }}>
+      <div style={{ width: 22, height: 22, borderRadius: 5, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <span style={{ ...body, fontSize: 8.5, fontWeight: 800, color: '#fff' }}>{abbr}</span>
+      </div>
+      <span style={{ ...body, fontSize: 12.5, fontWeight: 500, color: P.ink2 }}>{name}</span>
+    </div>
+  );
+}
+
+// ── Feature card ────────────────────────────────────────────────────────────
 const FEATURES = [
-  { icon: Sparkles, title: 'AI builds your model', body: 'Describe your business in one sentence. Koala drafts a full 3-statement model — revenue, costs, growth — in seconds. No spreadsheets, no accounting data required.', tag: 'Only on Koala' },
-  { icon: MessageSquare, title: 'Conversational what-if', body: '“What if I hire 3 people?” Koala proposes the exact line-item changes and shows you a clean before/after diff to apply or discard.', tag: 'Only on Koala' },
-  { icon: GitBranch, title: 'Base · Best · Worst', body: 'Every model carries three live scenarios at once. Stress-test downside and chase upside without rebuilding a thing.' },
-  { icon: BarChart3, title: 'Sector benchmarks', body: 'Your margins, instantly compared against real peers and industry ranges — so your plan is grounded in reality, not optimism.' },
-  { icon: Share2, title: 'Shareable live reports', body: 'Send a link to an interactive report, not a dead PDF. Investors and partners explore the numbers themselves.', tag: 'Only on Koala' },
-  { icon: FileText, title: 'Investor one-pager', body: 'Generate a clean, print-ready pitch summary from your model with a single click. Walk into the room ready.' },
+  { icon: Sparkles,    title: 'AI-Driven Assumption Engine',      tag: 'Exclusive', body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions — no spreadsheet, no accounting data required.' },
+  { icon: GitBranch,   title: 'Dynamic Multi-Scenario Architecture', tag: null,       body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding — toggle and compare in real time.' },
+  { icon: BarChart3,   title: 'Automated 3-Statement Integration',  tag: null,       body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
+  { icon: TrendingUp,  title: 'Institutional Benchmarking',        tag: null,       body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
+  { icon: MessageSquare, title: 'Conversational What-If Analysis', tag: 'Exclusive', body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard — full undo history included.' },
+  { icon: Share2,      title: 'Investor-Ready Live Reports',       tag: 'Exclusive', body: 'Share a live, interactive report — not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
 ];
 
-const STEPS = [
-  { n: '01', title: 'Describe or pick', body: 'Tell Koala about your business in plain English, or start from a sector template.' },
-  { n: '02', title: 'Koala drafts the model', body: 'A complete income statement, cash flow, and balance sheet — seeded with realistic assumptions.' },
-  { n: '03', title: 'Refine & share', body: 'Tweak any number, ask the AI advisor, then export or share a live, interactive report.' },
-];
-
-function Feature({ icon: Icon, title, body: text, tag }) {
+function FeatureCard({ icon: Icon, title, body: text, tag }) {
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, position: 'relative' }}>
-      {tag && <span style={{ position: 'absolute', top: 16, right: 16, ...body, fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.gold, background: C.goldSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>}
-      <div style={{ width: 42, height: 42, borderRadius: 11, background: C.bgWarm, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-        <Icon size={20} color={C.gold} />
+    <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: '24px 22px', position: 'relative' }}>
+      {tag && (
+        <span style={{ position: 'absolute', top: 18, right: 18, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accent, background: P.accentSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>
+      )}
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+        <Icon size={19} color={P.accent} />
       </div>
-      <h3 style={{ ...serif, fontSize: 21, fontWeight: 600, color: C.ink, marginBottom: 8 }}>{title}</h3>
-      <p style={{ ...body, fontSize: 14, lineHeight: 1.6, color: C.ink2 }}>{text}</p>
+      <h3 style={{ ...disp, fontSize: 17, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
+      <p style={{ ...body, fontSize: 13.5, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
     </div>
   );
 }
 
-function PriceCard({ name, price, period, blurb, features, cta, highlight }) {
+// ── Price card ──────────────────────────────────────────────────────────────
+function PriceCard({ tier, price, period, blurb, features, cta, ctaHref, highlight, enterprise }) {
+  const btn = {
+    display: 'block', textAlign: 'center',
+    ...body, fontSize: 14, fontWeight: 600,
+    padding: '11px 0', borderRadius: 9, textDecoration: 'none',
+    background: highlight ? P.accent : enterprise ? P.ink : 'transparent',
+    color: highlight ? P.bgDark : '#fff',
+    border: highlight ? 'none' : enterprise ? 'none' : `1.5px solid ${P.border}`,
+  };
   return (
-    <div style={{ background: highlight ? C.ink : C.surface, border: `1px solid ${highlight ? C.ink : C.border}`, borderRadius: 18, padding: 30, flex: 1, minWidth: 260, boxShadow: highlight ? '0 30px 60px -24px rgba(31,27,22,0.45)' : 'none' }}>
-      <div style={{ ...body, fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: highlight ? C.gold : C.muted, fontWeight: 600 }}>{name}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 14 }}>
-        <span style={{ ...serif, fontSize: 44, fontWeight: 600, color: highlight ? C.surface : C.ink }}>{price}</span>
-        <span style={{ ...body, fontSize: 14, color: highlight ? C.faint : C.muted }}>{period}</span>
+    <div style={{
+      background: highlight ? P.bgDarkCard : P.bg,
+      border: `1px solid ${highlight ? P.accentGlow : P.border}`,
+      borderRadius: 14,
+      padding: '28px 24px',
+      flex: 1,
+      minWidth: 250,
+      boxShadow: highlight ? `0 0 0 1px ${P.accentSoft}, 0 30px 60px -20px rgba(0,0,0,0.5)` : 'none',
+      position: 'relative',
+    }}>
+      {highlight && (
+        <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: P.accent, ...body, fontSize: 10, fontWeight: 700, color: P.bgDark, padding: '3px 14px', borderRadius: 20, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Most Popular</div>
+      )}
+      <div style={{ ...body, fontSize: 10.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: highlight ? P.accent : P.muted, fontWeight: 600 }}>{tier}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 12, marginBottom: 4 }}>
+        {enterprise
+          ? <span style={{ ...disp, fontSize: 30, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>Contact us</span>
+          : <>
+              <span style={{ ...disp, fontSize: 40, fontWeight: 700, color: highlight ? '#F1F5F9' : P.ink, letterSpacing: '-0.025em' }}>{price}</span>
+              <span style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.4)' : P.muted }}>{period}</span>
+            </>
+        }
       </div>
-      <p style={{ ...body, fontSize: 13.5, color: highlight ? '#D9D2C4' : C.ink2, marginTop: 8, marginBottom: 20 }}>{blurb}</p>
-      <Link to="/app" style={{ display: 'block', textAlign: 'center', ...body, fontSize: 14, fontWeight: 600, padding: '11px 0', borderRadius: 10, textDecoration: 'none', background: highlight ? C.gold : C.ink, color: highlight ? C.ink : C.surface }}>{cta}</Link>
-      <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 11 }}>
+      <p style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.5)' : P.ink2, marginBottom: 20, lineHeight: 1.55 }}>{blurb}</p>
+      <Link to={ctaHref} style={btn}>{cta}</Link>
+      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
         {features.map((f) => (
-          <div key={f} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
-            <Check size={16} color={highlight ? C.gold : C.green} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span style={{ ...body, fontSize: 13.5, color: highlight ? '#E8E2D4' : C.ink2 }}>{f}</span>
+          <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Check size={14} color={P.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.6)' : P.ink2 }}>{f}</span>
           </div>
         ))}
       </div>
@@ -99,124 +275,305 @@ function PriceCard({ name, price, period, blurb, features, cta, highlight }) {
   );
 }
 
+// ── Main ────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', ...body, color: C.ink }}>
+    <div style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink }}>
+
       {/* NAV */}
-      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(244,241,233,0.85)', backdropFilter: 'blur(10px)', borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ ...maxW, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Logo size={30} />
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-            <a href="#features" style={{ ...body, fontSize: 14, color: C.ink2, textDecoration: 'none' }} className="hidden sm:inline">Features</a>
-            <a href="#how" style={{ ...body, fontSize: 14, color: C.ink2, textDecoration: 'none' }} className="hidden sm:inline">How it works</a>
-            <a href="#pricing" style={{ ...body, fontSize: 14, color: C.ink2, textDecoration: 'none' }} className="hidden sm:inline">Pricing</a>
-            <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 600, color: C.surface, background: C.ink, padding: '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Open app</Link>
+      <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
+          <Logo size={28} />
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1 }} className="hidden sm:flex">
+            <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
+            <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
+            <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
+            <a href="#pricing"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Pricing</a>
           </nav>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+            <Link to="/app" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>
+            <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 600, color: '#fff', background: P.ink, padding: '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Start free</Link>
+          </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section style={{ ...maxW, padding: '72px 24px 56px', display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: 48, alignItems: 'center' }} className="koala-hero">
-        <div>
-          <Eyebrow>Financial modeling, reimagined</Eyebrow>
-          <h1 style={{ ...serif, fontSize: 'clamp(40px, 5.6vw, 68px)', fontWeight: 600, lineHeight: 1.03, letterSpacing: '-0.02em', color: C.ink, margin: '18px 0 0' }}>
-            The financial model that<br />builds <span style={{ color: C.gold, fontStyle: 'italic' }}>itself</span>.
-          </h1>
-          <p style={{ ...body, fontSize: 18, lineHeight: 1.6, color: C.ink2, marginTop: 22, maxWidth: 520 }}>
-            Describe your business in a sentence. Koala drafts a complete, investor-ready 3-statement model — with scenarios, benchmarks, and an AI advisor that actually understands your numbers.
-          </p>
-          <div style={{ display: 'flex', gap: 14, marginTop: 30, flexWrap: 'wrap' }}>
-            <Link to="/app" style={{ ...body, fontSize: 15, fontWeight: 600, color: C.surface, background: C.ink, padding: '14px 26px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              Start free <ArrowRight size={17} />
-            </Link>
-            <a href="#how" style={{ ...body, fontSize: 15, fontWeight: 600, color: C.ink, background: C.surface, border: `1px solid ${C.border}`, padding: '14px 26px', borderRadius: 11, textDecoration: 'none' }}>See how it works</a>
+      <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -120, right: -80, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ ...maxW, padding: '84px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', position: 'relative' }} className="koala-2col">
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: 22 }}>
+              <Zap size={12} color={P.accent} />
+              <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>AI-Native Financial Modeling</span>
+            </div>
+            <h1 style={{ ...disp, fontSize: 'clamp(32px, 4.4vw, 56px)', fontWeight: 700, lineHeight: 1.06, letterSpacing: '-0.025em', color: '#F8FAFC', margin: 0 }}>
+              Institutional-Grade<br />Financial Modeling.<br />
+              <span style={{ color: P.accent }}>Powered by AI.</span>
+            </h1>
+            <p style={{ ...body, fontSize: 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: 20, maxWidth: 490 }}>
+              Transform raw assumptions into investor-ready 3-statement financial architecture in minutes — not weeks. Built for founders, CFOs, and the analysts who support them.
+            </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
+              <Link to="/app" style={{ ...body, fontSize: 15, fontWeight: 600, color: P.bgDark, background: P.accent, padding: '13px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                Build your model free <ArrowRight size={16} />
+              </Link>
+              <a href="#how" style={{ ...body, fontSize: 15, fontWeight: 500, color: 'rgba(248,250,252,0.7)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', padding: '13px 24px', borderRadius: 10, textDecoration: 'none' }}>
+                See how it works
+              </a>
+            </div>
+            <div style={{ display: 'flex', gap: 20, marginTop: 22, flexWrap: 'wrap' }}>
+              {['No credit card required', 'SOC 2 compliant', '< 60 sec to first model'].map((t) => (
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.35)' }}>
+                  <Check size={13} color={P.accent} />{t}
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 22, ...body, fontSize: 13, color: C.muted }}>
-            <Check size={15} color={C.green} /> No credit card · No accounting data needed · Free to start
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <DashboardMock />
           </div>
         </div>
-        <ProductMock />
       </section>
 
-      {/* STATS STRIP */}
-      <section style={{ borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, background: C.bgWarm }}>
-        <div style={{ ...maxW, padding: '26px 24px', display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'space-around', textAlign: 'center' }}>
-          {[['3', 'statements, fully linked'], ['17+', 'industry benchmarks built in'], ['3', 'live scenarios per model'], ['< 30s', 'from idea to first draft']].map(([n, l]) => (
-            <div key={l}>
-              <div style={{ ...serif, fontSize: 34, fontWeight: 600, color: C.ink }}>{n}</div>
-              <div style={{ ...body, fontSize: 13, color: C.muted, marginTop: 2 }}>{l}</div>
+      {/* INTEGRATION STRIP */}
+      <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ ...body, fontSize: 11.5, color: P.muted, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>Works with your stack:</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {INTEGRATIONS.map((ig) => <IntegrationBadge key={ig.name} {...ig} />)}
+          </div>
+        </div>
+      </div>
+
+      {/* STATS */}
+      <div style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '44px 24px', display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 0 }}>
+          {[
+            ['< 60s', 'From description to first model'],
+            ['3', 'Live scenarios per model'],
+            ['17+', 'Industry benchmarks built in'],
+            ['100%', 'Statements auto-linked'],
+          ].map(([n, l], i) => (
+            <div key={l} style={{ padding: '10px 28px', borderRight: i < 3 ? `1px solid ${P.border}` : 'none', flex: 1, minWidth: 130 }}>
+              <div style={{ ...disp, fontSize: 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>{n}</div>
+              <div style={{ ...body, fontSize: 13, color: P.muted, marginTop: 5 }}>{l}</div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       {/* FEATURES */}
-      <section id="features" style={{ ...maxW, padding: '76px 24px 20px' }}>
-        <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 48px' }}>
-          <Eyebrow>The Koala difference</Eyebrow>
-          <h2 style={{ ...serif, fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 600, color: C.ink, margin: '14px 0 12px', letterSpacing: '-0.01em' }}>Everything the big tools do — plus the things they don't.</h2>
-          <p style={{ ...body, fontSize: 16, lineHeight: 1.6, color: C.ink2 }}>Fathom and the rest report on data you already have. Koala helps you build the plan from scratch — and uses AI to do the heavy lifting.</p>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 18 }}>
-          {FEATURES.map((f) => <Feature key={f.title} {...f} />)}
+      <section id="features" style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '84px 24px' }}>
+          <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 52px' }}>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Capabilities</div>
+            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
+            <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
+          </div>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how" style={{ ...maxW, padding: '76px 24px' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <Eyebrow>How it works</Eyebrow>
-          <h2 style={{ ...serif, fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 600, color: C.ink, margin: '14px 0 0', letterSpacing: '-0.01em' }}>From a sentence to a strategy in three steps.</h2>
+      <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '84px 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
+            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+            {[
+              { n: '01', title: 'Describe your business', icon: Sparkles, body: 'Type one sentence: "B2B SaaS, $30K MRR, targeting $5M ARR, 18-month runway." Koala reads your sector, stage, and scale automatically.' },
+              { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet — seeded with sector-calibrated assumptions and three live scenarios — in under 60 seconds.' },
+              { n: '03', title: 'Refine, share, raise',   icon: Share2,   body: 'Adjust any assumption, run what-if scenarios with the AI advisor, then share a live interactive report directly with your investors or board.' },
+            ].map(({ n, title, icon: Icon, body: text }) => (
+              <div key={n} style={{ padding: '28px 24px', background: P.bgAlt, borderRadius: 12, border: `1px solid ${P.border}` }}>
+                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accent, letterSpacing: '0.14em', marginBottom: 14 }}>STEP {n}</div>
+                <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                  <Icon size={18} color={P.accent} />
+                </div>
+                <h3 style={{ ...disp, fontSize: 20, fontWeight: 700, color: P.ink, marginBottom: 10, letterSpacing: '-0.01em' }}>{title}</h3>
+                <p style={{ ...body, fontSize: 14, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 22 }}>
-          {STEPS.map((s) => (
-            <div key={s.n} style={{ padding: '4px 8px' }}>
-              <div style={{ ...serif, fontSize: 40, fontWeight: 600, color: C.gold, lineHeight: 1 }}>{s.n}</div>
-              <div style={{ height: 1, background: C.border, margin: '16px 0' }} />
-              <h3 style={{ ...serif, fontSize: 22, fontWeight: 600, color: C.ink, marginBottom: 8 }}>{s.title}</h3>
-              <p style={{ ...body, fontSize: 14.5, lineHeight: 1.6, color: C.ink2 }}>{s.body}</p>
+      </section>
+
+      {/* SECURITY */}
+      <section id="security" style={{ background: P.bgDark }}>
+        <div style={{ ...maxW, padding: '84px 24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }} className="koala-2col">
+            <div>
+              <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
+              <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
+              <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: 'rgba(248,250,252,0.5)', marginBottom: 32 }}>
+                Your financial data stays private and secure. We've built Koala to meet the standards that institutional buyers and investors expect.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {[
+                  { icon: Shield,    label: 'SOC 2 Type II',             desc: 'Annual third-party audit of our security controls' },
+                  { icon: Lock,      label: '256-bit AES Encryption',     desc: 'At rest and in transit, on every plan' },
+                  { icon: Award,     label: 'GDPR & CCPA Compliant',      desc: 'Full data residency and deletion on request' },
+                  { icon: FileText,  label: 'Role-Based Access Control',  desc: 'Granular permissions for team and board sharing' },
+                ].map(({ icon: Icon, label, desc }) => (
+                  <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 9, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon size={16} color={P.accent} />
+                    </div>
+                    <div>
+                      <div style={{ ...body, fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 2 }}>{label}</div>
+                      <div style={{ ...body, fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>{desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {['SOC 2', 'GDPR', 'ISO 27001', 'CCPA'].map((badge) => (
+                  <div key={badge} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.3)`, margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Shield size={16} color={P.accent} />
+                    </div>
+                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{badge}</div>
+                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>Compliant</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {['🇺🇸 US East', '🇪🇺 EU West', '🌏 APAC'].map((r) => (
+                    <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* PRICING */}
-      <section id="pricing" style={{ background: C.bgWarm, borderTop: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}` }}>
-        <div style={{ ...maxW, padding: '76px 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 44 }}>
-            <Eyebrow>Pricing</Eyebrow>
-            <h2 style={{ ...serif, fontSize: 'clamp(30px, 4vw, 44px)', fontWeight: 600, color: C.ink, margin: '14px 0 0', letterSpacing: '-0.01em' }}>Start free. Upgrade when you're ready.</h2>
+      <section id="pricing" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '84px 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
+            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
+            <p style={{ ...body, fontSize: 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
           </div>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', maxWidth: 760, margin: '0 auto' }}>
-            <PriceCard name="Free" price="$0" period="forever" blurb="Everything you need to build and pressure-test your first model." cta="Get started" features={['Unlimited models on this device', '3-statement engine + scenarios', 'Sector benchmarks', 'AI advisor (fair-use)']} />
-            <PriceCard name="Pro" price="$19" period="/ month" blurb="For founders raising or running the numbers seriously." cta="Start free trial" highlight features={['Everything in Free', 'AI builds & edits your model', 'Shareable live reports', 'Investor one-pager export', 'Priority AI advisor']} />
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <PriceCard
+              tier="Growth"
+              price="$79"
+              period="/ month"
+              blurb="For founders and analysts who need a serious modeling tool — not a spreadsheet."
+              features={['Unlimited projects', '3-statement engine + all scenarios', '17+ industry benchmarks', 'AI advisor (fair use)', 'JSON export']}
+              cta="Start free trial"
+              ctaHref="/app"
+            />
+            <PriceCard
+              tier="Pro"
+              price="$249"
+              period="/ month"
+              blurb="For finance teams that need AI-native automation, live sharing, and board-ready exports."
+              features={['Everything in Growth', 'AI builds & edits your model', 'Conversational what-if analysis', 'Shareable live investor reports', 'Pitch one-pager export', 'Priority AI advisor', 'Team collaboration (up to 5)']}
+              cta="Start free trial"
+              ctaHref="/app"
+              highlight
+            />
+            <PriceCard
+              tier="Enterprise"
+              price=""
+              period=""
+              blurb="For organizations that need custom integrations, SSO, dedicated support, and SLAs."
+              features={['Everything in Pro', 'QuickBooks / Xero / NetSuite sync', 'SAML SSO + SCIM provisioning', 'Custom data residency', 'Dedicated CSM + SLA', 'Audit logs + RBAC', 'Custom AI fine-tuning']}
+              cta="Contact Sales"
+              ctaHref="/app"
+              enterprise
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
+        <div style={{ ...maxW, padding: '84px 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>What teams say</div>
+            <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>Trusted by founders and finance teams.</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+            {[
+              { quote: "Koala cut our financial model prep from two weeks to an afternoon. The AI-generated assumptions were accurate for our sector — our investors were impressed.", name: 'Sarah Chen', title: 'CFO @ Meridian Health', initials: 'SC' },
+              { quote: "Every investor we've talked to commented on how clean and credible our model looks. That credibility is Koala. The scenario analysis alone got us a second meeting.", name: 'Marcus Rivera', title: 'Co-founder @ Lattice Ventures', initials: 'MR' },
+              { quote: "We replaced three separate tools with Koala. Full 3-statement linkage, real benchmarks, an AI that understands the numbers. No more spreadsheet nightmares.", name: "James O'Brien", title: 'VP Finance @ Arch Systems', initials: 'JO' },
+            ].map(({ quote, name, title, initials }) => (
+              <div key={name} style={{ background: P.bgAlt, border: `1px solid ${P.border}`, borderRadius: 14, padding: '26px 24px' }}>
+                <div style={{ ...disp, fontSize: 28, color: P.accent, lineHeight: 1, marginBottom: 12, fontWeight: 400 }}>"</div>
+                <p style={{ ...body, fontSize: 14.5, lineHeight: 1.7, color: P.ink2, marginBottom: 20 }}>{quote}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ ...body, fontSize: 12, fontWeight: 700, color: P.accent }}>{initials}</span>
+                  </div>
+                  <div>
+                    <div style={{ ...body, fontSize: 13.5, fontWeight: 600, color: P.ink }}>{name}</div>
+                    <div style={{ ...body, fontSize: 12, color: P.muted }}>{title}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FINAL CTA */}
-      <section style={{ ...maxW, padding: '84px 24px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-flex', marginBottom: 22 }}><KoalaMark size={48} /></div>
-        <h2 style={{ ...serif, fontSize: 'clamp(32px, 4.4vw, 50px)', fontWeight: 600, color: C.ink, margin: '0 0 16px', letterSpacing: '-0.01em' }}>Your numbers deserve a real plan.</h2>
-        <p style={{ ...body, fontSize: 17, color: C.ink2, maxWidth: 520, margin: '0 auto 28px', lineHeight: 1.6 }}>Build your first model in under a minute. No spreadsheet, no finance degree, no credit card.</p>
-        <Link to="/app" style={{ ...body, fontSize: 16, fontWeight: 600, color: C.surface, background: C.ink, padding: '15px 32px', borderRadius: 12, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
-          Open Koala Statements <ArrowRight size={18} />
-        </Link>
+      <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 350, borderRadius: '50%', background: `radial-gradient(ellipse, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
+        <div style={{ ...maxW, padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
+          <h2 style={{ ...disp, fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+            Your investors expect<br />institutional quality.
+          </h2>
+          <p style={{ ...body, fontSize: 17, color: 'rgba(248,250,252,0.5)', maxWidth: 460, margin: '0 auto 32px', lineHeight: 1.65 }}>
+            Build your first 3-statement model in under 60 seconds. No spreadsheet, no finance degree, no credit card.
+          </p>
+          <Link to="/app" style={{ ...body, fontSize: 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+            Build your model free <ArrowRight size={18} />
+          </Link>
+          <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
+            No credit card · Cancel anytime · SOC 2 compliant
+          </div>
+        </div>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: `1px solid ${C.border}`, background: C.surface }}>
-        <div style={{ ...maxW, padding: '32px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <Logo size={26} />
-          <div style={{ ...body, fontSize: 12.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 7 }}>
-            <TrendingUp size={14} color={C.gold} /> Built for founders, by Koala. Not financial advice.
+      <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ ...maxW, padding: '36px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <KoalaMark size={24} color="#F8FAFC" accent={P.accent} />
+            <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
-          <div style={{ ...body, fontSize: 12.5, color: C.faint }}>© {new Date().getFullYear()} Koala Statements</div>
+          <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.22)' }}>
+            © {new Date().getFullYear()} Koala Statements · Not financial advice.
+          </div>
+          <div style={{ display: 'flex', gap: 20 }}>
+            {['Privacy', 'Terms', 'Security'].map((l) => (
+              <a key={l} href="#" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>{l}</a>
+            ))}
+          </div>
         </div>
       </footer>
 
       <style>{`
-        @media (max-width: 860px){ .koala-hero{ grid-template-columns: 1fr !important; } }
+        @media (max-width: 860px) {
+          .koala-2col { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .koala-2col > div:last-child { display: none; }
+        }
       `}</style>
     </div>
   );
