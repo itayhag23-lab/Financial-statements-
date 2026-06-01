@@ -1,10 +1,30 @@
-import React,{useState,useMemo,useCallback,useRef,useEffect} from 'react';
+import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
+
+// Error boundary — prevents a crash from showing a blank page.
+class AppErrorBoundary extends Component {
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(err){return{err};}
+  render(){
+    if(!this.state.err)return this.props.children;
+    return(
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#F8FAFC',fontFamily:'Inter,system-ui,sans-serif',padding:24,textAlign:'center'}}>
+        <div style={{fontSize:28,marginBottom:16}}>⚠️</div>
+        <div style={{fontSize:18,fontWeight:700,color:'#0F172A',marginBottom:8}}>Something went wrong</div>
+        <div style={{fontSize:13,color:'#64748B',marginBottom:24,maxWidth:380}}>{String(this.state.err?.message||'Unexpected error')}</div>
+        <button onClick={()=>{try{localStorage.clear();}catch{}window.location.reload();}} style={{display:'inline-flex',alignItems:'center',gap:8,background:'#10B981',color:'#fff',border:'none',borderRadius:8,padding:'10px 20px',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+          <RefreshCw size={15}/> Reset &amp; Reload
+        </button>
+        <div style={{fontSize:11,color:'#94A3B8',marginTop:12}}>This clears local storage and reloads a fresh model.</div>
+      </div>
+    );
+  }
+}
 
 const FontStyles=()=>(<style>{`
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
@@ -963,7 +983,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 </div></div>);
 }
 
-export default function FinancialModelBuilder({projectId}={}){
+function FinancialModelBuilderInner({projectId}={}){
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
@@ -1106,4 +1126,8 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
 </div>);
+}
+
+export default function FinancialModelBuilder(props){
+  return React.createElement(AppErrorBoundary,null,React.createElement(FinancialModelBuilderInner,props));
 }
