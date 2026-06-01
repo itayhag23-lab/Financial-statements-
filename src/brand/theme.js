@@ -21,7 +21,7 @@ export const C = {
 };
 
 export const FONTS = {
-  display: "'Cormorant Garamond', Georgia, serif",
+  display: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
   body: "'Inter', system-ui, sans-serif",
   num: "'JetBrains Mono', monospace",
 };

@@ -3,14 +3,15 @@ import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId } from './lib/persistence';
+import PerformanceDashboard from './components/charts/PerformanceDashboard';
 
 const FontStyles=()=>(<style>{`
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
-.ff-display{font-family:'Cormorant Garamond',Georgia,serif;font-feature-settings:"lnum";letter-spacing:-0.005em;}
-.ff-body{font-family:'Inter',system-ui,sans-serif;}
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
+.ff-display{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;letter-spacing:-0.02em;font-feature-settings:"ss01";}
+.ff-body{font-family:'Inter',system-ui,sans-serif;letter-spacing:-0.006em;}
 .ff-num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
-.label-eyebrow{letter-spacing:0.16em;text-transform:uppercase;font-size:10px;font-weight:500;}
-.label-folio{letter-spacing:0.22em;text-transform:uppercase;font-size:9.5px;font-weight:500;}
+.label-eyebrow{letter-spacing:0.16em;text-transform:uppercase;font-size:10px;font-weight:600;}
+.label-folio{letter-spacing:0.18em;text-transform:uppercase;font-size:9.5px;font-weight:600;}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 input[type=number]{-moz-appearance:textfield;}
 .row-hover:hover{background-color:#EDE9DD55;}
@@ -946,6 +947,8 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 </div>
 </div>
 </div></div>
+
+{!showWizard&&<div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto"><PerformanceDashboard computed={computed} periods={periods} scenarioLabel={SCENARIO_META[activeScenario].label} symbol={CURRENCIES[currencyKey]?.symbol||'$'}/></div></div>}
 
 <div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto">
 <div className="flex items-center justify-between gap-3 mb-3 flex-wrap"><Eyebrow>{BUILD_TABS.length===1?'Statement':'Statements'}</Eyebrow><div className="flex items-center gap-2 flex-wrap">
