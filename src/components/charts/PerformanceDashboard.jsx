@@ -22,7 +22,7 @@ function KPI({ label, value, tone }) {
 function ChartTooltip({ active, payload, label, symbol }) {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '9px 12px', boxShadow: '0 10px 28px -10px rgba(31,27,22,0.25)', fontFamily: FONTS.body }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: '9px 12px', boxShadow: '0 10px 28px -10px rgba(15,23,42,0.18)', fontFamily: FONTS.body }}>
       <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, letterSpacing: '0.04em' }}>{label}</div>
       {payload.map((p) => (
         <div key={p.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: C.ink }}>
@@ -53,7 +53,7 @@ export default function PerformanceDashboard({ computed, periods, scenarioLabel 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div className="label-eyebrow ff-body" style={{ color: C.gold }}>Performance · {scenarioLabel}</div>
         <div style={{ display: 'flex', gap: 16, fontFamily: FONTS.body, fontSize: 11.5, color: C.muted }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 3, borderRadius: 2, background: C.gold, display: 'inline-block' }} /> Revenue</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 3, borderRadius: 2, background: C.blue, display: 'inline-block' }} /> Revenue</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 3, borderRadius: 2, background: C.green, display: 'inline-block' }} /> Net Income</span>
         </div>
       </div>
@@ -67,8 +67,8 @@ export default function PerformanceDashboard({ computed, periods, scenarioLabel 
           <ComposedChart data={data} margin={{ top: 6, right: 6, left: -8, bottom: 0 }}>
             <defs>
               <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={C.gold} stopOpacity={0.28} />
-                <stop offset="100%" stopColor={C.gold} stopOpacity={0} />
+                <stop offset="0%" stopColor={C.blue} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={C.blue} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid stroke={C.border} strokeDasharray="3 3" vertical={false} />
@@ -76,7 +76,7 @@ export default function PerformanceDashboard({ computed, periods, scenarioLabel 
             <YAxis tickFormatter={compact} tick={{ fontFamily: FONTS.num, fontSize: 10.5, fill: C.muted }} axisLine={false} tickLine={false} width={44} />
             <Tooltip content={<ChartTooltip symbol={symbol} />} />
             <ReferenceLine y={0} stroke={C.faint} />
-            <Area type="monotone" dataKey="Revenue" stroke={C.gold} strokeWidth={2.5} fill="url(#revFill)" dot={false} activeDot={{ r: 4 }} />
+            <Area type="monotone" dataKey="Revenue" stroke={C.blue} strokeWidth={2.5} fill="url(#revFill)" dot={false} activeDot={{ r: 4 }} />
             <Line type="monotone" dataKey="Net Income" stroke={C.green} strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
           </ComposedChart>
         </ResponsiveContainer>

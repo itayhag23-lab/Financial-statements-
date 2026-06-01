@@ -148,25 +148,25 @@ export default function SharedReport() {
       </header>
 
       {/* ── HEADER ── */}
-      <section style={{ background: P.bgDark, padding: '48px 24px 40px' }}>
+      <section style={{ background: P.bg, padding: '44px 24px 36px', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW }}>
           <div style={{ ...body, fontSize: 11, color: P.accent, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
             Shared Financial Model · {sharedDate}
           </div>
-          <h1 style={{ ...disp, fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: 0, letterSpacing: '-0.025em' }}>
+          <h1 style={{ ...disp, fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.025em' }}>
             {meta?.name || 'Untitled Model'}
           </h1>
-          <p style={{ ...body, fontSize: 14, color: 'rgba(255,255,255,0.45)', marginTop: 10 }}>
+          <p style={{ ...body, fontSize: 14, color: P.muted, marginTop: 10 }}>
             {periods.length > 0 ? `${periods[0]} – ${periods[periods.length - 1]}` : ''} · Base scenario · Read-only
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             <button
               onClick={openEditable}
-              style={{ ...body, fontSize: 14, fontWeight: 600, color: P.bgDark, background: P.accent, padding: '11px 20px', borderRadius: 9, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
+              style={{ ...body, fontSize: 14, fontWeight: 600, color: '#fff', background: P.accent, padding: '11px 20px', borderRadius: 9, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
             >
               Open editable copy <ArrowRight size={15} />
             </button>
-            <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', padding: '11px 20px', borderRadius: 9, textDecoration: 'none' }}>
+            <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 500, color: P.ink2, background: P.bg, border: `1px solid ${P.border}`, padding: '11px 20px', borderRadius: 9, textDecoration: 'none' }}>
               Build my own model →
             </Link>
           </div>
@@ -285,11 +285,11 @@ export default function SharedReport() {
       )}
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: P.bgDark, borderTop: `1px solid rgba(255,255,255,0.06)`, padding: '28px 24px' }}>
+      <footer style={{ background: P.bg, borderTop: `1px solid ${P.border}`, padding: '28px 24px' }}>
         <div style={{ ...maxW, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <Logo size={22} color="#F8FAFC" accent={P.accent} />
-          <div style={{ ...body, fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>Shared read-only view · Not financial advice</div>
-          <button onClick={openEditable} style={{ ...body, fontSize: 13, fontWeight: 600, color: P.bgDark, background: P.accent, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
+          <Logo size={22} />
+          <div style={{ ...body, fontSize: 12, color: P.muted }}>Shared read-only view · Not financial advice</div>
+          <button onClick={openEditable} style={{ ...body, fontSize: 13, fontWeight: 600, color: '#fff', background: P.accent, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
             Open editable copy →
           </button>
         </div>

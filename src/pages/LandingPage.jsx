@@ -5,7 +5,19 @@ import {
   ArrowRight, Check, Shield, Lock, TrendingUp, Zap, Award,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
-import { Logo, KoalaMark } from '../brand/Logo';
+
+// Brand lockup — high-quality koala logo served as a real image asset.
+function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
+      <img src="/koala-logo.svg" width={size} height={size} alt="Koala Statements logo" style={{ display: 'block', borderRadius: size * 0.24 }} />
+      <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
+        <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
+        <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: size * 0.29, color: accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
+      </span>
+    </span>
+  );
+}
 
 // ── Enterprise palette ──────────────────────────────────────────────────────
 const P = {
@@ -283,7 +295,7 @@ export default function LandingPage() {
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
-          <Logo size={28} />
+          <BrandLockup size={30} />
           <nav style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1 }} className="hidden sm:flex">
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
@@ -553,7 +565,7 @@ export default function LandingPage() {
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ ...maxW, padding: '36px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <KoalaMark size={24} color="#F8FAFC" accent={P.accent} />
+            <img src="/koala-logo.svg" width={26} height={26} alt="Koala Statements logo" style={{ display: 'block', borderRadius: 6 }} />
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
           <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.22)' }}>
