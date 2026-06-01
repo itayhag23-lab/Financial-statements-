@@ -55,6 +55,18 @@ export function deleteProject(id) {
   if (getLastActive() === id) safeDel(LAST_KEY);
 }
 
+// ── Share links (localStorage-based, same device) ──────────────────────────
+const shareKey = (id) => `${PREFIX}:share:${id}`;
+
+export function saveShare(id, doc) {
+  try {
+    localStorage.setItem(shareKey(id), JSON.stringify({ ...doc, sharedAt: Date.now() }));
+    return true;
+  } catch { return false; }
+}
+
+export function loadShare(id) { return id ? safeGet(shareKey(id)) : null; }
+
 export function duplicateProject(id) {
   const doc = loadProject(id);
   if (!doc) return null;

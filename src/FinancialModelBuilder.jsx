@@ -2,7 +2,8 @@ import React,{useState,useMemo,useCallback,useRef,useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3}from 'lucide-react';
 import { C } from './brand/theme';
-import { loadProject, saveProject, getLastActive, genId } from './lib/persistence';
+import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
+import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
 
 const FontStyles=()=>(<style>{`
@@ -704,20 +705,93 @@ return 'You are a sharp financial analyst embedded in a 3-statement financial mo
 'Peers:\n'+(sector.peers.map(p=>'  '+p.name+': '+p.netMargin+'% NM').join('\n')||'  none')+'\n\n'+
 'Watch-outs:\n'+(SECTOR_WATCHOUTS[sectorKey]||SECTOR_WATCHOUTS.other).map(w=>'  - '+w).join('\n')+'\n\n'+
 'All sector benchmarks:\n'+benchmarks+'\n\n'+
-'Instructions: Be concise (max 150 words). Cite actual numbers. Compare to benchmarks with specific %. Suggest specific changes. No fluff.';
+'Instructions: Be concise (max 150 words). Cite actual numbers. Compare to benchmarks with specific %. Suggest specific changes. No fluff.'+WHATIF_PATCH_ADDENDUM;
 }
 
 const QUICK_QUESTIONS=['Is my gross margin realistic?','What should I stress-test first?','Why am I not reaching break-even?','How do I compare to peers?','What is a healthy burn rate here?','Are my growth assumptions realistic?'];
 
-function AIAdvisorPanel({open,onClose,modelContext}){
+// ── AI Generate from description ──────────────────────────────────────────
+function AIGenerateModal({open,onClose,onApplyDraft}){
+const[desc,setDesc]=useState('');
+const[status,setStatus]=useState('idle'); // idle|generating|success|error
+const[result,setResult]=useState(null);
+const[err,setErr]=useState('');
+const taRef=useRef(null);
+useEffect(()=>{if(!open){setDesc('');setStatus('idle');setResult(null);setErr('');}else{setTimeout(()=>taRef.current?.focus(),80);}},[open]);
+const generate=async()=>{
+const t=desc.trim();if(!t||status==='generating')return;
+setStatus('generating');setErr('');setResult(null);
+try{
+const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
+const data=await res.json();
+if(data.error){setErr('AI error: '+(data.error.message||data.error));setStatus('error');return;}
+const text=data?.content?.[0]?.text;
+if(!text){setErr('No response from AI.');setStatus('error');return;}
+const raw=parseModelDraftJSON(text);
+const vr=validateModelDraft(raw);
+if(!vr.valid){setErr('AI returned an unexpected format: '+vr.error+'. Please try rephrasing.');setStatus('error');return;}
+setResult(vr.draft);setStatus('success');
+}catch(e){setErr('Error: '+e.message);setStatus('error');}
+};
+const apply=()=>{if(result)onApplyDraft(result);};
+if(!open)return null;
+const BB_LABELS={coffeeshop:'Coffee Shop',restaurant:'Restaurant',foodtruck:'Food Truck',ecommerce:'E-commerce',retail:'Retail Shop',carwash:'Car Wash',vending:'Vending Machines',gym:'Gym / Fitness Studio',consulting:'Consulting',saas:'SaaS Product',mobileapp:'Mobile App',contentcreator:'Content Creator',agency:'Creative Agency',manufacturing:'Small Manufacturing',other:'Other'};
+return(
+React.createElement('div',{style:{position:'fixed',inset:0,zIndex:51,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(31,27,22,0.55)'},onClick:onClose},
+React.createElement('div',{style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:'0 32px 64px -16px rgba(31,27,22,0.4)',width:'min(560px,calc(100vw - 32px))',overflow:'hidden'},onClick:e=>e.stopPropagation()},
+// Header
+React.createElement('div',{style:{padding:'18px 22px',borderBottom:`1px solid ${C.border}`,background:C.bgWarm,display:'flex',alignItems:'center',justifyContent:'space-between'}},
+React.createElement('div',null,
+React.createElement('div',{className:'label-eyebrow ff-body',style:{color:C.gold}},'✶ AI Model Builder'),
+React.createElement('h3',{className:'ff-display',style:{fontSize:20,fontWeight:500,color:C.ink,marginTop:2}},'Build from description')
+),
+React.createElement('button',{onClick:onClose,style:{background:'transparent',border:'none',cursor:'pointer',color:C.ink2,padding:4}},React.createElement(X,{size:18}))
+),
+// Body
+React.createElement('div',{style:{padding:'20px 22px'}},
+status!=='success'&&React.createElement('div',null,
+React.createElement('div',{className:'ff-body',style:{fontSize:13,color:C.ink2,marginBottom:10,lineHeight:1.55}},'Describe your business in plain English. The AI will select a sector, set realistic assumptions, and seed a complete model.'),
+React.createElement('textarea',{ref:taRef,value:desc,onChange:e=>setDesc(e.target.value),placeholder:'e.g. "A SaaS startup in Israel with ~$30K MRR targeting B2B clients, 3 employees, pre-Series A"',rows:4,className:'ff-body w-full',style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.bg,color:C.ink,fontSize:13.5,lineHeight:1.55,resize:'vertical',outline:'none',boxSizing:'border-box'}}),
+status==='error'&&React.createElement('div',{style:{marginTop:10,padding:'8px 12px',borderRadius:8,background:C.rustSoft,fontSize:12,color:C.rust,fontFamily:'Inter,system-ui,sans-serif'}},err)
+),
+status==='success'&&result&&React.createElement('div',null,
+React.createElement('div',{style:{padding:'14px 16px',borderRadius:10,background:C.greenSoft,border:`1px solid ${C.green}55`,marginBottom:14}},
+React.createElement('div',{className:'ff-body',style:{fontSize:11,fontWeight:700,color:C.green,letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:4}},'✓ Model detected — '+BB_LABELS[result.sectorKey]),
+React.createElement('div',{className:'ff-body',style:{fontSize:13,color:C.ink2,lineHeight:1.55}},(result.rationale||'Sector-calibrated assumptions seeded.'))
+),
+result.overrides&&result.overrides.length>0&&React.createElement('div',{style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,padding:'10px 12px',marginBottom:14}},
+React.createElement('div',{className:'label-eyebrow ff-body',style:{color:C.muted,marginBottom:8,fontSize:9}},`${result.overrides.length} OVERRIDE${result.overrides.length!==1?'S':''} APPLIED`),
+result.overrides.slice(0,5).map(ov=>React.createElement('div',{key:ov.rowId,className:'ff-body',style:{fontSize:11.5,color:C.ink2,marginBottom:4}},
+'→ ',React.createElement('span',{style:{fontWeight:500,color:C.ink}},ov.rowId),': ',
+ov.mode==='flatGrowth'?`base ${ov.baseValue?.toLocaleString()} · ${ov.flatRate}% growth`:
+ov.mode==='percentOfRevenue'?`${ov.pctOfRev}% of revenue`:'custom values'
+))
+)
+)
+),
+// Footer
+React.createElement('div',{style:{padding:'14px 22px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}},
+React.createElement('button',{onClick:onClose,className:'ff-body',style:{fontSize:12.5,color:C.muted,background:'transparent',border:'none',cursor:'pointer',padding:'6px 10px'}},status==='success'?'Cancel':'Use wizard instead'),
+status==='success'
+?React.createElement('button',{onClick:apply,className:'ff-body',style:{fontSize:13,fontWeight:600,color:C.surface,background:C.green,border:'none',cursor:'pointer',padding:'9px 20px',borderRadius:8}},'✓ Apply this model')
+:React.createElement('button',{onClick:generate,disabled:!desc.trim()||status==='generating',className:'ff-body',style:{fontSize:13,fontWeight:600,color:C.surface,background:desc.trim()&&status!=='generating'?C.ink:C.surfaceAlt,border:'none',cursor:desc.trim()&&status!=='generating'?'pointer':'not-allowed',padding:'9px 20px',borderRadius:8}},status==='generating'?'Generating…':'Generate model →')
+)
+)
+)
+);
+}
+
+function AIAdvisorPanel({open,onClose,modelContext,rowLabels,currentRowData,onApplyPatch}){
 const[msgs,setMsgs]=useState([]);
 const[input,setInput]=useState('');
 const[loading,setLoading]=useState(false);
 const[error,setError]=useState(null);
+const[pendingPatch,setPendingPatch]=useState(null);
+const[patchApplied,setPatchApplied]=useState(false);
 const bottomRef=useRef(null);
 const inputRef=useRef(null);
 
-useEffect(()=>{if(!open){setMsgs([]);setInput('');setLoading(false);setError(null);}},[open]);
+useEffect(()=>{if(!open){setMsgs([]);setInput('');setLoading(false);setError(null);setPendingPatch(null);setPatchApplied(false);}},[open]);
 useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
 
 const callAI=async(apiHistory)=>{
@@ -732,7 +806,12 @@ const data=await res.json();
 if(data.error){setError('API: '+(data.error.message||data.error));setLoading(false);return;}
 const reply=data?.content?.[0]?.text;
 if(!reply){setError('No response received.');setLoading(false);return;}
-setMsgs(prev=>[...prev,{role:'assistant',text:reply}]);
+// Detect ```patch [...] ``` blocks — strip from displayed text, show as diff card
+let displayText=reply;let parsedPatch=null;
+const pm=reply.match(/```patch\n([\s\S]*?)\n```/);
+if(pm){try{const p=JSON.parse(pm[1]);if(Array.isArray(p)&&p.length>0){parsedPatch=p;displayText=reply.replace(/```patch\n[\s\S]*?\n```/,'').trim();}}catch{}}
+setMsgs(prev=>[...prev,{role:'assistant',text:displayText}]);
+if(parsedPatch){setPendingPatch(parsedPatch);setPatchApplied(false);}
 }catch(e){setError('Error: '+e.message);}
 setLoading(false);
 setTimeout(()=>inputRef.current?.focus(),80);
@@ -792,6 +871,30 @@ React.createElement('div',{className:'anim-fade-in',style:{position:'fixed',zInd
       )
     ),
     error&&React.createElement('div',{style:{fontSize:11.5,padding:'8px 12px',borderRadius:8,background:C.rustSoft,color:C.rust}},error),
+    // What-if patch diff card
+    pendingPatch&&!patchApplied&&onApplyPatch&&React.createElement('div',{className:'anim-fade-in',style:{background:C.bgWarm,border:`1px solid ${C.gold}66`,borderRadius:12,padding:'12px 14px',marginTop:4}},
+      React.createElement('div',{className:'label-eyebrow ff-body',style:{color:C.gold,marginBottom:8,fontSize:9}},'PROPOSED CHANGES · REVIEW BEFORE APPLYING'),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:6,marginBottom:12}},
+        pendingPatch.map((p,i)=>{
+          const lbl=rowLabels?.[p.rowId]||p.rowId;
+          const cur=currentRowData?.[p.rowId]?.[p.field];
+          return React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:8,background:C.surface,borderRadius:7,padding:'7px 10px',border:`1px solid ${C.border}`}},
+            React.createElement('span',{className:'ff-body',style:{flex:1,fontSize:11.5,color:C.ink,fontWeight:500}},lbl),
+            React.createElement('span',{className:'ff-body',style:{fontSize:10.5,color:C.muted}},p.field),
+            cur!==undefined&&React.createElement('span',{className:'ff-num',style:{fontSize:11,color:C.rust}},cur),
+            cur!==undefined&&React.createElement('span',{style:{color:C.muted,fontSize:10}},'→'),
+            React.createElement('span',{className:'ff-num',style:{fontSize:11,color:C.green,fontWeight:600}},p.newValue)
+          );
+        })
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8}},
+        React.createElement('button',{onClick:()=>{onApplyPatch(pendingPatch);setPatchApplied(true);setPendingPatch(null);},className:'ff-body',style:{fontSize:12,fontWeight:600,padding:'6px 14px',borderRadius:7,background:C.green,color:'#fff',border:'none',cursor:'pointer'}},'✓ Apply to base'),
+        React.createElement('button',{onClick:()=>setPendingPatch(null),className:'ff-body',style:{fontSize:12,padding:'6px 14px',borderRadius:7,background:C.bg,color:C.muted,border:`1px solid ${C.border}`,cursor:'pointer'}},'Discard')
+      )
+    ),
+    patchApplied&&React.createElement('div',{style:{padding:'8px 12px',borderRadius:8,background:C.greenSoft,fontSize:11.5,color:C.green,fontFamily:'Inter,system-ui,sans-serif'}},
+      '✓ Changes applied to base scenario. Use Undo (Cmd+Z) to revert.'
+    ),
     React.createElement('div',{ref:bottomRef})
   ),
   React.createElement('div',{style:{padding:'8px 12px 12px',borderTop:'1px solid '+C.border,flexShrink:0}},
@@ -807,14 +910,14 @@ React.createElement('style',null,'@keyframes dot{0%,80%,100%{opacity:0.25;transf
 }
 
 
-function Masthead({todayLabel,projectName,sectorLabel,regionLabel,onRename,onNewProject,onOpenWizard}){
+function Masthead({todayLabel,projectName,sectorLabel,regionLabel,onRename,onNewProject,onOpenWizard,onOpenAIGen}){
 const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(projectName||'');
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
 const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t);setEditing(false);};
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-3"><div className="flex-1 min-w-0">
 <div className="flex items-center gap-2 flex-wrap"><span className="label-folio" style={{color:C.gold}}>🐨 Koala Statements</span>{sectorLabel&&<><span style={{width:14,height:1,background:C.gold}}/><span className="label-folio" style={{color:C.muted}}>{sectorLabel}</span></>}{regionLabel&&<><span style={{width:14,height:1,background:C.border}}/><span className="label-folio" style={{color:C.muted}}>{regionLabel}</span></>}</div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-[0.92] mt-2 outline-none w-full" style={{color:C.ink,fontSize:'clamp(40px,5.6vw,68px)',fontWeight:500,letterSpacing:'-0.015em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-[0.92] mt-2 cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(40px,5.6vw,68px)',fontWeight:500,letterSpacing:'-0.015em'}}>{projectName||'Untitled Project'}</h1>)}
-<div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[11px] flex items-center gap-1" style={{color:C.muted}}><Edit3 size={11}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[11px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[11px]" style={{color:C.muted}}>New project</button></div>
+<div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[11px] flex items-center gap-1" style={{color:C.muted}}><Edit3 size={11}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[11px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[11px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[11px] flex items-center gap-1" style={{color:C.gold}}>✶ Build from description</button></div>
 </div><div className="text-right flex-none"><div className="label-folio" style={{color:C.faint}}>Dateline</div><div className="ff-display text-[18px] mt-1" style={{color:C.ink,fontWeight:500}}>{todayLabel}</div></div></div>
 <div className="mt-6 flex items-center gap-3"><div style={{flex:1,height:1,background:C.ink}}/><span style={{color:C.gold,letterSpacing:'0.5em',fontSize:12}}>· · ·</span><div style={{flex:1,height:1,background:C.ink}}/></div>
 </div></div>);
@@ -868,6 +971,7 @@ const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeri
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
+const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
@@ -899,6 +1003,32 @@ const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(cons
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
 const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,incomeType:answers.incomeType,stage:answers.stage,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);},[numPeriods,buildTab]);
 const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
+
+// AI generation: apply a validated ModelDraft (from AIGenerateModal)
+const handleAIGenComplete=useCallback((draft)=>{
+const answers={name:draft.name||'AI-Generated Model',sectorKey:draft.sectorKey,regionKey:draft.regionKey,currencyKey:'usd',incomeType:'main',stage:'early',statements:draft.statements};
+setWizardAnswers(answers);setProjectName(answers.name);setCurrencyKey('usd');
+const s=seedProjectForWizard({sectorKey:draft.sectorKey,regionKey:draft.regionKey,incomeType:'main',stage:'early',statements:draft.statements,numPeriods});
+// Apply overrides to all scenarios
+if(draft.overrides&&draft.overrides.length>0){const rd={...s.rowData};for(const sc of SCENARIOS){rd[sc]={...rd[sc]};for(const ov of draft.overrides){if(rd[sc][ov.rowId]){rd[sc][ov.rowId]={...rd[sc][ov.rowId]};if(ov.mode)rd[sc][ov.rowId].mode=ov.mode;if(ov.baseValue!==undefined)rd[sc][ov.rowId].baseValue=ov.baseValue;if(ov.flatRate!==undefined)rd[sc][ov.rowId].flatRate=ov.flatRate;if(ov.pctOfRev!==undefined)rd[sc][ov.rowId].pctOfRev=ov.pctOfRev;}}}s.rowData=rd;}
+setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);
+if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');
+if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');
+setShowAIGen(false);},[numPeriods,buildTab]);
+
+// What-if patch: apply AI-proposed numeric changes to base scenario
+const handleApplyAIPatch=useCallback((patches)=>{setRowData(prev=>{const nx={...prev,[activeScenario]:{...prev[activeScenario]}};for(const p of patches){if(nx[activeScenario][p.rowId]){nx[activeScenario][p.rowId]={...nx[activeScenario][p.rowId]};if(p.field==='baseValue')nx[activeScenario][p.rowId].baseValue=Number(p.newValue)||0;if(p.field==='flatRate')nx[activeScenario][p.rowId].flatRate=Number(p.newValue)||0;if(p.field==='pctOfRev')nx[activeScenario][p.rowId].pctOfRev=Number(p.newValue)||0;}}return nx;});},[activeScenario]);
+
+// Share: save snapshot + model to localStorage, copy URL to clipboard
+const handleShare=useCallback(()=>{
+const shareId=genId();
+const snap={periods,revenue:computed.values.revenue||[],netIncome:computed.values.netIncome||[],grossProfit:computed.values.grossProfit||[],operatingIncome:computed.values.operatingIncome||[],incomeRows:rows.income.map(r=>({id:r.id,label:r.label,type:r.type,parentId:r.parentId})),incomeValues:{}};
+for(const r of rows.income)if(computed.values[r.id])snap.incomeValues[r.id]=computed.values[r.id];
+const ok=saveShare(shareId,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers,snapshot:snap});
+if(!ok){alert('Could not save share — localStorage may be full.');return;}
+const url=window.location.origin+'/r/'+shareId;
+navigator.clipboard.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=>setShareCopied(false),2500);}).catch(()=>alert('Share URL: '+url));
+},[computed,rows,periods,fullState,wizardAnswers,projectName,currencyKey,enabledStatements]);
 const handleRemoveStatement=useCallback((stmt)=>{if(stmt==='income')return;setEnabledStatements(s=>({...s,[stmt]:false}));setBuildTab('income');},[]);
 const exportCSV=useCallback(()=>{const lines=[`3-Statement Model — Scenario: ${SCENARIO_META[activeScenario].label}`,`Granularity: ${granularity}, Periods: ${numPeriods}, Start: ${startYear}`,''];for(const stmt of['income','balance','cashFlow']){lines.push(stmt==='income'?'INCOME STATEMENT':stmt==='balance'?'BALANCE SHEET':'CASH FLOW STATEMENT');lines.push(['Line Item',...periods].join(','));for(const r of rows[stmt]){const v=computed.values[r.id]||[];lines.push([`"${r.label}"`,...v.map(x=>Math.round(x))].join(','));}lines.push('');}const b=new Blob([lines.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=`model-${activeScenario}-${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear]);
 const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
@@ -909,6 +1039,7 @@ const didLoadRef=useRef(false);
 useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;const doc=loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}},[]); // eslint-disable-line
 useEffect(()=>{if(showWizard)return;const t=setTimeout(()=>{saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
+const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
 const BUILD_TABS=useMemo(()=>{const t=[{id:'income',label:'Income Statement'}];if(enabledStatements.balance)t.push({id:'balance',label:'Balance Sheet'});if(enabledStatements.cashFlow)t.push({id:'cashFlow',label:'Cash Flow'});return t;},[enabledStatements]);
 const todayLabel=useMemo(()=>new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),[]);
 
@@ -919,7 +1050,7 @@ const expandedFor={income:expandedIncome,balance:expandedBalance,cashFlow:expand
 
 return(<div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/><GrainOverlay/><div className="spine"/>
 <div className="absolute top-4 right-6 label-folio hidden md:block" style={{color:C.faint,zIndex:10}}>p. 01 — Studio</div>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)}/></div>
 
 <button onClick={()=>setShowAI(true)} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <span style={{fontSize:13}}>✦</span><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
@@ -943,6 +1074,7 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 <button onClick={handleRedo} disabled={!canRedo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canRedo?C.ink2:C.faint,opacity:canRedo?1:0.5,cursor:canRedo?'pointer':'not-allowed'}} title="Redo (Cmd+Shift+Z)">↷ Redo</button>
 <button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Save size={12}/> Save / Load</button>
 <button onClick={exportCSV} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> CSV</button>
+<button onClick={handleShare} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:shareCopied?C.greenSoft:C.bg,border:`1px solid ${shareCopied?C.green:C.border}`,color:shareCopied?C.green:C.ink2}}>{shareCopied?'✓ Link copied':'↗ Share'}</button>
 <button onClick={resetModel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:'transparent',color:C.muted}}>Reset</button>
 </div>
 </div>
@@ -971,7 +1103,8 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={loadState} onClose={()=>setShowSaveLoad(false)}/>}
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onClose={()=>setShowWizard(false)} allowSkip={!!wizardAnswers}/>}
-<AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}}/>
+{showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete}/>}
+<AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
 </div>);
