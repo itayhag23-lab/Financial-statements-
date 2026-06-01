@@ -8,6 +8,9 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY not configured. Add it in your Vercel project settings.' });
   }
 
+  // Model is overridable via env var so it can be changed without a code deploy.
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+
   try {
     const { messages = [], system, max_tokens } = req.body;
 
@@ -17,17 +20,25 @@ module.exports = async function handler(req, res) {
       parts: [{ text: typeof m.content === 'string' ? m.content : (m.content || []).map(c => c.text || '').join('') }]
     }));
 
+    // The v1 endpoint does not support the separate `systemInstruction` field,
+    // so we fold the system prompt into the first user turn. This works across
+    // every Gemini model/version and avoids "Unknown name systemInstruction".
+    if (system) {
+      const firstUser = contents.find(c => c.role === 'user');
+      if (firstUser) {
+        firstUser.parts[0].text = system + '\n\n---\n\n' + firstUser.parts[0].text;
+      } else {
+        contents.unshift({ role: 'user', parts: [{ text: system }] });
+      }
+    }
+
     const geminiReq = {
       contents,
       generationConfig: { maxOutputTokens: max_tokens || 2048 }
     };
 
-    if (system) {
-      geminiReq.systemInstruction = { parts: [{ text: system }] };
-    }
-
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
