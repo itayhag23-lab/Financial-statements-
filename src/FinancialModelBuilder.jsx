@@ -1,6 +1,8 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect} from 'react';
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3}from 'lucide-react';
+import { C } from './brand/theme';
+import { loadProject, saveProject, getLastActive, genId } from './lib/persistence';
 
 const FontStyles=()=>(<style>{`
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
@@ -25,7 +27,7 @@ input[type=number]{-moz-appearance:textfield;}
 ::selection{background:#B8893E33;color:#1F1B16;}
 `}</style>);
 
-const C={bg:'#F4F1E9',bgWarm:'#EFEAD9',surface:'#FBFAF6',surfaceAlt:'#EDE9DD',border:'#E0DAC8',borderSoft:'#E8E2D080',ink:'#1F1B16',ink2:'#4A443A',muted:'#857E70',faint:'#B5AE9D',green:'#3F5C42',greenSoft:'#E5EDE3',rust:'#A85332',rustSoft:'#F4E5DD',gold:'#B8893E',goldSoft:'#F0E6D0'};
+// Design tokens now live in ./brand/theme (imported as C) — single source of truth.
 const GrainOverlay=()=>(<svg className="fixed inset-0 pointer-events-none" style={{zIndex:50,mixBlendMode:'multiply',opacity:0.045}} aria-hidden><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.92" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.12 0 0 0 0 0.10 0 0 0 0 0.08 0 0 0 1 0"/></filter><rect width="100%" height="100%" filter="url(#noise)"/></svg>);
 
 const SCENARIOS=['base','best','worst'];
@@ -860,7 +862,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 </div></div>);
 }
 
-export default function FinancialModelBuilder(){
+export default function FinancialModelBuilder({projectId}={}){
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
@@ -900,6 +902,11 @@ const handleRemoveStatement=useCallback((stmt)=>{if(stmt==='income')return;setEn
 const exportCSV=useCallback(()=>{const lines=[`3-Statement Model — Scenario: ${SCENARIO_META[activeScenario].label}`,`Granularity: ${granularity}, Periods: ${numPeriods}, Start: ${startYear}`,''];for(const stmt of['income','balance','cashFlow']){lines.push(stmt==='income'?'INCOME STATEMENT':stmt==='balance'?'BALANCE SHEET':'CASH FLOW STATEMENT');lines.push(['Line Item',...periods].join(','));for(const r of rows[stmt]){const v=computed.values[r.id]||[];lines.push([`"${r.label}"`,...v.map(x=>Math.round(x))].join(','));}lines.push('');}const b=new Blob([lines.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=`model-${activeScenario}-${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear]);
 const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
 const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
+// --- Persistence: load saved project on mount, then debounced autosave ---
+const pidRef=useRef(projectId||getLastActive()||genId());
+const didLoadRef=useRef(false);
+useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;const doc=loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}},[]); // eslint-disable-line
+useEffect(()=>{if(showWizard)return;const t=setTimeout(()=>{saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const BUILD_TABS=useMemo(()=>{const t=[{id:'income',label:'Income Statement'}];if(enabledStatements.balance)t.push({id:'balance',label:'Balance Sheet'});if(enabledStatements.cashFlow)t.push({id:'cashFlow',label:'Cash Flow'});return t;},[enabledStatements]);
 const todayLabel=useMemo(()=>new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}),[]);
