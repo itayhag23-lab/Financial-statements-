@@ -6,11 +6,40 @@ import {
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 
-// Brand lockup — high-quality koala logo served as a real image asset.
+// Scroll-reveal wrapper — fades + slides up as element enters the viewport.
+function Reveal({ children, delay = 0, style = {}, className = '' }) {
+  const ref = React.useRef(null);
+  const [vis, setVis] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setVis(true); obs.disconnect(); }
+    }, { threshold: 0.08, rootMargin: '0px 0px -28px 0px' });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className={className} style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? 'translateY(0)' : 'translateY(22px)',
+      transition: `opacity 0.6s ease ${delay}ms, transform 0.65s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+// Brand lockup — clean geometric K monogram mark + wordmark.
 function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
-      <img src="/koala-logo.svg" width={size} height={size} alt="Koala Statements logo" style={{ display: 'block', borderRadius: size * 0.24 }} />
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: size * 1.3, height: size * 1.3, borderRadius: size * 0.32, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', flexShrink: 0 }}>
+        <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <line x1="20" y1="14" x2="20" y2="50" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
+          <line x1="20" y1="31" x2="43" y2="14" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
+          <line x1="20" y1="31" x2="43" y2="50" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
+        </svg>
+      </span>
       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
         <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
         <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: size * 0.29, color: accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
@@ -378,25 +407,25 @@ export default function LandingPage() {
       {/* FEATURES */}
       <section id="features" style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: '84px 24px' }}>
-          <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 52px' }}>
+          <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 52px' }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Capabilities</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
             <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          </Reveal>
+          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
             {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* HOW IT WORKS */}
       <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: '84px 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+          </Reveal>
+          <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
             {[
               { n: '01', title: 'Describe your business', icon: Sparkles, body: 'Type one sentence: "B2B SaaS, $30K MRR, targeting $5M ARR, 18-month runway." Koala reads your sector, stage, and scale automatically.' },
               { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet — seeded with sector-calibrated assumptions and three live scenarios — in under 60 seconds.' },
@@ -411,7 +440,7 @@ export default function LandingPage() {
                 <p style={{ ...body, fontSize: 14, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
               </div>
             ))}
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -472,11 +501,11 @@ export default function LandingPage() {
       {/* PRICING */}
       <section id="pricing" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: '84px 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
             <p style={{ ...body, fontSize: 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
-          </div>
+          </Reveal>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <PriceCard
               tier="Growth"
@@ -511,37 +540,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '84px 24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>What teams say</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>Trusted by founders and finance teams.</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
-            {[
-              { quote: "Koala cut our financial model prep from two weeks to an afternoon. The AI-generated assumptions were accurate for our sector — our investors were impressed.", name: 'Sarah Chen', title: 'CFO @ Meridian Health', initials: 'SC' },
-              { quote: "Every investor we've talked to commented on how clean and credible our model looks. That credibility is Koala. The scenario analysis alone got us a second meeting.", name: 'Marcus Rivera', title: 'Co-founder @ Lattice Ventures', initials: 'MR' },
-              { quote: "We replaced three separate tools with Koala. Full 3-statement linkage, real benchmarks, an AI that understands the numbers. No more spreadsheet nightmares.", name: "James O'Brien", title: 'VP Finance @ Arch Systems', initials: 'JO' },
-            ].map(({ quote, name, title, initials }) => (
-              <div key={name} style={{ background: P.bgAlt, border: `1px solid ${P.border}`, borderRadius: 14, padding: '26px 24px' }}>
-                <div style={{ ...disp, fontSize: 28, color: P.accent, lineHeight: 1, marginBottom: 12, fontWeight: 400 }}>"</div>
-                <p style={{ ...body, fontSize: 14.5, lineHeight: 1.7, color: P.ink2, marginBottom: 20 }}>{quote}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <span style={{ ...body, fontSize: 12, fontWeight: 700, color: P.accent }}>{initials}</span>
-                  </div>
-                  <div>
-                    <div style={{ ...body, fontSize: 13.5, fontWeight: 600, color: P.ink }}>{name}</div>
-                    <div style={{ ...body, fontSize: 12, color: P.muted }}>{title}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* FINAL CTA */}
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 350, borderRadius: '50%', background: `radial-gradient(ellipse, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
@@ -565,7 +563,11 @@ export default function LandingPage() {
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ ...maxW, padding: '36px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/koala-logo.svg" width={26} height={26} alt="Koala Statements logo" style={{ display: 'block', borderRadius: 6 }} />
+            <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <line x1="20" y1="14" x2="20" y2="50" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
+              <line x1="20" y1="31" x2="43" y2="14" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
+              <line x1="20" y1="31" x2="43" y2="50" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
+            </svg>
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
           <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.22)' }}>

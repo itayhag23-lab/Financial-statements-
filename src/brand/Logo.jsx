@@ -1,23 +1,16 @@
 import React from 'react';
 import { C, FONTS } from './theme';
 
-// Refined, minimal koala mark drawn with smooth paths (no stacked circles).
-// `badge` wraps it in a soft rounded "app icon" tile for a premium feel.
+// Clean geometric K monogram mark. `badge` wraps it in a soft rounded tile.
 export function KoalaMark({ size = 30, color = C.ink, accent = C.gold, badge = false }) {
   const mark = (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      {/* ears */}
-      <circle cx="16" cy="20" r="10" fill={color} />
-      <circle cx="48" cy="20" r="10" fill={color} />
-      <circle cx="16" cy="20" r="4.6" fill={accent} opacity="0.9" />
-      <circle cx="48" cy="20" r="4.6" fill={accent} opacity="0.9" />
-      {/* head */}
-      <path d="M32 14c11.6 0 19 8.2 19 19.5C51 46 42.6 54 32 54S13 46 13 33.5C13 22.2 20.4 14 32 14Z" fill={color} />
-      {/* eyes */}
-      <circle cx="24" cy="31" r="2.6" fill={C.surface} />
-      <circle cx="40" cy="31" r="2.6" fill={C.surface} />
-      {/* signature koala nose — soft spade shape */}
-      <path d="M32 33c4.8 0 7.4 2.9 7 6.4-.4 3.4-4 6.6-7 8.6-3-2-6.6-5.2-7-8.6-.4-3.5 2.2-6.4 7-6.4Z" fill={accent} />
+      {/* vertical bar — brand dark */}
+      <line x1="20" y1="14" x2="20" y2="50" stroke={color} strokeWidth="6" strokeLinecap="round"/>
+      {/* upper diagonal arm — accent */}
+      <line x1="20" y1="31" x2="43" y2="14" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
+      {/* lower diagonal arm — accent */}
+      <line x1="20" y1="31" x2="43" y2="50" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
     </svg>
   );
   if (!badge) return mark;
