@@ -1,6 +1,6 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Hash}from 'lucide-react';
 
 const FontStyles=()=>(<style>{`
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
@@ -19,6 +19,10 @@ input[type=number]{-moz-appearance:textfield;}
 .anim-fade-in{animation:fadeIn 200ms ease-out;}
 @keyframes flicker{0%{opacity:1}40%{opacity:0.4}100%{opacity:1}}
 .flicker{animation:flicker 320ms ease-out;}
+@keyframes tabFadeIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.anim-tab-in{animation:tabFadeIn 380ms cubic-bezier(0.16,1,0.3,1);}
+.scroll-reveal{opacity:0;transform:translateY(28px);}
+.scroll-reveal-vis{opacity:1;transform:translateY(0);transition:opacity 0.65s cubic-bezier(0.16,1,0.3,1),transform 0.65s cubic-bezier(0.16,1,0.3,1);}
 .spine{position:fixed;left:0;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,transparent,#B8893E33,#B8893E33,transparent);pointer-events:none;z-index:1;}
 .chevron-exp{transform:rotate(0deg);transition:transform 180ms ease-out;}
 .chevron-col{transform:rotate(-90deg);transition:transform 180ms ease-out;}
@@ -155,10 +159,25 @@ other:['Without a known business type, sanity-checking is harder — verify assu
 };
 
 // HELPERS
-function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,manualValues:Array(numPeriods).fill(0)};}
-function resizeRowData(entry,numPeriods){return{...entry,manualValues:Array(numPeriods).fill(0).map((_,i)=>entry.manualValues[i]??0),customRates:Array(Math.max(0,numPeriods-1)).fill(0).map((_,i)=>entry.customRates[i]??0)};}
+function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,manualValues:Array(numPeriods).fill(0),unitQty:Array(numPeriods).fill(0),unitPrice:0};}
+function resizeRowData(entry,numPeriods){return{...entry,manualValues:Array(numPeriods).fill(0).map((_,i)=>entry.manualValues[i]??0),customRates:Array(Math.max(0,numPeriods-1)).fill(0).map((_,i)=>entry.customRates[i]??0),unitQty:Array(numPeriods).fill(0).map((_,i)=>entry.unitQty?.[i]??0)};}
 function fmt(n,{paren=false,abbreviate=false}={}){if(n===null||n===undefined||Number.isNaN(n))return'—';const r=Math.round(n);if(r===0)return'0';if(abbreviate){const abs=Math.abs(r);if(abs>=1e6)return(r>=0?'':'−')+(abs/1e6).toFixed(1)+'M';if(abs>=1000)return(r>=0?'':'−')+(abs/1000).toFixed(1)+'K';}if(paren&&r<0)return`(${Math.abs(r).toLocaleString('en-US')})`;return r.toLocaleString('en-US');}
-function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}return out.map(v=>Math.round(v));}
+const MillionsCtx=React.createContext(false);
+function fmtMillions(n,{paren=false}={}){
+  if(n===null||n===undefined||Number.isNaN(n))return'—';
+  const m=n/1e6;const abs=Math.abs(m);
+  if(abs<0.005)return'0.00M';
+  const s=abs>=100?abs.toFixed(1)+'M':abs.toFixed(2)+'M';
+  if(paren&&m<0)return`(${s})`;
+  if(m<0)return`−${s}`;
+  return s;
+}
+function ScrollReveal({children,delay=0,style={}}){
+  const ref=useRef(null);const[vis,setVis]=useState(false);
+  useEffect(()=>{const el=ref.current;if(!el)return;const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting){setVis(true);obs.disconnect();}},{threshold:0.08,rootMargin:'0px 0px -40px 0px'});obs.observe(el);return()=>obs.disconnect();},[]);
+  return(<div ref={ref} className={vis?'scroll-reveal-vis':'scroll-reveal'} style={{...style,transitionDelay:vis?`${delay}ms`:'0ms'}}>{children}</div>);
+}
+function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}else if(mode==='unitCalc'){const price=rd.unitPrice||0;for(let i=0;i<numPeriods;i++)out[i]=(rd.unitQty?.[i]||0)*price;}return out.map(v=>Math.round(v));}
 
 function computeTree(rows,rowData,numPeriods,totalRevenue){
 const byId=Object.fromEntries(rows.map(r=>[r.id,r]));
@@ -317,14 +336,21 @@ function useFlicker(key){const[n,setN]=useState(0);const lk=useRef(key);useEffec
 
 const Eyebrow=({children,color,className='',style={}})=>(<div className={`label-eyebrow ff-body ${className}`} style={{color:color||C.muted,...style}}>{children}</div>);
 const Ornament=({style={}})=>(<div className="flex items-center justify-center gap-2" style={style}><div style={{width:28,height:1,background:C.border}}/><div style={{width:4,height:4,transform:'rotate(45deg)',background:C.gold}}/><div style={{width:28,height:1,background:C.border}}/></div>);
-const AnimatedNumber=({value,format=(v)=>fmt(v),tweenKey,className='',style={}})=>{const tw=useTween(value);const fk=useFlicker(tweenKey);return (<span key={fk} className={`flicker ${className}`} style={style}>{format(tw)}</span>);};
+const AnimatedNumber=({value,format=(v)=>fmt(v),tweenKey,className='',style={}})=>{
+const inMillions=React.useContext(MillionsCtx);
+const tw=useTween(value);const fk=useFlicker(tweenKey);
+const displayVal=inMillions?fmtMillions(tw,{paren:true}):format(tw);
+return (<span key={fk} className={`flicker ${className}`} style={style}>{displayVal}</span>);};
 
 // Comma-aware number input: shows formatted on blur, raw on focus
-function NumberInput({value,onChange,className='',style={},onFocus,onBlur,placeholder='0'}){
+function NumberInput({value,onChange,className='',style={},onFocus,onBlur,placeholder}){
+const inMillions=React.useContext(MillionsCtx);
 const[focused,setFocused]=useState(false);const[draft,setDraft]=useState('');
 const num=typeof value==='number'&&!Number.isNaN(value)?value:0;
-const display=focused?draft:(num===0?'':num.toLocaleString('en-US'));
-return(<input type="text" inputMode="decimal" value={display} placeholder={placeholder} className={className} style={style}
+const ph=placeholder??(inMillions?'0.00M':'0');
+const blurDisplay=num===0?'':inMillions?fmtMillions(num):num.toLocaleString('en-US');
+const display=focused?draft:blurDisplay;
+return(<input type="text" inputMode="decimal" value={display} placeholder={ph} className={className} style={style}
 onFocus={(e)=>{setFocused(true);setDraft(num===0?'':String(num));setTimeout(()=>{try{e.target.select();}catch{}},0);onFocus?.(e);}}
 onChange={(e)=>{let raw=e.target.value.replace(/[^0-9.,\-]/g,'');const fd=raw.indexOf('.');if(fd>=0)raw=raw.slice(0,fd+1)+raw.slice(fd+1).replace(/\./g,'');setDraft(raw);const cl=raw.replace(/,/g,'');if(!cl||cl==='-'||cl==='.')return;const p=Number(cl);if(!Number.isNaN(p))onChange(p);}}
 onBlur={(e)=>{setFocused(false);setDraft('');onBlur?.(e);}}/>);
@@ -343,7 +369,7 @@ const lp=pts[pts.length-1];
 return(<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{overflow:'visible',display:'block'}}><path d={areaD} fill={color} fillOpacity={fillOpacity}/>{showZero&&zeroY!==null&&<line x1="0" y1={zeroY} x2={width} y2={zeroY} stroke={C.faint} strokeWidth="0.5" strokeDasharray="2 2"/>}<path d={pathD} fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>{showLastDot&&lp&&<circle cx={lp[0]} cy={lp[1]} r="2" fill={color}/>}</svg>);
 };
 
-const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'}};
+const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'},unitCalc:{label:'Qty × Price',short:'Qty×$',icon:Hash,blurb:'Quantity per period × a fixed unit price.'}};
 
 function ModeMenu({currentMode,onChange,allowed}){
 const[open,setOpen]=useState(false);
@@ -388,7 +414,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(85vh - 180px)'}}>
 <div><Eyebrow className="mb-2">Add under</Eyebrow><div className="flex gap-1.5 flex-wrap">{parents.map(p=>(<button key={p.id} onClick={()=>setSelParent(p.id)} className="px-3 py-1.5 rounded-md ff-body text-[12px]" style={{background:selParent===p.id?C.ink:C.bg,border:`1px solid ${selParent===p.id?C.ink:C.border}`,color:selParent===p.id?C.surface:C.ink2,fontWeight:selParent===p.id?500:400}}>{p.label}</button>))}</div></div>
 {items.length>0&&<div><Eyebrow className="mb-2">Suggested</Eyebrow><div className="grid grid-cols-2 gap-1.5">{items.filter(it=>!existingLabels.includes(it.label.toLowerCase())).map((it,i)=>(<button key={i} onClick={()=>onAdd({label:it.label,parentId:selParent,defaultMode:it.defaultMode})} className="text-left px-3 py-2 rounded-md ff-body text-[12.5px] flex items-center justify-between row-hover" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><span>{it.label}</span><Plus size={13} style={{color:C.muted}}/></button>))}</div></div>}
-<div className="pt-3" style={{borderTop:`1px solid ${C.border}`}}><Eyebrow className="mb-2 mt-2">Custom item</Eyebrow><div className="flex gap-2"><input type="text" placeholder="Line item name" value={custom} onChange={e=>setCustom(e.target.value)} className="flex-1 px-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><select value={mode} onChange={e=>setMode(e.target.value)} className="px-2 py-2 rounded-md ff-body text-[12px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><option value="manual">Manual</option><option value="flatGrowth">Flat %</option><option value="customGrowth">Custom %</option>{statement==='income'&&<option value="percentOfRevenue">% of Rev</option>}</select><button onClick={()=>{if(!custom.trim()||!selParent)return;onAdd({label:custom.trim(),parentId:selParent,defaultMode:mode});setCustom('');}} className="px-3 py-2 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Add</button></div></div>
+<div className="pt-3" style={{borderTop:`1px solid ${C.border}`}}><Eyebrow className="mb-2 mt-2">Custom item</Eyebrow><div className="flex gap-2"><input type="text" placeholder="Line item name" value={custom} onChange={e=>setCustom(e.target.value)} className="flex-1 px-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><select value={mode} onChange={e=>setMode(e.target.value)} className="px-2 py-2 rounded-md ff-body text-[12px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><option value="manual">Manual</option><option value="flatGrowth">Flat %</option><option value="customGrowth">Custom %</option><option value="unitCalc">Qty×$</option>{statement==='income'&&selParent!=='rev'&&<option value="percentOfRevenue">% of Rev</option>}</select><button onClick={()=>{if(!custom.trim()||!selParent)return;onAdd({label:custom.trim(),parentId:selParent,defaultMode:mode});setCustom('');}} className="px-3 py-2 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Add</button></div></div>
 </div></div></div>);
 }
 
@@ -425,11 +451,13 @@ return(<div className="grid items-center" style={{...grid,background:bg,borderTo
 }
 
 const mode=entry?.mode||'manual';
-const allowed=['manual','flatGrowth','customGrowth','percentOfRevenue'];
+const isRevRow=row.parentId==='rev';
+const allowed=['manual','flatGrowth','customGrowth','unitCalc',...(isRevRow?[]:['percentOfRevenue'])];
 const cells=[];
 if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
 else if(mode==='flatGrowth'||mode==='customGrowth'){cells.push(<NumberInput key={0} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 else if(mode==='percentOfRevenue'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
+else if(mode==='unitCalc'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} value={entry.unitQty?.[i]??0} onChange={v=>{const n=(entry.unitQty||Array(periods.length).fill(0)).slice();n[i]=v;onUpdateData({unitQty:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
 
 return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1px solid ${C.borderSoft}`}}>
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
@@ -441,6 +469,7 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 {mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
 {mode==='percentOfRevenue'&&<div className="flex items-center gap-1"><input type="number" value={entry.pctOfRev||0} onChange={e=>onUpdateData({pctOfRev:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>% of rev</span></div>}
 {mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit rates →</button>}
+{mode==='unitCalc'&&<div className="flex items-center gap-1"><span className="ff-num text-[10.5px]" style={{color:C.muted}}>×</span><NumberInput value={entry.unitPrice||0} onChange={v=>onUpdateData({unitPrice:v})} className="w-24 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>/unit</span></div>}
 </div>
 </div>
 </div>
@@ -641,6 +670,7 @@ return(<>
 <div className="flex gap-0 mt-4 overflow-x-auto" style={{borderBottom:`1px solid ${C.border}`,marginBottom:-1}}>{TABS.map(t=>{const a=tab===t.id;return(<button key={t.id} onClick={()=>setTab(t.id)} className="px-3 py-2 ff-body text-[12px] flex-none whitespace-nowrap" style={{color:a?C.ink:C.muted,borderBottom:`2px solid ${a?C.gold:'transparent'}`,fontWeight:a?500:400}}>{t.label}</button>);})}</div>
 </div>
 <div className="flex-1 overflow-y-auto px-6 py-5 anim-drawer-slide" style={{minHeight:0}}>
+<div key={tab} className="anim-tab-in">
 {tab==='overview'&&<div className="space-y-5"><FeasibilityScoreCard {...feasibility}/><PeerComparisonPanel computed={computed} periods={periods} sectorKey={sectorKey}/><SectorBenchmarkPanel computed={computed} periods={periods} sectorKey={sectorKey}/><CompactKPIGrid computed={computed} periods={periods} granularity={granularity} enabledStatements={stmts}/>{!stmts.balance&&<div className="rounded-md p-3 ff-body text-[11.5px]" style={{background:C.bgWarm,border:`1px dashed ${C.border}`,color:C.muted}}><span style={{color:C.gold,fontWeight:500}}>Note —</span>{' '}Without a Balance Sheet, cash-related insights are limited.</div>}</div>}
 {tab==='insights'&&<InsightsList insights={insights} sectorKey={sectorKey}/>}
 {tab==='whatif'&&<WhatIfPanel rows={rows} rowData={rowData[scenarioKey]} numPeriods={numPeriods} periods={periods} scenarioKey={scenarioKey} sectorKey={sectorKey} granularity={granularity} enabledStatements={stmts}/>}
@@ -648,6 +678,7 @@ return(<>
 {tab==='ratios'&&<RatiosPanel computed={computed} periods={periods} granularity={granularity}/>}
 {tab==='breakEven'&&<BreakEvenPanel computed={computed} periods={periods} granularity={granularity}/>}
 {tab==='warnings'&&<WarningsPanel computed={computed} periods={periods}/>}
+</div>
 </div>
 </div>
 </>);
@@ -809,7 +840,7 @@ const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(project
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
 const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t);setEditing(false);};
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-3"><div className="flex-1 min-w-0">
-<div className="flex items-center gap-2 flex-wrap"><span className="label-folio" style={{color:C.gold}}>🐨 Koala Statements</span>{sectorLabel&&<><span style={{width:14,height:1,background:C.gold}}/><span className="label-folio" style={{color:C.muted}}>{sectorLabel}</span></>}{regionLabel&&<><span style={{width:14,height:1,background:C.border}}/><span className="label-folio" style={{color:C.muted}}>{regionLabel}</span></>}</div>
+<div className="flex items-center gap-2 flex-wrap"><span className="label-folio" style={{color:C.gold}}>Financial Model Studio</span>{sectorLabel&&<><span style={{width:14,height:1,background:C.gold}}/><span className="label-folio" style={{color:C.muted}}>{sectorLabel}</span></>}{regionLabel&&<><span style={{width:14,height:1,background:C.border}}/><span className="label-folio" style={{color:C.muted}}>{regionLabel}</span></>}</div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-[0.92] mt-2 outline-none w-full" style={{color:C.ink,fontSize:'clamp(40px,5.6vw,68px)',fontWeight:500,letterSpacing:'-0.015em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-[0.92] mt-2 cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(40px,5.6vw,68px)',fontWeight:500,letterSpacing:'-0.015em'}}>{projectName||'Untitled Project'}</h1>)}
 <div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[11px] flex items-center gap-1" style={{color:C.muted}}><Edit3 size={11}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[11px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[11px]" style={{color:C.muted}}>New project</button></div>
 </div><div className="text-right flex-none"><div className="label-folio" style={{color:C.faint}}>Dateline</div><div className="ff-display text-[18px] mt-1" style={{color:C.ink,fontWeight:500}}>{todayLabel}</div></div></div>
@@ -866,6 +897,7 @@ const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswe
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
 const[buildTab,setBuildTab]=useState('income');
+const[inMillions,setInMillions]=useState(false);
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
 const[expandedBalance,setExpandedBalance]=useState(()=>new Set());
@@ -897,7 +929,30 @@ const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=n
 const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,incomeType:answers.incomeType,stage:answers.stage,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);},[numPeriods,buildTab]);
 const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
 const handleRemoveStatement=useCallback((stmt)=>{if(stmt==='income')return;setEnabledStatements(s=>({...s,[stmt]:false}));setBuildTab('income');},[]);
-const exportCSV=useCallback(()=>{const lines=[`3-Statement Model — Scenario: ${SCENARIO_META[activeScenario].label}`,`Granularity: ${granularity}, Periods: ${numPeriods}, Start: ${startYear}`,''];for(const stmt of['income','balance','cashFlow']){lines.push(stmt==='income'?'INCOME STATEMENT':stmt==='balance'?'BALANCE SHEET':'CASH FLOW STATEMENT');lines.push(['Line Item',...periods].join(','));for(const r of rows[stmt]){const v=computed.values[r.id]||[];lines.push([`"${r.label}"`,...v.map(x=>Math.round(x))].join(','));}lines.push('');}const b=new Blob([lines.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=`model-${activeScenario}-${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear]);
+const exportExcel=useCallback(()=>{
+const currency=CURRENCIES[currencyKey]?.symbol||'$';
+const stmtConfig=[{key:'income',label:'INCOME STATEMENT',color:'#1F1B16',text:'#FBFAF6'},{key:'balance',label:'BALANCE SHEET',color:'#3F5C42',text:'#FBFAF6'},{key:'cashFlow',label:'CASH FLOW STATEMENT',color:'#A85332',text:'#FBFAF6'}];
+const numFmt=(v)=>{const r=Math.round(v);if(r===0)return'—';if(r<0)return`(${Math.abs(r).toLocaleString('en-US')})`;return r.toLocaleString('en-US');};
+let tableRows='';
+const headerRow=`<tr><th style="background:#1F1B16;color:#FBFAF6;padding:8px 14px;text-align:left;border:1px solid #333;min-width:220px;">Line Item</th>${periods.map(p=>`<th style="background:#1F1B16;color:#FBFAF6;padding:8px 14px;text-align:right;border:1px solid #333;font-family:monospace;">${p}</th>`).join('')}</tr>`;
+for(const {key,label,color,text} of stmtConfig){
+  const stmtRows=rows[key];
+  tableRows+=`<tr><td colspan="${periods.length+1}" style="background:${color};color:${text};padding:8px 14px;font-weight:bold;font-size:13px;border:1px solid ${color};">${label}</td></tr>`;
+  for(const r of stmtRows){
+    const v=computed.values[r.id]||[];
+    const isTotal=r.type==='computed'&&(r.id==='net-inc'||r.id==='cf-net'||r.id==='total-le');
+    const isParent=r.type==='parent';
+    const indent=r.parentId?'padding-left:28px':'padding-left:12px';
+    const bg=isTotal?'#E5EDE3':isParent?'#EDE9DD':'#FBFAF6';
+    const fw=isTotal||isParent?'bold':'normal';
+    const prefix=r.type==='computed'?'= ':'';
+    tableRows+=`<tr><td style="background:${bg};${indent};padding-top:6px;padding-bottom:6px;padding-right:14px;font-weight:${fw};border:1px solid #E0DAC8;">${prefix}${r.label}</td>${periods.map((_,i)=>{const val=Math.round(v[i]||0);const clr=val<0?'#A85332':val===0?'#B5AE9D':'#1F1B16';return`<td style="background:${bg};padding:6px 14px;text-align:right;font-family:monospace;font-weight:${fw};color:${clr};border:1px solid #E0DAC8;">${numFmt(val)}</td>`;}).join('')}</tr>`;
+  }
+  tableRows+=`<tr><td colspan="${periods.length+1}" style="padding:6px;border:none;"></td></tr>`;
+}
+const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12px;}table{border-collapse:collapse;}</style></head><body><h2 style="color:#1F1B16;font-family:Georgia,serif;margin-bottom:4px;">${projectName}</h2><p style="color:#857E70;font-size:11px;margin-bottom:16px;">Scenario: ${SCENARIO_META[activeScenario].label} &nbsp;·&nbsp; ${granularity==='annual'?'Annual':'Quarterly'} &nbsp;·&nbsp; Currency: ${currency} &nbsp;·&nbsp; Generated: ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</p><table border="0">${headerRow}${tableRows}</table></body></html>`;
+const b=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=`${(projectName||'model').replace(/\s+/g,'-')}-${activeScenario}.xls`;a.click();URL.revokeObjectURL(url);
+},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear,projectName,currencyKey]);
 const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
 const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
@@ -909,7 +964,7 @@ const expandAll=(stmt)=>{const setFn={income:setExpandedIncome,balance:setExpand
 const collapseAll=(stmt)=>{const setFn={income:setExpandedIncome,balance:setExpandedBalance,cashFlow:setExpandedCashFlow}[stmt];if(!setFn)return;setFn(new Set());};
 const expandedFor={income:expandedIncome,balance:expandedBalance,cashFlow:expandedCashFlow};
 
-return(<div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/><GrainOverlay/><div className="spine"/>
+return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/><GrainOverlay/><div className="spine"/>
 <div className="absolute top-4 right-6 label-folio hidden md:block" style={{color:C.faint,zIndex:10}}>p. 01 — Studio</div>
 <div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)}/></div>
 
@@ -934,18 +989,30 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 <button onClick={handleUndo} disabled={!canUndo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canUndo?C.ink2:C.faint,opacity:canUndo?1:0.5,cursor:canUndo?'pointer':'not-allowed'}} title="Undo (Cmd+Z)">↶ Undo</button>
 <button onClick={handleRedo} disabled={!canRedo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canRedo?C.ink2:C.faint,opacity:canRedo?1:0.5,cursor:canRedo?'pointer':'not-allowed'}} title="Redo (Cmd+Shift+Z)">↷ Redo</button>
 <button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Save size={12}/> Save / Load</button>
-<button onClick={exportCSV} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> CSV</button>
+<button onClick={exportExcel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> Excel</button>
+<button onClick={()=>setInMillions(m=>!m)} title={inMillions?'Showing in Millions — click to show full numbers':'Show values in Millions'} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1" style={{background:inMillions?C.goldSoft:C.bg,border:`1px solid ${inMillions?C.gold:C.border}`,color:inMillions?C.gold:C.ink2,fontWeight:inMillions?600:400}}><span className="ff-num" style={{fontSize:11}}>M</span>{inMillions&&<Check size={10}/>}</button>
 <button onClick={resetModel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:'transparent',color:C.muted}}>Reset</button>
 </div>
 </div>
 </div></div>
 
-<div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto">
-<div className="flex items-center justify-between gap-3 mb-3 flex-wrap"><Eyebrow>{BUILD_TABS.length===1?'Statement':'Statements'}</Eyebrow><div className="flex items-center gap-2 flex-wrap">
-{!enabledStatements.balance&&<button onClick={()=>{setEnabledStatements(s=>({...s,balance:true}));setBuildTab('balance');}} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px dashed ${C.gold}88`,color:C.gold}}><Plus size={12}/>Add Balance Sheet</button>}
-{!enabledStatements.cashFlow&&<button onClick={()=>{setEnabledStatements(s=>({...s,cashFlow:true}));setBuildTab('cashFlow');}} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px dashed ${C.gold}88`,color:C.gold}}><Plus size={12}/>Add Cash Flow</button>}
-{enabledStatements.balance&&buildTab==='balance'&&<button onClick={()=>handleRemoveStatement('balance')} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.rust}}><X size={12}/>Remove Balance Sheet</button>}
-{enabledStatements.cashFlow&&buildTab==='cashFlow'&&<button onClick={()=>handleRemoveStatement('cashFlow')} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.rust}}><X size={12}/>Remove Cash Flow</button>}
+<ScrollReveal delay={60}><div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto">
+<div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+<Eyebrow>{BUILD_TABS.length===1?'Statement':'Statements'}</Eyebrow>
+<div className="flex items-center gap-1.5 p-1 rounded-lg" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`}}>
+{[{id:'income',label:'Income Statement',always:true},{id:'balance',label:'Balance Sheet',always:false},{id:'cashFlow',label:'Cash Flow',always:false}].map(({id,label,always})=>{
+  const on=enabledStatements[id];
+  const active=buildTab===id&&on;
+  return(<div key={id} className="flex items-center">
+    <button onClick={()=>{if(!on){setEnabledStatements(s=>({...s,[id]:true}));setBuildTab(id);}else{setBuildTab(id);}}}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md ff-body text-[12px]"
+      style={{background:active?C.surface:on&&!active?'transparent':'transparent',color:active?C.ink:on?C.ink2:C.faint,fontWeight:active?500:400,border:active?`1px solid ${C.border}`:'1px solid transparent',boxShadow:active?'0 1px 3px rgba(31,27,22,0.08)':'none'}}>
+      {on?<Check size={11} style={{color:active?C.gold:C.green,flexShrink:0}}/>:<Plus size={11} style={{color:C.gold,flexShrink:0}}/>}
+      <span>{label}</span>
+    </button>
+    {on&&!always&&active&&<button onClick={()=>handleRemoveStatement(id)} className="ml-0.5 p-1 rounded-md opacity-40 hover:opacity-100" style={{color:C.rust}} title={`Remove ${label}`}><X size={11}/></button>}
+  </div>);
+})}
 </div></div>
 <ChapterTabs tabs={BUILD_TABS} active={buildTab} onChange={setBuildTab}/>
 <div className="mt-5 overflow-x-auto pb-2">
@@ -953,9 +1020,9 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 {buildTab==='balance'&&enabledStatements.balance&&<StatementTable statementId="balance" rows={rows.balance} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.balance} onToggleExpand={id=>toggleExpand('balance',id)} onExpandAll={()=>expandAll('balance')} onCollapseAll={()=>collapseAll('balance')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onAddRow={()=>setAddRowFor('balance')} scenarioKey={activeScenario}/>}
 {buildTab==='cashFlow'&&enabledStatements.cashFlow&&<StatementTable statementId="cashFlow" rows={rows.cashFlow} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.cashFlow} onToggleExpand={id=>toggleExpand('cashFlow',id)} onExpandAll={()=>expandAll('cashFlow')} onCollapseAll={()=>collapseAll('cashFlow')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onAddRow={()=>setAddRowFor('cashFlow')} scenarioKey={activeScenario}/>}
 </div>
-</div></div>
+</div></div></ScrollReveal>
 
-<footer className="px-6 md:px-10 pb-10 pt-12 mt-6"><div className="max-w-[1400px] mx-auto"><Ornament style={{marginBottom:24}}/><div className="flex items-center justify-between flex-wrap gap-3 ff-body text-[11px]" style={{color:C.muted}}><div>Projection tool — not for accounting compliance. Cross-statement linkages (NI → RE → CF) in this build.</div><div className="flex items-center gap-3 flex-wrap"><span>Whole numbers</span><span style={{width:1,height:10,background:C.border}}/><span>3 scenarios</span><span style={{width:1,height:10,background:C.border}}/><span>Hierarchical rows · v0.4</span></div></div></div></footer>
+<ScrollReveal delay={100}><footer className="px-6 md:px-10 pb-10 pt-12 mt-6"><div className="max-w-[1400px] mx-auto"><Ornament style={{marginBottom:24}}/><div className="flex items-center justify-between flex-wrap gap-3 ff-body text-[11px]" style={{color:C.muted}}><div>Projection tool — not for accounting compliance. Cross-statement linkages (NI → RE → CF) in this build.</div><div className="flex items-center gap-3 flex-wrap"><span>Whole numbers</span><span style={{width:1,height:10,background:C.border}}/><span>3 scenarios</span><span style={{width:1,height:10,background:C.border}}/><span>Hierarchical rows · v0.5</span></div></div></div></footer></ScrollReveal>
 
 {customGrowthRow&&<CustomGrowthModal row={customGrowthRow} entry={rowData[activeScenario][customGrowthRow.id]} periods={periods} onClose={()=>setCustomGrowthRow(null)} onChange={p=>updateRowData(customGrowthRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
@@ -964,5 +1031,5 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
-</div>);
+</div></MillionsCtx.Provider>);
 }
