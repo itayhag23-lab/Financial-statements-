@@ -1,6 +1,6 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
@@ -414,12 +414,82 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 </div></div></div>);
 }
 
+// ── CSV / file import helpers ────────────────────────────────────────────────
+// Splits one CSV line into cells, honoring "quoted, fields" and "" escapes.
+function splitCSVLine(line){const cells=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if(ch===','&&!inQ){cells.push(cur);cur='';}else cur+=ch;}cells.push(cur);return cells.map(c=>c.trim());}
+function parseCSVGrid(text){return text.replace(/\r\n?/g,'\n').split('\n').filter(l=>l.trim().length).map(splitCSVLine);}
+function csvNum(s){if(s==null)return null;const v=parseFloat(String(s).replace(/[$,%\s()]/g,''));if(!isFinite(v))return null;return /^\s*\(/.test(String(s))?-v:v;}
+// Line items the engine computes itself — never import them as data rows.
+const CSV_COMPUTED=['gross profit','operating income','operating income (ebit)','ebit','pretax income','pre-tax income','pretax','net income','total revenue','revenue','cost of revenue','operating expenses','non-operating items','total liabilities + equity','net change in cash','cash from operations','cash from investing','cash from financing'];
+function csvClassify(label){const l=label.toLowerCase();if(/cogs|cost of (revenue|goods|sales)|direct (material|labor|cost)|materials|fulfillment|hosting|shipping|payment processing/.test(l))return 'cogs';if(/tax/.test(l)&&!/before tax/.test(l))return 'tax';if(/revenue|sales|turnover|bookings|fees earned/.test(l)&&!/cost|expense/.test(l))return 'rev';return 'opex';}
+// Build a full editable income-statement model from a CSV the user uploads.
+// Honest mapping only: real numbers go to manual line items; computed rows recompute.
+function buildStateFromCSV(text){
+const grid=parseCSVGrid(text);if(!grid.length)throw new Error('The file is empty.');
+// Locate the header row (starts with "Line Item"/"Item") and how many period columns it has.
+let headerIdx=grid.findIndex(r=>/^(line item|item|name|account)$/i.test((r[0]||'').trim()));
+if(headerIdx<0)headerIdx=grid.findIndex(r=>r.length>=2&&r.slice(1).some(c=>csvNum(c)!==null));
+if(headerIdx<0)throw new Error('Could not find a table with period columns.');
+const header=grid[headerIdx];
+let P=0;for(let i=headerIdx+1;i<grid.length;i++){const cnt=grid[i].slice(1).filter(c=>csvNum(c)!==null).length;if(cnt>P)P=cnt;}
+P=Math.max(1,Math.min(20,P||header.slice(1).length||5));
+// Granularity + start year from the period header labels.
+const labels=header.slice(1,P+1);const isQuarterly=labels.some(l=>/q[1-4]/i.test(l));
+const yearMatch=labels.join(' ').match(/(19|20)\d{2}/);const startYear=yearMatch?parseInt(yearMatch[0],10):new Date().getFullYear();
+// Collect data rows for the income statement only (stop at balance-sheet/cash-flow sections).
+const items=[];let stop=false;
+for(let i=headerIdx+1;i<grid.length&&!stop;i++){const r=grid[i];const raw=(r[0]||'').replace(/^"|"$/g,'').trim();if(!raw)continue;const low=raw.toLowerCase();
+if(/^(balance sheet|cash flow statement)/i.test(raw)){stop=true;break;}
+if(/^income statement$/i.test(raw)||/^(line item|item|name|account)$/i.test(low))continue;
+if(CSV_COMPUTED.includes(low))continue;
+const vals=[];for(let c=1;c<=P;c++)vals.push(csvNum(r[c])||0);
+if(vals.every(v=>v===0))continue; // skip blank rows
+items.push({label:raw,vals,group:csvClassify(raw)});}
+if(!items.length)throw new Error('No numeric line items were found to import.');
+// Assemble rows: keep the standard parents + computed rows, drop default seed leaves, append imported leaves.
+const keep=new Set(['rev','cogs','gross','opex','op-inc','non-op','pretax','tax','net-inc']);
+const income=TEMPLATES.income.filter(r=>r.type!=='leaf'||keep.has(r.id)).map(r=>({...r}));
+const scen=['base','best','worst'];const rowData={base:{},best:{},worst:{}};
+// tax row is a standard leaf already in the template — seed it blank, fill if found.
+for(const sc of scen)rowData[sc]['tax']=makeRowDataEntry('manual',P);
+for(const it of items){
+if(it.group==='tax'){for(const sc of scen)rowData[sc]['tax']={mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,manualValues:it.vals.slice()};continue;}
+const parentId=it.group==='rev'?'rev':it.group==='cogs'?'cogs':'opex';
+const id=newRowId(parentId);
+income.push({id,label:it.label,type:'leaf',parentId,defaultMode:'manual',deletable:true});
+for(const sc of scen)rowData[sc][id]={mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,manualValues:it.vals.slice()};}
+return{granularity:isQuarterly?'quarterly':'annual',numPeriods:P,startYear,activeScenario:'base',rows:{income,balance:[],cashFlow:[]},rowData,enabledStatements:{income:true,balance:false,cashFlow:false},__importSummary:{count:items.length,periods:P,rev:items.filter(i=>i.group==='rev').length,cogs:items.filter(i=>i.group==='cogs').length,opex:items.filter(i=>i.group==='opex').length}};
+}
+// Detect what a pasted/dropped blob is and turn it into loadable state.
+function interpretImport(text,filename){
+const looksJSON=/\.json$/i.test(filename||'')||/^\s*[{[]/.test(text);
+if(looksJSON){const obj=JSON.parse(text);if(!obj||!obj.rows||!obj.rowData)throw new Error('That JSON is not a saved model (missing rows/rowData).');return obj;}
+return buildStateFromCSV(text);
+}
+
 function SaveLoadModal({state,onLoad,onClose}){
-const[text,setText]=useState(JSON.stringify(state,null,2));const[error,setError]=useState(null);
-return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-<div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Manual backup</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>Export / Import JSON</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
-<div className="p-6 space-y-3"><p className="ff-body text-[12.5px]" style={{color:C.muted}}>Copy this JSON to keep your model externally, or paste a saved one to restore.</p><textarea value={text} onChange={e=>{setText(e.target.value);setError(null);}} spellCheck={false} className="w-full p-3 rounded-md ff-num text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink,minHeight:280,lineHeight:1.5}}/>{error&&<div className="ff-body text-[12px]" style={{color:C.rust}}>{error}</div>}</div>
-<div className="flex items-center justify-end gap-2 px-6 py-3" style={{borderTop:`1px solid ${C.border}`,background:C.surfaceAlt}}><button onClick={()=>navigator.clipboard?.writeText(text)} className="px-3 py-1.5 rounded-md ff-body text-[12px]" style={{color:C.ink2,border:`1px solid ${C.border}`,background:C.surface}}>Copy JSON</button><button onClick={()=>{try{onLoad(JSON.parse(text));onClose();}catch(e){setError('Could not parse JSON: '+e.message);}}} className="px-4 py-1.5 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Load</button></div>
+const[text,setText]=useState(JSON.stringify(state,null,2));const[error,setError]=useState(null);const[note,setNote]=useState(null);const[drag,setDrag]=useState(false);const fileRef=useRef(null);
+const handleFile=(file)=>{if(!file)return;setError(null);setNote(null);const rd=new FileReader();rd.onload=()=>{const content=String(rd.result||'');setText(content);try{const st=interpretImport(content,file.name);if(st.__importSummary){const s=st.__importSummary;setNote(`Ready to import ${s.count} line items across ${s.periods} periods (${s.rev} revenue · ${s.cogs} cost · ${s.opex} expense). Click "Load file".`);}else setNote('Saved model detected. Click "Load file" to restore.');}catch(e){setError(e.message);}};rd.onerror=()=>setError('Could not read that file.');rd.readAsText(file);};
+const doLoad=()=>{try{const st=interpretImport(text,'');const{__importSummary,...clean}=st;onLoad(clean);onClose();}catch(e){setError(e.message||'Could not read the data.');}};
+return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'90vh'}}>
+<div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Import &amp; backup</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>Upload a file or paste data</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
+<div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(90vh - 170px)'}}>
+<input ref={fileRef} type="file" accept=".csv,.json,.txt,text/csv,application/json" style={{display:'none'}} onChange={e=>handleFile(e.target.files&&e.target.files[0])}/>
+<div onClick={()=>fileRef.current&&fileRef.current.click()} onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={e=>{e.preventDefault();setDrag(false);handleFile(e.dataTransfer.files&&e.dataTransfer.files[0]);}} className="rounded-lg flex flex-col items-center justify-center text-center cursor-pointer" style={{border:`1.5px dashed ${drag?C.gold:C.border}`,background:drag?C.goldSoft:C.bg,padding:'26px 20px',transition:'all .15s'}}>
+<Upload size={22} style={{color:drag?C.gold:C.muted}}/>
+<div className="ff-body mt-2.5" style={{fontSize:14,fontWeight:600,color:C.ink}}>Drop a file here, or click to browse</div>
+<div className="ff-body mt-1" style={{fontSize:12,color:C.muted}}>CSV spreadsheet (line items × periods) or a saved <span className="ff-num">.json</span> model</div>
+<div className="flex items-center gap-4 mt-3"><span className="ff-body flex items-center gap-1.5" style={{fontSize:11.5,color:C.muted}}><FileSpreadsheet size={13}/> .csv</span><span className="ff-body flex items-center gap-1.5" style={{fontSize:11.5,color:C.muted}}><FileText size={13}/> .json</span></div>
+</div>
+{note&&<div className="ff-body rounded-md px-3 py-2.5" style={{fontSize:12.5,color:C.green,background:C.greenSoft,border:`1px solid ${C.green}44`}}>{note}</div>}
+{error&&<div className="ff-body rounded-md px-3 py-2.5" style={{fontSize:12.5,color:C.rust,background:C.rustSoft,border:`1px solid ${C.rust}44`}}>{error}</div>}
+<div><div className="flex items-center justify-between mb-2"><Eyebrow>Or paste / review data</Eyebrow><span className="ff-body" style={{fontSize:11,color:C.faint}}>CSV or JSON</span></div>
+<textarea value={text} onChange={e=>{setText(e.target.value);setError(null);setNote(null);}} spellCheck={false} className="w-full p-3 rounded-md ff-num text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink,minHeight:200,lineHeight:1.5}}/></div>
+<p className="ff-body" style={{fontSize:11.5,color:C.muted}}>CSV format: first column = line item names, following columns = one value per period. Revenue / cost / expense rows are detected automatically; totals like Gross Profit and Net Income are recomputed for you.</p>
+</div>
+<div className="flex items-center justify-between gap-2 px-6 py-3" style={{borderTop:`1px solid ${C.border}`,background:C.surfaceAlt}}>
+<button onClick={()=>{navigator.clipboard?.writeText(JSON.stringify(state,null,2));setNote('Current model copied to clipboard as JSON.');}} className="px-3 py-1.5 rounded-md ff-body text-[12px] flex items-center gap-1.5" style={{color:C.ink2,border:`1px solid ${C.border}`,background:C.surface}}><Download size={12}/> Copy current model</button>
+<button onClick={doLoad} className="px-4 py-1.5 rounded-md ff-body text-[12px] flex items-center gap-1.5" style={{background:C.ink,color:C.surface}}><Upload size={13}/> Load file</button></div>
 </div></div>);
 }
 
@@ -928,14 +998,14 @@ React.createElement('style',null,'@keyframes dot{0%,80%,100%{opacity:0.25;transf
 }
 
 
-function Masthead({todayLabel,projectName,sectorLabel,regionLabel,onRename,onNewProject,onOpenWizard,onOpenAIGen}){
+function Masthead({todayLabel,projectName,sectorLabel,regionLabel,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport}){
 const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(projectName||'');
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
 const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t);setEditing(false);};
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-4"><div className="flex-1 min-w-0">
 <div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}</div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-tight outline-none w-full" style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-tight cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em'}}>{projectName||'Untitled Project'}</h1>)}
-<div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button></div>
+<div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onImport} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Upload size={12}/> Import file</button></div>
 </div><div className="text-right flex-none hidden md:block"><div className="ff-body text-[10px]" style={{color:C.faint,letterSpacing:'0.1em',textTransform:'uppercase'}}>Last updated</div><div className="ff-body text-[14px] mt-1" style={{color:C.ink2,fontWeight:500}}>{todayLabel}</div></div></div>
 </div></div>);
 }
@@ -1070,7 +1140,7 @@ const collapseAll=(stmt)=>{const setFn={income:setExpandedIncome,balance:setExpa
 const expandedFor={income:expandedIncome,balance:expandedBalance,cashFlow:expandedCashFlow};
 
 return(<div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)} onImport={()=>setShowSaveLoad(true)}/></div>
 
 <button onClick={()=>setShowAI(true)} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
@@ -1092,7 +1162,7 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 <div className="flex items-center gap-2">
 <button onClick={handleUndo} disabled={!canUndo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canUndo?C.ink2:C.faint,opacity:canUndo?1:0.5,cursor:canUndo?'pointer':'not-allowed'}} title="Undo (Cmd+Z)">↶ Undo</button>
 <button onClick={handleRedo} disabled={!canRedo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canRedo?C.ink2:C.faint,opacity:canRedo?1:0.5,cursor:canRedo?'pointer':'not-allowed'}} title="Redo (Cmd+Shift+Z)">↷ Redo</button>
-<button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Save size={12}/> Save / Load</button>
+<button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Upload size={12}/> Import / Save</button>
 <button onClick={exportCSV} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> CSV</button>
 <button onClick={handleShare} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:shareCopied?C.greenSoft:C.bg,border:`1px solid ${shareCopied?C.green:C.border}`,color:shareCopied?C.green:C.ink2}}>{shareCopied?'✓ Link copied':'↗ Share'}</button>
 <button onClick={resetModel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:'transparent',color:C.muted}}>Reset</button>
@@ -1121,7 +1191,7 @@ return(<div className="min-h-screen ff-body relative" style={{background:C.bg,co
 
 {customGrowthRow&&<CustomGrowthModal row={customGrowthRow} entry={rowData[activeScenario][customGrowthRow.id]} periods={periods} onClose={()=>setCustomGrowthRow(null)} onChange={p=>updateRowData(customGrowthRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
-{showSaveLoad&&<SaveLoadModal state={fullState} onLoad={loadState} onClose={()=>setShowSaveLoad(false)}/>}
+{showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onClose={()=>setShowWizard(false)} allowSkip={true}/>}
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
