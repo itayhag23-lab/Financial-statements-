@@ -1036,6 +1036,10 @@ setShowAIGen(false);},[numPeriods,buildTab]);
 // What-if patch: apply AI-proposed numeric changes to base scenario
 const handleApplyAIPatch=useCallback((patches)=>{setRowData(prev=>{const nx={...prev,[activeScenario]:{...prev[activeScenario]}};for(const p of patches){if(nx[activeScenario][p.rowId]){nx[activeScenario][p.rowId]={...nx[activeScenario][p.rowId]};if(p.field==='baseValue')nx[activeScenario][p.rowId].baseValue=Number(p.newValue)||0;if(p.field==='flatRate')nx[activeScenario][p.rowId].flatRate=Number(p.newValue)||0;if(p.field==='pctOfRev')nx[activeScenario][p.rowId].pctOfRev=Number(p.newValue)||0;}}return nx;});},[activeScenario]);
 
+// fullState + loadState must be declared before handleShare (dep array evaluated during render)
+const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
+const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
+
 // Share: save snapshot + model to localStorage, copy URL to clipboard
 const handleShare=useCallback(()=>{
 const shareId=genId();
@@ -1048,8 +1052,6 @@ navigator.clipboard.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=
 },[computed,rows,periods,fullState,wizardAnswers,projectName,currencyKey,enabledStatements]);
 const handleRemoveStatement=useCallback((stmt)=>{if(stmt==='income')return;setEnabledStatements(s=>({...s,[stmt]:false}));setBuildTab('income');},[]);
 const exportCSV=useCallback(()=>{const lines=[`3-Statement Model — Scenario: ${SCENARIO_META[activeScenario].label}`,`Granularity: ${granularity}, Periods: ${numPeriods}, Start: ${startYear}`,''];for(const stmt of['income','balance','cashFlow']){lines.push(stmt==='income'?'INCOME STATEMENT':stmt==='balance'?'BALANCE SHEET':'CASH FLOW STATEMENT');lines.push(['Line Item',...periods].join(','));for(const r of rows[stmt]){const v=computed.values[r.id]||[];lines.push([`"${r.label}"`,...v.map(x=>Math.round(x))].join(','));}lines.push('');}const b=new Blob([lines.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;a.download=`model-${activeScenario}-${Date.now()}.csv`;a.click();URL.revokeObjectURL(url);},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear]);
-const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
-const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
 // --- Persistence: load saved project on mount, then debounced autosave ---
 const pidRef=useRef(projectId||getLastActive()||genId());
 const didLoadRef=useRef(false);
