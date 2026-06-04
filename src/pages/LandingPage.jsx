@@ -6,6 +6,21 @@ import {
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 
+// Detects viewport width for truly responsive inline styles.
+function useIsMobile(bp = 640) {
+  const [mob, setMob] = React.useState(() =>
+    typeof window !== 'undefined' && window.innerWidth <= bp
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp}px)`);
+    setMob(mq.matches);
+    const fn = e => setMob(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, [bp]);
+  return mob;
+}
+
 // Scroll-reveal wrapper — fades + slides up as element enters the viewport.
 function Reveal({ children, delay = 0, style = {}, className = '' }) {
   const ref = React.useRef(null);
@@ -318,22 +333,28 @@ function PriceCard({ tier, price, period, blurb, features, cta, ctaHref, highlig
 
 // ── Main ────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const mob = useIsMobile(640);   // phone
+  const tab = useIsMobile(860);   // tablet/collapse-2col
+
+  const sp = mob ? '16px' : '24px';          // side padding
+  const vp = mob ? '44px' : '84px';          // vertical section padding
+
   return (
     <div style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink }}>
 
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
-        <div className="koala-nav-inner" style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
-          <BrandLockup size={30} />
+        <div style={{ ...maxW, padding: `12px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 28 }}>
+          <BrandLockup size={mob ? 24 : 30} />
           <nav style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1 }} className="hidden sm:flex">
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
             <a href="#pricing"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Pricing</a>
           </nav>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-            <Link to="/app" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>
-            <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 600, color: '#fff', background: P.ink, padding: '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Start free</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 6 : 10, marginLeft: 'auto' }}>
+            {!mob && <Link to="/app" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
+            <Link to="/app" style={{ ...body, fontSize: mob ? 13 : 14, fontWeight: 600, color: '#fff', background: P.ink, padding: mob ? '10px 16px' : '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Start free</Link>
           </div>
         </div>
       </header>
@@ -342,44 +363,48 @@ export default function LandingPage() {
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -120, right: -80, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ ...maxW, padding: '84px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', position: 'relative' }} className="koala-2col koala-hero-inner">
+        <div style={{ ...maxW, padding: `${mob ? '44px' : '84px'} ${sp} ${mob ? '40px' : '80px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: mob ? 28 : 60, alignItems: 'center', position: 'relative' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: 22 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22 }}>
               <Zap size={12} color={P.accent} />
               <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>AI-Native Financial Modeling</span>
             </div>
-            <h1 style={{ ...disp, fontSize: 'clamp(32px, 4.4vw, 56px)', fontWeight: 700, lineHeight: 1.06, letterSpacing: '-0.025em', color: '#F8FAFC', margin: 0 }}>
+            <h1 style={{ ...disp, fontSize: mob ? 'clamp(28px, 8vw, 36px)' : 'clamp(32px, 4.4vw, 56px)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.025em', color: '#F8FAFC', margin: 0 }}>
               Institutional-Grade<br />Financial Modeling.<br />
               <span style={{ color: P.accent }}>Powered by AI.</span>
             </h1>
-            <p style={{ ...body, fontSize: 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: 20, maxWidth: 490 }}>
+            <p style={{ ...body, fontSize: mob ? 15 : 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: mob ? 14 : 20, maxWidth: 490 }}>
               Transform raw assumptions into investor-ready 3-statement financial architecture in minutes — not weeks. Built for founders, CFOs, and the analysts who support them.
             </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: 28, flexWrap: 'wrap' }}>
-              <Link to="/app" style={{ ...body, fontSize: 15, fontWeight: 600, color: P.bgDark, background: P.accent, padding: '13px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: mob ? 20 : 28, flexWrap: 'wrap' }}>
+              <Link to="/app" style={{ ...body, fontSize: mob ? 14 : 15, fontWeight: 600, color: P.bgDark, background: P.accent, padding: mob ? '12px 20px' : '13px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 Build your model free <ArrowRight size={16} />
               </Link>
-              <a href="#how" style={{ ...body, fontSize: 15, fontWeight: 500, color: 'rgba(248,250,252,0.7)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', padding: '13px 24px', borderRadius: 10, textDecoration: 'none' }}>
-                See how it works
-              </a>
+              {!mob && (
+                <a href="#how" style={{ ...body, fontSize: 15, fontWeight: 500, color: 'rgba(248,250,252,0.7)', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', padding: '13px 24px', borderRadius: 10, textDecoration: 'none' }}>
+                  See how it works
+                </a>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 20, marginTop: 22, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: mob ? 12 : 20, marginTop: mob ? 16 : 22, flexWrap: 'wrap' }}>
               {['No credit card required', 'SOC 2 compliant', '< 60 sec to first model'].map((t) => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.35)' }}>
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: 'rgba(255,255,255,0.35)' }}>
                   <Check size={13} color={P.accent} />{t}
                 </div>
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <DashboardMock />
-          </div>
+          {!tab && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <DashboardMock />
+            </div>
+          )}
         </div>
       </section>
 
       {/* INTEGRATION STRIP */}
       <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div style={{ ...maxW, padding: `16px ${sp}`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
           <span style={{ ...body, fontSize: 11.5, color: P.muted, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>Works with your stack:</span>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
             {INTEGRATIONS.map((ig) => <IntegrationBadge key={ig.name} {...ig} />)}
@@ -389,16 +414,23 @@ export default function LandingPage() {
 
       {/* STATS */}
       <div style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '44px 24px', display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 0 }}>
+        <div style={{ ...maxW, padding: `${mob ? '28px' : '44px'} ${sp}`, display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 0 }}>
           {[
             ['< 60s', 'From description to first model'],
             ['3', 'Live scenarios per model'],
             ['17+', 'Industry benchmarks built in'],
             ['100%', 'Statements auto-linked'],
           ].map(([n, l], i) => (
-            <div key={l} className="koala-stat-item" style={{ padding: '10px 28px', borderRight: i < 3 ? `1px solid ${P.border}` : 'none', flex: 1, minWidth: 130 }}>
-              <div style={{ ...disp, fontSize: 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>{n}</div>
-              <div style={{ ...body, fontSize: 13, color: P.muted, marginTop: 5 }}>{l}</div>
+            <div key={l} style={{
+              padding: mob ? '14px 12px' : '10px 28px',
+              borderRight: (!mob && i < 3) ? `1px solid ${P.border}` : 'none',
+              borderBottom: mob ? `1px solid ${P.border}` : 'none',
+              flex: mob ? '0 0 50%' : 1,
+              minWidth: mob ? 0 : 130,
+              boxSizing: 'border-box',
+            }}>
+              <div style={{ ...disp, fontSize: mob ? 28 : 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>{n}</div>
+              <div style={{ ...body, fontSize: mob ? 12 : 13, color: P.muted, marginTop: 5 }}>{l}</div>
             </div>
           ))}
         </div>
@@ -406,13 +438,13 @@ export default function LandingPage() {
 
       {/* FEATURES */}
       <section id="features" style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
-        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
-          <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 52px' }}>
+        <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
+          <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: `0 auto ${mob ? '32px' : '52px'}` }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Capabilities</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
-            <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
+            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
+            <p style={{ ...body, fontSize: mob ? 14 : 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
           </Reveal>
-          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: mob ? 12 : 16 }}>
             {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
           </Reveal>
         </div>
@@ -420,24 +452,24 @@ export default function LandingPage() {
 
       {/* HOW IT WORKS */}
       <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
-        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
-          <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
+        <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
+          <Reveal style={{ textAlign: 'center', marginBottom: mob ? 28 : 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
+            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
           </Reveal>
-          <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+          <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: mob ? 12 : 20 }}>
             {[
               { n: '01', title: 'Describe your business', icon: Sparkles, body: 'Type one sentence: "B2B SaaS, $30K MRR, targeting $5M ARR, 18-month runway." Koala reads your sector, stage, and scale automatically.' },
               { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet — seeded with sector-calibrated assumptions and three live scenarios — in under 60 seconds.' },
               { n: '03', title: 'Refine, share, raise',   icon: Share2,   body: 'Adjust any assumption, run what-if scenarios with the AI advisor, then share a live interactive report directly with your investors or board.' },
             ].map(({ n, title, icon: Icon, body: text }) => (
-              <div key={n} style={{ padding: '28px 24px', background: P.bgAlt, borderRadius: 12, border: `1px solid ${P.border}` }}>
-                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accent, letterSpacing: '0.14em', marginBottom: 14 }}>STEP {n}</div>
-                <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <div key={n} style={{ padding: mob ? '20px 16px' : '28px 24px', background: P.bgAlt, borderRadius: 12, border: `1px solid ${P.border}` }}>
+                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accent, letterSpacing: '0.14em', marginBottom: 12 }}>STEP {n}</div>
+                <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <Icon size={18} color={P.accent} />
                 </div>
-                <h3 style={{ ...disp, fontSize: 20, fontWeight: 700, color: P.ink, marginBottom: 10, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ ...body, fontSize: 14, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
+                <h3 style={{ ...disp, fontSize: mob ? 17 : 20, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
+                <p style={{ ...body, fontSize: mob ? 13 : 14, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
               </div>
             ))}
           </Reveal>
@@ -446,8 +478,8 @@ export default function LandingPage() {
 
       {/* SECURITY */}
       <section id="security" style={{ background: P.bgDark }}>
-        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }} className="koala-2col">
+        <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
+          <div style={{ display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 32 : 64, alignItems: 'center' }}>
             <div>
               <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
               <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
@@ -500,13 +532,13 @@ export default function LandingPage() {
 
       {/* PRICING */}
       <section id="pricing" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
-        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
-          <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
+        <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
+          <Reveal style={{ textAlign: 'center', marginBottom: mob ? 32 : 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
-            <p style={{ ...body, fontSize: 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
+            <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
           </Reveal>
-          <div className="koala-pricing-wrap" style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start', flexDirection: mob ? 'column' : 'row' }}>
             <PriceCard
               tier="Growth"
               price="$79"
@@ -543,14 +575,14 @@ export default function LandingPage() {
       {/* FINAL CTA */}
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 350, borderRadius: '50%', background: `radial-gradient(ellipse, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
-        <div className="koala-final-cta" style={{ ...maxW, padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
-          <h2 style={{ ...disp, fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+        <div style={{ ...maxW, padding: `${mob ? '60px' : '100px'} ${sp}`, textAlign: 'center', position: 'relative' }}>
+          <h2 style={{ ...disp, fontSize: 'clamp(26px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
             Your investors expect<br />institutional quality.
           </h2>
-          <p style={{ ...body, fontSize: 17, color: 'rgba(248,250,252,0.5)', maxWidth: 460, margin: '0 auto 32px', lineHeight: 1.65 }}>
+          <p style={{ ...body, fontSize: mob ? 15 : 17, color: 'rgba(248,250,252,0.5)', maxWidth: 460, margin: '0 auto 32px', lineHeight: 1.65 }}>
             Build your first 3-statement model in under 60 seconds. No spreadsheet, no finance degree, no credit card.
           </p>
-          <Link to="/app" style={{ ...body, fontSize: 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+          <Link to="/app" style={{ ...body, fontSize: mob ? 15 : 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '13px 24px' : '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
             Build your model free <ArrowRight size={18} />
           </Link>
           <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
@@ -561,7 +593,7 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ ...maxW, padding: '36px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ ...maxW, padding: `28px ${sp}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true">
               <line x1="20" y1="14" x2="20" y2="50" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
@@ -582,32 +614,8 @@ export default function LandingPage() {
       </footer>
 
       <style>{`
-        @media (max-width: 860px) {
-          .koala-2col { grid-template-columns: 1fr !important; }
-        }
         @media (max-width: 640px) {
-          .koala-2col > div:last-child { display: none; }
-          /* Hero section */
-          .koala-hero-inner { padding: 48px 16px 40px !important; gap: 32px !important; }
-          /* Nav */
-          .koala-nav-inner { padding: 10px 16px !important; gap: 12px !important; }
-          /* Stats */
-          .koala-stat-item { border-right: none !important; border-bottom: 1px solid #E2E8F0; flex: 0 0 50% !important; box-sizing: border-box !important; padding: 14px 16px !important; }
-          .koala-stat-item:nth-last-child(-n+2) { border-bottom: none !important; }
-          /* Sections */
-          .koala-section-pad { padding: 52px 16px !important; }
-          /* Pricing */
-          .koala-pricing-wrap { flex-direction: column !important; }
-          .koala-pricing-wrap > * { min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; }
-          /* Final CTA */
-          .koala-final-cta { padding: 60px 16px !important; }
-          /* Touch targets */
           header a, header button { min-height: 40px; display: inline-flex; align-items: center; }
-        }
-        @media (max-width: 480px) {
-          .koala-hero-inner { padding: 36px 16px 32px !important; }
-          .koala-stat-item { flex: 0 0 100% !important; border-right: none !important; border-bottom: 1px solid #E2E8F0 !important; }
-          .koala-stat-item:last-child { border-bottom: none !important; }
         }
       `}</style>
     </div>
