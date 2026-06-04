@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
+import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
 
@@ -1107,7 +1108,7 @@ const computedAll=useMemo(()=>{const m={};for(const sc of SCENARIOS)m[sc]=comput
 const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[activeScenario]:{...prev[activeScenario],[rowId]:{...prev[activeScenario][rowId],...patch}}}));},[activeScenario]);
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
-const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);},[numPeriods,buildTab]);
+const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
 const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
@@ -1136,6 +1137,7 @@ const snap={periods,revenue:computed.values.revenue||[],netIncome:computed.value
 for(const r of rows.income)if(computed.values[r.id])snap.incomeValues[r.id]=computed.values[r.id];
 const ok=await saveShare(shareId,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers,snapshot:snap});
 if(!ok){alert('Could not save share.');return;}
+capture('model_shared',{sectorKey:wizardAnswers?.sectorKey});
 const url=window.location.origin+'/r/'+shareId;
 navigator.clipboard.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=>setShareCopied(false),2500);}).catch(()=>alert('Share URL: '+url));
 },[computed,rows,periods,fullState,wizardAnswers,projectName,currencyKey,enabledStatements]);

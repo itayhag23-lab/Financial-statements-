@@ -1,14 +1,17 @@
-import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
 import { AuthProvider } from './contexts/AuthContext';
+import { page } from './lib/analytics';
 
 const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
 const SharedReport           = lazy(() => import('./pages/SharedReport'));
 const AuthPage               = lazy(() => import('./pages/AuthPage'));
 const Dashboard              = lazy(() => import('./pages/Dashboard'));
+const PrivacyPage            = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage              = lazy(() => import('./pages/TermsPage'));
 
 function Loading() {
   return (
@@ -36,9 +39,16 @@ function SharedReportRoute() {
   );
 }
 
+function PageTracker() {
+  const location = useLocation();
+  useEffect(() => { page(location.pathname); }, [location.pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
+      <PageTracker />
       <Routes>
         <Route path="/"           element={<LandingPage />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
@@ -46,6 +56,8 @@ export default function App() {
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />
+        <Route path="/privacy"    element={<Suspense fallback={<Loading />}><PrivacyPage /></Suspense>} />
+        <Route path="/terms"      element={<Suspense fallback={<Loading />}><TermsPage /></Suspense>} />
         <Route path="*"           element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>

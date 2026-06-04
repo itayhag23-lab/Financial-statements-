@@ -659,9 +659,9 @@ export default function LandingPage() {
             © {new Date().getFullYear()} Koala Statements · Not financial advice.
           </div>
           <div style={{ display: 'flex', gap: 20 }}>
-            {['Privacy', 'Terms', 'Security'].map((l) => (
-              <a key={l} href="#" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>{l}</a>
-            ))}
+            <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Privacy</Link>
+            <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Terms</Link>
+            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>

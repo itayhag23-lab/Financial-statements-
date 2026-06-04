@@ -1,3 +1,27 @@
+// Rate limiting via Upstash Redis REST API (zero extra packages).
+// Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel to activate.
+// Without those vars the function still works — rate limiting is simply skipped.
+const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const RATE_LIMIT  = 15;   // AI requests per hour per IP
+const WINDOW_S    = 3600;
+
+async function checkRateLimit(ip) {
+  if (!REDIS_URL || !REDIS_TOKEN) return { ok: true };
+  try {
+    const key = `rl:chat:${ip}`;
+    const r = await fetch(`${REDIS_URL}/pipeline`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify([['INCR', key], ['EXPIRE', key, WINDOW_S, 'NX']]),
+    });
+    const [[, count]] = await r.json();
+    return { ok: count <= RATE_LIMIT, count, limit: RATE_LIMIT };
+  } catch {
+    return { ok: true }; // fail open — never block legitimate users due to Redis errors
+  }
+}
+
 // Preference order for which Gemini model to use. The first one that both
 // exists for this API key AND has available quota wins. GEMINI_MODEL (if set)
 // is tried first.
@@ -27,6 +51,14 @@ async function listAvailableModels(apiKey) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limiting
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+  const rl = await checkRateLimit(ip);
+  if (!rl.ok) {
+    res.setHeader('Retry-After', WINDOW_S);
+    return res.status(429).json({ error: `Rate limit exceeded. You can make ${RATE_LIMIT} AI requests per hour.` });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
