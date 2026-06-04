@@ -51,6 +51,8 @@ input[type=number]{-moz-appearance:textfield;}
 .scroll-reveal-vis{animation:scrollReveal 640ms cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .anim-tab-in{animation:tabIn 220ms ease-out;}
+@keyframes rotateHint{0%{transform:rotate(0deg)}35%{transform:rotate(90deg)}65%{transform:rotate(90deg)}100%{transform:rotate(0deg)}}
+.rotate-hint{animation:rotateHint 2.4s ease-in-out infinite;display:block;}
 @media (max-width:768px){
 .koala-toolbar{flex-wrap:nowrap !important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .koala-toolbar::-webkit-scrollbar{display:none;}
@@ -1069,6 +1071,8 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 function FinancialModelBuilderInner({projectId}={}){
+const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
+useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
@@ -1191,6 +1195,25 @@ const expandAll=(stmt)=>{const setFn={income:setExpandedIncome,balance:setExpand
 const collapseAll=(stmt)=>{const setFn={income:setExpandedIncome,balance:setExpandedBalance,cashFlow:setExpandedCashFlow}[stmt];if(!setFn)return;setFn(new Set());};
 const expandedFor={income:expandedIncome,balance:expandedBalance,cashFlow:expandedCashFlow};
 
+if(isPortraitMob)return(
+<div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'#070D1A',padding:'40px 28px',textAlign:'center',gap:28,boxSizing:'border-box'}}>
+<FontStyles/>
+<div style={{width:76,height:76,borderRadius:22,background:'rgba(16,185,129,0.08)',border:'1px solid rgba(16,185,129,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+<svg className="rotate-hint" width={38} height={38} viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+<rect x="7" y="2" width="10" height="19" rx="2"/>
+<line x1="11" y1="17" x2="13" y2="17"/>
+</svg>
+</div>
+<div>
+<div style={{fontFamily:'Plus Jakarta Sans,Inter,sans-serif',fontSize:24,fontWeight:700,color:'#F8FAFC',letterSpacing:'-0.02em',marginBottom:12}}>Rotate your phone</div>
+<div style={{fontFamily:'Inter,sans-serif',fontSize:15,lineHeight:1.65,color:'rgba(248,250,252,0.48)',maxWidth:300,margin:'0 auto'}}>The financial model builder is designed for landscape view. Turn your phone sideways to see the full model.</div>
+</div>
+<div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 18px',borderRadius:30,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+<svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+<span style={{fontFamily:'Inter,sans-serif',fontSize:12,color:'rgba(255,255,255,0.3)'}}>Your model saves automatically</span>
+</div>
+</div>
+);
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
 <div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)} onImport={()=>setShowSaveLoad(true)}/></div>
 
