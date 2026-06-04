@@ -77,6 +77,23 @@ function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onTogg
   );
 }
 
+function friendlyError(msg = '') {
+  const m = msg.toLowerCase();
+  if (m.includes('email rate limit') || m.includes('over_email_send_rate_limit'))
+    return 'Too many attempts. Please wait a few minutes, then try again — or check your inbox for a confirmation link.';
+  if (m.includes('unsupported provider') || m.includes('provider is not enabled'))
+    return 'Google sign-in isn\'t enabled yet. Please use email and password below.';
+  if (m.includes('invalid login credentials') || m.includes('invalid_credentials'))
+    return 'Incorrect email or password.';
+  if (m.includes('email not confirmed'))
+    return 'Please check your inbox and click the confirmation link first, then sign in.';
+  if (m.includes('user already registered'))
+    return 'An account with this email already exists. Try signing in instead.';
+  if (m.includes('password should be at least'))
+    return 'Password must be at least 6 characters.';
+  return msg || 'Something went wrong. Please try again.';
+}
+
 export default function AuthPage() {
   const navigate  = useNavigate();
   const user      = useAuth();
@@ -115,7 +132,7 @@ export default function AuthPage() {
         setMode('signin');
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(friendlyError(err.message));
     } finally {
       setLoading(false);
     }
@@ -126,9 +143,9 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await signInWithGoogle();
-      // Google OAuth redirects the browser — no manual navigate needed
+      // Google OAuth redirects the browser — no manual navigate needed here
     } catch (err) {
-      setError(err.message || 'Google sign-in failed.');
+      setError(friendlyError(err.message));
       setLoading(false);
     }
   };

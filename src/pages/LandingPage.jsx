@@ -391,6 +391,10 @@ export default function LandingPage() {
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
       `}</style>
 
       {/* NAV */}
@@ -453,12 +457,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* INTEGRATION STRIP */}
-      <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: `16px ${sp}`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <span style={{ ...body, fontSize: 11.5, color: P.muted, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0 }}>Works with your stack:</span>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {INTEGRATIONS.map((ig) => <IntegrationBadge key={ig.name} {...ig} />)}
+      {/* INTEGRATION STRIP — scrolling marquee */}
+      <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}`, padding: `14px 0` }}>
+        <div style={{ ...body, fontSize: 11, color: P.muted, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>
+          Works with your stack
+        </div>
+        <div style={{ overflow: 'hidden', position: 'relative' }}>
+          {/* fade masks at edges */}
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 40, background: `linear-gradient(to right, ${P.bgAlt}, transparent)`, zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, background: `linear-gradient(to left, ${P.bgAlt}, transparent)`, zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', gap: 10, animation: 'marquee 18s linear infinite', width: 'max-content' }}>
+            {[...INTEGRATIONS, ...INTEGRATIONS].map((ig, i) => (
+              <IntegrationBadge key={i} {...ig} />
+            ))}
           </div>
         </div>
       </div>
