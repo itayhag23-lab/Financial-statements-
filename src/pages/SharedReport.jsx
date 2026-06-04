@@ -80,16 +80,18 @@ export default function SharedReport() {
   const [opening, setOpening] = useState(false);
 
   useEffect(() => {
-    const d = loadShare(shareId);
-    if (d) setDoc(d);
-    else setNotFound(true);
+    (async () => {
+      const d = await loadShare(shareId);
+      if (d) setDoc(d);
+      else setNotFound(true);
+    })();
   }, [shareId]);
 
-  const openEditable = () => {
+  const openEditable = async () => {
     if (!doc || opening) return;
     setOpening(true);
     const newId = genId();
-    saveProject(newId, {
+    await saveProject(newId, {
       meta: {
         name: `${doc.meta?.name || 'Shared Model'} (copy)`,
         sectorKey: doc.meta?.sectorKey,

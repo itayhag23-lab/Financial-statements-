@@ -1130,12 +1130,12 @@ const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
 const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
 
 // Share: save snapshot + model to localStorage, copy URL to clipboard
-const handleShare=useCallback(()=>{
+const handleShare=useCallback(async ()=>{
 const shareId=genId();
 const snap={periods,revenue:computed.values.revenue||[],netIncome:computed.values.netIncome||[],grossProfit:computed.values.grossProfit||[],operatingIncome:computed.values.operatingIncome||[],incomeRows:rows.income.map(r=>({id:r.id,label:r.label,type:r.type,parentId:r.parentId})),incomeValues:{}};
 for(const r of rows.income)if(computed.values[r.id])snap.incomeValues[r.id]=computed.values[r.id];
-const ok=saveShare(shareId,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers,snapshot:snap});
-if(!ok){alert('Could not save share — localStorage may be full.');return;}
+const ok=await saveShare(shareId,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers,snapshot:snap});
+if(!ok){alert('Could not save share.');return;}
 const url=window.location.origin+'/r/'+shareId;
 navigator.clipboard.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=>setShareCopied(false),2500);}).catch(()=>alert('Share URL: '+url));
 },[computed,rows,periods,fullState,wizardAnswers,projectName,currencyKey,enabledStatements]);
@@ -1181,10 +1181,10 @@ a.click();URL.revokeObjectURL(url);
 // --- Persistence: load saved project on mount, then debounced autosave ---
 const pidRef=useRef(projectId||getLastActive()||genId());
 const didLoadRef=useRef(false);
-useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;const doc=loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
+useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
 // No saved project: seed a populated, editable starter so the builder is never empty behind the wizard.
-const s=seedProjectForWizard({sectorKey:'other',regionKey:'us',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}},[]); // eslint-disable-line
-useEffect(()=>{if(showWizard)return;const t=setTimeout(()=>{saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
+const s=seedProjectForWizard({sectorKey:'other',regionKey:'us',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}})();},[]); // eslint-disable-line
+useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
 const BUILD_TABS=useMemo(()=>{const t=[{id:'income',label:'Income Statement'}];if(enabledStatements.balance)t.push({id:'balance',label:'Balance Sheet'});if(enabledStatements.cashFlow)t.push({id:'cashFlow',label:'Cash Flow'});return t;},[enabledStatements]);

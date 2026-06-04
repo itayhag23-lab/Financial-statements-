@@ -353,8 +353,8 @@ export default function LandingPage() {
             <a href="#pricing"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Pricing</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 6 : 10, marginLeft: 'auto' }}>
-            {!mob && <Link to="/app" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
-            <Link to="/app" style={{ ...body, fontSize: mob ? 13 : 14, fontWeight: 600, color: '#fff', background: P.ink, padding: mob ? '10px 16px' : '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Start free</Link>
+            {!mob && <Link to="/auth" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
+            <Link to="/auth" style={{ ...body, fontSize: mob ? 13 : 14, fontWeight: 600, color: '#fff', background: P.ink, padding: mob ? '10px 16px' : '9px 18px', borderRadius: 9, textDecoration: 'none' }}>Start free</Link>
           </div>
         </div>
       </header>
@@ -377,7 +377,7 @@ export default function LandingPage() {
               Transform raw assumptions into investor-ready 3-statement financial architecture in minutes — not weeks. Built for founders, CFOs, and the analysts who support them.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: mob ? 20 : 28, flexWrap: 'wrap' }}>
-              <Link to="/app" style={{ ...body, fontSize: mob ? 14 : 15, fontWeight: 600, color: P.bgDark, background: P.accent, padding: mob ? '12px 20px' : '13px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Link to="/auth" style={{ ...body, fontSize: mob ? 14 : 15, fontWeight: 600, color: P.bgDark, background: P.accent, padding: mob ? '12px 20px' : '13px 24px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 Build your model free <ArrowRight size={16} />
               </Link>
               {!mob && (
@@ -546,7 +546,7 @@ export default function LandingPage() {
               blurb="For founders and analysts who need a serious modeling tool — not a spreadsheet."
               features={['Unlimited projects', '3-statement engine + all scenarios', '17+ industry benchmarks', 'AI advisor (fair use)', 'JSON export']}
               cta="Start free trial"
-              ctaHref="/app"
+              ctaHref="/auth"
             />
             <PriceCard
               tier="Pro"
@@ -555,7 +555,7 @@ export default function LandingPage() {
               blurb="For finance teams that need AI-native automation, live sharing, and board-ready exports."
               features={['Everything in Growth', 'AI builds & edits your model', 'Conversational what-if analysis', 'Shareable live investor reports', 'Pitch one-pager export', 'Priority AI advisor', 'Team collaboration (up to 5)']}
               cta="Start free trial"
-              ctaHref="/app"
+              ctaHref="/auth"
               highlight
             />
             <PriceCard
@@ -565,7 +565,7 @@ export default function LandingPage() {
               blurb="For organizations that need custom integrations, SSO, dedicated support, and SLAs."
               features={['Everything in Pro', 'QuickBooks / Xero / NetSuite sync', 'SAML SSO + SCIM provisioning', 'Custom data residency', 'Dedicated CSM + SLA', 'Audit logs + RBAC', 'Custom AI fine-tuning']}
               cta="Contact Sales"
-              ctaHref="/app"
+              ctaHref="/auth"
               enterprise
             />
           </div>
@@ -582,7 +582,7 @@ export default function LandingPage() {
           <p style={{ ...body, fontSize: mob ? 15 : 17, color: 'rgba(248,250,252,0.5)', maxWidth: 460, margin: '0 auto 32px', lineHeight: 1.65 }}>
             Build your first 3-statement model in under 60 seconds. No spreadsheet, no finance degree, no credit card.
           </p>
-          <Link to="/app" style={{ ...body, fontSize: mob ? 15 : 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '13px 24px' : '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+          <Link to="/auth" style={{ ...body, fontSize: mob ? 15 : 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '13px 24px' : '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
             Build your model free <ArrowRight size={18} />
           </Link>
           <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
