@@ -44,6 +44,40 @@ function Reveal({ children, delay = 0, style = {}, className = '' }) {
   );
 }
 
+// Counts from 0 to `end` when the element scrolls into view.
+function CountUp({ end, prefix = '', suffix = '' }) {
+  const ref = React.useRef(null);
+  const [val, setVal] = React.useState(0);
+  const [started, setStarted] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setStarted(true); obs.disconnect(); }
+    }, { threshold: 0.6 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  React.useEffect(() => {
+    if (!started) return;
+    const dur = 1400, t0 = Date.now();
+    const tick = () => {
+      const p = Math.min((Date.now() - t0) / dur, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setVal(Math.round(ease * end));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [started, end]);
+  return <span ref={ref}>{prefix}{val}{suffix}</span>;
+}
+
+// Returns [isHovered, eventProps] for inline-style hover effects.
+function useHover() {
+  const [hov, setHov] = React.useState(false);
+  return [hov, { onMouseEnter: () => setHov(true), onMouseLeave: () => setHov(false) }];
+}
+
 // Brand lockup — clean geometric K monogram mark + wordmark.
 function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
   return (
@@ -269,8 +303,9 @@ const FEATURES = [
 ];
 
 function FeatureCard({ icon: Icon, title, body: text, tag }) {
+  const [hov, hp] = useHover();
   return (
-    <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: '24px 22px', position: 'relative' }}>
+    <div {...hp} style={{ background: P.bg, border: `1px solid ${hov ? '#CBD5E1' : P.border}`, borderRadius: 12, padding: '24px 22px', position: 'relative', transform: hov ? 'translateY(-4px)' : 'translateY(0)', boxShadow: hov ? '0 12px 28px -10px rgba(15,23,42,0.12)' : 'none', transition: 'transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms, border-color 200ms' }}>
       {tag && (
         <span style={{ position: 'absolute', top: 18, right: 18, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accent, background: P.accentSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>
       )}
@@ -296,12 +331,17 @@ function PriceCard({ tier, price, period, blurb, features, cta, ctaHref, highlig
   return (
     <div style={{
       background: highlight ? P.bgDarkCard : P.bg,
-      border: `1px solid ${highlight ? P.accentGlow : P.border}`,
+      border: highlight ? '1.5px solid transparent' : `1px solid ${P.border}`,
+      backgroundImage: highlight ? 'linear-gradient(#0F172A, #0F172A), linear-gradient(135deg, #10B981 0%, #3B82F6 50%, #10B981 100%)' : 'none',
+      backgroundOrigin: highlight ? 'border-box' : 'padding-box',
+      backgroundClip: highlight ? 'padding-box, border-box' : 'border-box',
+      backgroundSize: highlight ? 'auto, 200% 200%' : 'auto',
+      animation: highlight ? 'shimmerBorder 3s ease infinite' : 'none',
       borderRadius: 14,
       padding: '28px 24px',
       flex: 1,
       minWidth: 250,
-      boxShadow: highlight ? `0 0 0 1px ${P.accentSoft}, 0 30px 60px -20px rgba(0,0,0,0.5)` : 'none',
+      boxShadow: highlight ? '0 30px 60px -20px rgba(0,0,0,0.5)' : 'none',
       position: 'relative',
     }}>
       {highlight && (
@@ -340,7 +380,18 @@ export default function LandingPage() {
   const vp = mob ? '44px' : '84px';          // vertical section padding
 
   return (
-    <div style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink, overflowX: 'hidden' }}>
+    <div className="koala-page" style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink, overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes badgePulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); }
+          60%      { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
+        }
+        @keyframes shimmerBorder {
+          0%   { background-position: 0% 50%; }
+          50%  { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
 
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
@@ -365,7 +416,7 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ ...maxW, padding: `${mob ? '44px' : '84px'} ${sp} ${mob ? '40px' : '80px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: mob ? 28 : 60, alignItems: 'center', position: 'relative' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22, animation: 'badgePulse 2.4s ease-in-out infinite' }}>
               <Zap size={12} color={P.accent} />
               <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>AI-Native Financial Modeling</span>
             </div>
@@ -416,12 +467,12 @@ export default function LandingPage() {
       <div style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `${mob ? '28px' : '44px'} ${sp}`, display: 'flex', justifyContent: 'space-around', textAlign: 'center', flexWrap: 'wrap', gap: 0 }}>
           {[
-            ['< 60s', 'From description to first model'],
-            ['3', 'Live scenarios per model'],
-            ['17+', 'Industry benchmarks built in'],
-            ['100%', 'Statements auto-linked'],
-          ].map(([n, l], i) => (
-            <div key={l} style={{
+            { label: 'From description to first model', end: 60, prefix: '< ', suffix: 's' },
+            { label: 'Live scenarios per model',        end: 3,  prefix: '',   suffix: '' },
+            { label: 'Industry benchmarks built in',   end: 17, prefix: '',   suffix: '+' },
+            { label: 'Statements auto-linked',         end: 100,prefix: '',   suffix: '%' },
+          ].map(({ label, end, prefix, suffix }, i) => (
+            <div key={label} style={{
               padding: mob ? '14px 12px' : '10px 28px',
               borderRight: (!mob && i < 3) ? `1px solid ${P.border}` : 'none',
               borderBottom: mob ? `1px solid ${P.border}` : 'none',
@@ -429,8 +480,10 @@ export default function LandingPage() {
               minWidth: mob ? 0 : 130,
               boxSizing: 'border-box',
             }}>
-              <div style={{ ...disp, fontSize: mob ? 28 : 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>{n}</div>
-              <div style={{ ...body, fontSize: mob ? 12 : 13, color: P.muted, marginTop: 5 }}>{l}</div>
+              <div style={{ ...disp, fontSize: mob ? 28 : 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>
+                <CountUp end={end} prefix={prefix} suffix={suffix} />
+              </div>
+              <div style={{ ...body, fontSize: mob ? 12 : 13, color: P.muted, marginTop: 5 }}>{label}</div>
             </div>
           ))}
         </div>

@@ -134,7 +134,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: P.bgDark, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', boxSizing: 'border-box' }}>
+    <div className="koala-page" style={{ minHeight: '100vh', background: P.bgDark, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', boxSizing: 'border-box' }}>
 
       {/* Ambient glow */}
       <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 300, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 65%)', pointerEvents: 'none' }} />

@@ -203,7 +203,7 @@ export default function Dashboard() {
   const userEmail   = user?.email || '';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC', ...body }}>
+    <div className="koala-page" style={{ minHeight: '100vh', background: '#F8FAFC', ...body }}>
 
       {/* Top nav */}
       <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 40 }}>
