@@ -340,13 +340,13 @@ export default function LandingPage() {
   const vp = mob ? '44px' : '84px';          // vertical section padding
 
   return (
-    <div style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink }}>
+    <div style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink, overflowX: 'hidden' }}>
 
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `12px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 28 }}>
           <BrandLockup size={mob ? 24 : 30} />
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1 }} className="hidden sm:flex">
+          <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 22, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
@@ -373,7 +373,7 @@ export default function LandingPage() {
               Institutional-Grade<br />Financial Modeling.<br />
               <span style={{ color: P.accent }}>Powered by AI.</span>
             </h1>
-            <p style={{ ...body, fontSize: mob ? 15 : 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: mob ? 14 : 20, maxWidth: 490 }}>
+            <p style={{ ...body, fontSize: mob ? 15 : 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: mob ? 14 : 20, maxWidth: mob ? '100%' : 490 }}>
               Transform raw assumptions into investor-ready 3-statement financial architecture in minutes — not weeks. Built for founders, CFOs, and the analysts who support them.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: mob ? 20 : 28, flexWrap: 'wrap' }}>
@@ -614,8 +614,10 @@ export default function LandingPage() {
       </footer>
 
       <style>{`
+        html, body, #root { overflow-x: hidden; max-width: 100vw; }
+        * { box-sizing: border-box; }
         @media (max-width: 640px) {
-          header a, header button { min-height: 40px; display: inline-flex; align-items: center; }
+          header a, header button { min-height: 44px; display: inline-flex; align-items: center; }
         }
       `}</style>
     </div>
