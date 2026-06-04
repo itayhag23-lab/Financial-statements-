@@ -323,7 +323,7 @@ export default function LandingPage() {
 
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
+        <div className="koala-nav-inner" style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 28 }}>
           <BrandLockup size={30} />
           <nav style={{ display: 'flex', alignItems: 'center', gap: 22, flex: 1 }} className="hidden sm:flex">
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
@@ -342,7 +342,7 @@ export default function LandingPage() {
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -120, right: -80, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ ...maxW, padding: '84px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', position: 'relative' }} className="koala-2col">
+        <div style={{ ...maxW, padding: '84px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center', position: 'relative' }} className="koala-2col koala-hero-inner">
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: 22 }}>
               <Zap size={12} color={P.accent} />
@@ -396,7 +396,7 @@ export default function LandingPage() {
             ['17+', 'Industry benchmarks built in'],
             ['100%', 'Statements auto-linked'],
           ].map(([n, l], i) => (
-            <div key={l} style={{ padding: '10px 28px', borderRight: i < 3 ? `1px solid ${P.border}` : 'none', flex: 1, minWidth: 130 }}>
+            <div key={l} className="koala-stat-item" style={{ padding: '10px 28px', borderRight: i < 3 ? `1px solid ${P.border}` : 'none', flex: 1, minWidth: 130 }}>
               <div style={{ ...disp, fontSize: 36, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>{n}</div>
               <div style={{ ...body, fontSize: 13, color: P.muted, marginTop: 5 }}>{l}</div>
             </div>
@@ -406,7 +406,7 @@ export default function LandingPage() {
 
       {/* FEATURES */}
       <section id="features" style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '84px 24px' }}>
+        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
           <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 52px' }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Capabilities</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
@@ -420,7 +420,7 @@ export default function LandingPage() {
 
       {/* HOW IT WORKS */}
       <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '84px 24px' }}>
+        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
           <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
@@ -446,7 +446,7 @@ export default function LandingPage() {
 
       {/* SECURITY */}
       <section id="security" style={{ background: P.bgDark }}>
-        <div style={{ ...maxW, padding: '84px 24px' }}>
+        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }} className="koala-2col">
             <div>
               <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
@@ -500,13 +500,13 @@ export default function LandingPage() {
 
       {/* PRICING */}
       <section id="pricing" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
-        <div style={{ ...maxW, padding: '84px 24px' }}>
+        <div className="koala-section-pad" style={{ ...maxW, padding: '84px 24px' }}>
           <Reveal style={{ textAlign: 'center', marginBottom: 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
             <p style={{ ...body, fontSize: 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
           </Reveal>
-          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div className="koala-pricing-wrap" style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <PriceCard
               tier="Growth"
               price="$79"
@@ -543,7 +543,7 @@ export default function LandingPage() {
       {/* FINAL CTA */}
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 350, borderRadius: '50%', background: `radial-gradient(ellipse, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
-        <div style={{ ...maxW, padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
+        <div className="koala-final-cta" style={{ ...maxW, padding: '100px 24px', textAlign: 'center', position: 'relative' }}>
           <h2 style={{ ...disp, fontSize: 'clamp(30px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
             Your investors expect<br />institutional quality.
           </h2>
@@ -587,6 +587,27 @@ export default function LandingPage() {
         }
         @media (max-width: 640px) {
           .koala-2col > div:last-child { display: none; }
+          /* Hero section */
+          .koala-hero-inner { padding: 48px 16px 40px !important; gap: 32px !important; }
+          /* Nav */
+          .koala-nav-inner { padding: 10px 16px !important; gap: 12px !important; }
+          /* Stats */
+          .koala-stat-item { border-right: none !important; border-bottom: 1px solid #E2E8F0; flex: 0 0 50% !important; box-sizing: border-box !important; padding: 14px 16px !important; }
+          .koala-stat-item:nth-last-child(-n+2) { border-bottom: none !important; }
+          /* Sections */
+          .koala-section-pad { padding: 52px 16px !important; }
+          /* Pricing */
+          .koala-pricing-wrap { flex-direction: column !important; }
+          .koala-pricing-wrap > * { min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; }
+          /* Final CTA */
+          .koala-final-cta { padding: 60px 16px !important; }
+          /* Touch targets */
+          header a, header button { min-height: 40px; display: inline-flex; align-items: center; }
+        }
+        @media (max-width: 480px) {
+          .koala-hero-inner { padding: 36px 16px 32px !important; }
+          .koala-stat-item { flex: 0 0 100% !important; border-right: none !important; border-bottom: 1px solid #E2E8F0 !important; }
+          .koala-stat-item:last-child { border-bottom: none !important; }
         }
       `}</style>
     </div>

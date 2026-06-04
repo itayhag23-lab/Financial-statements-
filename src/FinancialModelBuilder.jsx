@@ -51,6 +51,16 @@ input[type=number]{-moz-appearance:textfield;}
 .scroll-reveal-vis{animation:scrollReveal 640ms cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .anim-tab-in{animation:tabIn 220ms ease-out;}
+@media (max-width:768px){
+.koala-toolbar{flex-wrap:nowrap !important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.koala-toolbar::-webkit-scrollbar{display:none;}
+.koala-toolbar>*{flex-shrink:0 !important;}
+.koala-masthead-actions{flex-wrap:nowrap !important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.koala-masthead-actions::-webkit-scrollbar{display:none;}
+.koala-masthead-actions>*{flex-shrink:0;}
+.koala-fab-ai{bottom:76px !important;right:12px !important;}
+.koala-fab-analysis{bottom:16px !important;right:12px !important;}
+}
 `}</style>);
 
 // Design tokens now live in ./brand/theme (imported as C) — single source of truth.
@@ -1015,7 +1025,7 @@ const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t)
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-4"><div className="flex-1 min-w-0">
 <div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}</div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-tight outline-none w-full" style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-tight cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em'}}>{projectName||'Untitled Project'}</h1>)}
-<div className="flex items-center gap-3 mt-3 flex-wrap"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onImport} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Upload size={12}/> Import file</button></div>
+<div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onImport} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Upload size={12}/> Import file</button></div>
 </div><div className="text-right flex-none hidden md:block"><div className="ff-body text-[10px]" style={{color:C.faint,letterSpacing:'0.1em',textTransform:'uppercase'}}>Last updated</div><div className="ff-body text-[14px] mt-1" style={{color:C.ink2,fontWeight:500}}>{todayLabel}</div></div></div>
 </div></div>);
 }
@@ -1184,17 +1194,17 @@ const expandedFor={income:expandedIncome,balance:expandedBalance,cashFlow:expand
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
 <div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)} onImport={()=>setShowSaveLoad(true)}/></div>
 
-<button onClick={()=>setShowAI(true)} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>setShowAI(true)} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
 </button>
-<button onClick={()=>setShowAnalysisDrawer(true)} className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>setShowAnalysisDrawer(true)} className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-analysis" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <BarChart3 size={14}/><span className="text-[12.5px]" style={{fontWeight:500}}>Analysis</span>
 <span className="ff-num text-[10px] px-1.5 py-0.5 rounded" style={{background:C.gold,color:C.ink}}>{(()=>{const f=computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements);return f.score;})()}</span>
 </button>
 
 <div className="px-6 md:px-10 mt-6 stagger stagger-3"><div className="max-w-[1400px] mx-auto space-y-3">
 <div className="flex items-baseline justify-between flex-wrap gap-2 mb-1"><Eyebrow color={C.gold}>Editing scenario · {SCENARIO_META[activeScenario].label}</Eyebrow><span className="ff-body text-[10.5px]" style={{color:C.muted}}>All changes apply to the selected scenario only</span></div>
-<div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-md" style={{background:C.surface,border:`1px solid ${C.border}`}}>
+<div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-md koala-toolbar" style={{background:C.surface,border:`1px solid ${C.border}`}}>
 <CompactScenarioPicker activeScenario={activeScenario} onSelect={setActiveScenario} computedAll={computedAll} periods={periods}/>
 <div style={{width:1,height:24,background:C.border}} className="hidden md:block"/>
 <div className="flex items-center gap-2 flex-wrap"><span className="label-eyebrow ff-body" style={{color:C.muted}}>View</span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{['annual','quarterly'].map(g=>(<button key={g} onClick={()=>setGranularity(g)} className="px-3 py-1 ff-body text-[11.5px]" style={{background:granularity===g?C.ink:'transparent',color:granularity===g?C.surface:C.ink2,textTransform:'capitalize'}}>{g}</button>))}</div></div>

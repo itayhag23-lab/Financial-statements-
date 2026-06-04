@@ -130,16 +130,16 @@ export default function SharedReport() {
 
       {/* ── NAV ── */}
       <header style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${P.border}`, position: 'sticky', top: 0, zIndex: 40 }}>
-        <div style={{ ...maxW, padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link to="/" style={{ textDecoration: 'none' }}><Logo size={26} /></Link>
-          <div style={{ display: 'flex', align: 'center', gap: 10 }}>
-            <div style={{ ...body, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Lock size={11} color={P.accent} /> Read-only shared model
+        <div style={{ ...maxW, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}><Logo size={26} /></Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ ...body, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+              <Lock size={11} color={P.accent} /> <span className="hidden sm:inline">Read-only shared model</span>
             </div>
             <button
               onClick={openEditable}
               disabled={opening}
-              style={{ ...body, fontSize: 13, fontWeight: 600, color: '#fff', background: opening ? P.muted : P.bgDark, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: opening ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
+              style={{ ...body, fontSize: 13, fontWeight: 600, color: '#fff', background: opening ? P.muted : P.bgDark, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: opening ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}
             >
               {opening ? 'Opening…' : 'Open editable copy'} {!opening && <ExternalLink size={13} />}
             </button>
@@ -148,7 +148,7 @@ export default function SharedReport() {
       </header>
 
       {/* ── HEADER ── */}
-      <section style={{ background: P.bg, padding: '44px 24px 36px', borderBottom: `1px solid ${P.border}` }}>
+      <section style={{ background: P.bg, padding: 'clamp(28px, 5vw, 44px) 16px 28px', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW }}>
           <div style={{ ...body, fontSize: 11, color: P.accent, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
             Shared Financial Model · {sharedDate}
@@ -197,9 +197,10 @@ export default function SharedReport() {
 
       {/* ── INCOME STATEMENT ── */}
       {incomeRows.length > 0 && (
-        <section style={{ ...maxW, padding: '40px 24px' }}>
+        <section style={{ ...maxW, padding: 'clamp(24px, 4vw, 40px) 16px' }}>
           <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: P.accent, marginBottom: 16 }}>Income Statement · Base scenario</div>
-          <div style={{ border: `1px solid ${P.border}`, borderRadius: 12, overflow: 'hidden', background: P.bg }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ border: `1px solid ${P.border}`, borderRadius: 12, overflow: 'hidden', background: P.bg, minWidth: 480 }}>
             {/* Header row */}
             <div style={{ display: 'flex', background: P.bgAlt, borderBottom: `1px solid ${P.border}`, padding: '10px 18px' }}>
               <div style={{ flex: 1, ...body, fontSize: 10, color: P.muted, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Line item</div>
@@ -239,12 +240,13 @@ export default function SharedReport() {
               );
             })}
           </div>
+          </div>
         </section>
       )}
 
       {/* ── REVENUE CHART ── */}
       {revenue.length > 1 && (
-        <section style={{ ...maxW, padding: '0 24px 48px' }}>
+        <section style={{ ...maxW, padding: '0 16px 40px' }}>
           <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: '24px 24px 16px' }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: P.accent, marginBottom: 4 }}>Revenue & Net Income trend</div>
             <div style={{ ...body, fontSize: 12, color: P.muted, marginBottom: 16 }}>Base scenario · {symbol}thousands</div>
@@ -285,7 +287,7 @@ export default function SharedReport() {
       )}
 
       {/* ── FOOTER ── */}
-      <footer style={{ background: P.bg, borderTop: `1px solid ${P.border}`, padding: '28px 24px' }}>
+      <footer style={{ background: P.bg, borderTop: `1px solid ${P.border}`, padding: '20px 16px' }}>
         <div style={{ ...maxW, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <Logo size={22} />
           <div style={{ ...body, fontSize: 12, color: P.muted }}>Shared read-only view · Not financial advice</div>
