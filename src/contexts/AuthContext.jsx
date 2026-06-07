@@ -36,7 +36,7 @@ export async function signInWithEmail(email, password) {
 
 export async function signUpWithEmail(email, password) {
   if (!supabase) throw new Error('Auth not configured');
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
   capture('auth_signed_up', { method: 'email' });
   // Welcome email — fire-and-forget, never blocks the signup flow
@@ -49,6 +49,9 @@ export async function signUpWithEmail(email, password) {
       html: welcomeEmail(email),
     }),
   }).catch(() => {});
+  // If "Confirm email" is disabled in Supabase, signUp returns a live session
+  // immediately — the caller can sign the user straight in.
+  return { signedIn: !!data?.session };
 }
 
 export async function signInWithGoogle() {
