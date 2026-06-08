@@ -216,7 +216,7 @@ export default function Dashboard() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <span style={{ ...body, fontSize: 13, fontWeight: 700, color: '#059669' }}>{userInitial}</span>
               </div>
-              <span style={{ ...body, fontSize: 13, color: '#334155', display: window.innerWidth > 480 ? 'block' : 'none' }}>{userEmail}</span>
+              <span className="dash-user-email" style={{ ...body, fontSize: 13, color: '#334155' }}>{userEmail}</span>
             </div>
             <button
               onClick={async () => { await signOut(); navigate('/auth', { replace: true }); }}
