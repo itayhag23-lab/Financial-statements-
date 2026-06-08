@@ -263,6 +263,33 @@ return labels;
 }
 let _idc=1;const newRowId=(p='r')=>`${p}_${Date.now().toString(36)}_${(_idc++).toString(36)}`;
 
+// Saved projects persist their own rows/rowData snapshot, so rows added or
+// re-flagged in TEMPLATES after a project was saved (e.g. the auto-linked CF
+// rows, the Free Cash Flow line) would otherwise never appear when reloading
+// older projects. Patch the loaded rows up to the current template shape.
+function reconcileLoadedRows(loadedRows,loadedRowData,numPeriods){
+const rows={};const rowData=loadedRowData?{...loadedRowData}:{};
+for(const sc of SCENARIOS)if(!rowData[sc])rowData[sc]={};
+for(const stmt of['income','balance','cashFlow']){
+const tmpl=TEMPLATES[stmt];
+const loaded=(loadedRows&&loadedRows[stmt])||tmpl.map(r=>({...r}));
+const byId=new Map(loaded.map(r=>[r.id,r]));
+const merged=loaded.map(r=>{
+const t=tmpl.find(tr=>tr.id===r.id);
+if(t&&t.linked&&!r.linked)return{...r,linked:t.linked,linkLabel:t.linkLabel};
+return r;
+});
+for(const t of tmpl){
+if(!byId.has(t.id)){
+merged.push({...t});
+if(t.type==='leaf')for(const sc of SCENARIOS)if(!rowData[sc][t.id])rowData[sc][t.id]=makeRowDataEntry(t.defaultMode,numPeriods);
+}
+}
+rows[stmt]=merged;
+}
+return{rows,rowData};
+}
+
 function seedProjectForWizard({sectorKey,regionKey,statements,numPeriods}){
 const sector=BB[sectorKey]||BB.other;
 const region=REGIONS[regionKey]||REGIONS.us;
@@ -1159,7 +1186,7 @@ const handleApplyAIPatch=useCallback((patches)=>{setRowData(prev=>{const nx={...
 
 // fullState + loadState must be declared before handleShare (dep array evaluated during render)
 const fullState={granularity,numPeriods,startYear,activeScenario,rows,rowData};
-const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows)setRows(s.rows);if(s.rowData)setRowData(s.rowData);};
+const loadState=(s)=>{if(!s)return;if(s.granularity)setGranularity(s.granularity);if(s.numPeriods)setNumPeriods(s.numPeriods);if(s.startYear)setStartYear(s.startYear);if(s.activeScenario)setActiveScenario(s.activeScenario);if(s.rows){const np=s.numPeriods||numPeriods;const{rows:mr,rowData:mrd}=reconcileLoadedRows(s.rows,s.rowData,np);setRows(mr);setRowData(mrd);}else if(s.rowData)setRowData(s.rowData);};
 
 // Share: save snapshot + model to localStorage, copy URL to clipboard
 const handleShare=useCallback(async ()=>{
