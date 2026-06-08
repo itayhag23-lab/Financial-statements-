@@ -1,9 +1,9 @@
-import React, { Suspense, lazy, useEffect } from 'react';
-import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { page } from './lib/analytics';
 
 const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
@@ -45,10 +45,38 @@ function PageTracker() {
   return null;
 }
 
+// Handles the return trip from an OAuth provider (e.g. Google). Supabase only
+// honours the `redirectTo` we request if that exact URL is in the project's
+// Redirect URLs allow-list; otherwise it silently falls back to the Site URL
+// (the landing page). Either way the OAuth response lands with the session
+// tokens in the URL (`#access_token=…` for implicit, `?code=…` for PKCE).
+// We detect that on first render and, once the session is established, forward
+// the user to the dashboard — so sign-in works regardless of the allow-list.
+function OAuthRedirectHandler() {
+  const user = useAuth();
+  const navigate = useNavigate();
+  const isOAuthReturn = useRef(
+    typeof window !== 'undefined' && (
+      window.location.hash.includes('access_token') ||
+      new URLSearchParams(window.location.search).has('code')
+    )
+  );
+
+  useEffect(() => {
+    if (isOAuthReturn.current && user) {
+      isOAuthReturn.current = false;
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <PageTracker />
+      <OAuthRedirectHandler />
       <Routes>
         <Route path="/"           element={<LandingPage />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
