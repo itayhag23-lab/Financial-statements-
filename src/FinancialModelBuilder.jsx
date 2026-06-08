@@ -1,6 +1,6 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { capture } from './lib/analytics';
@@ -91,7 +91,7 @@ income:[
 {id:'op-inc',label:'Operating Income (EBIT)',type:'computed',parentId:null,deletable:false,formula:[{rowId:'gross',sign:1},{rowId:'opex',sign:-1}]},
 {id:'non-op',label:'Non-Operating Items',type:'parent',parentId:null,deletable:false},
 {id:'int-inc',label:'Interest Income',type:'leaf',parentId:'non-op',defaultMode:'manual',deletable:true},
-{id:'int-exp',label:'Interest Expense',type:'leaf',parentId:'non-op',defaultMode:'manual',deletable:true},
+{id:'int-exp',label:'Interest Expense (negative)',type:'leaf',parentId:'non-op',defaultMode:'manual',deletable:true},
 {id:'other-no',label:'Other Income / (Expense)',type:'leaf',parentId:'non-op',defaultMode:'manual',deletable:true},
 {id:'pretax',label:'Pretax Income',type:'computed',parentId:null,deletable:false,formula:[{rowId:'op-inc',sign:1},{rowId:'non-op',sign:1}]},
 {id:'tax',label:'Tax Provision',type:'leaf',parentId:null,defaultMode:'percentOfRevenue',deletable:false},
@@ -118,12 +118,12 @@ balance:[
 ],
 cashFlow:[
 {id:'cfo',label:'Cash from Operations',type:'parent',parentId:null,deletable:false},
-{id:'cf-ni',label:'Net Income',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:false},
+{id:'cf-ni',label:'Net Income',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:false,linked:true,linkLabel:'from Income Statement'},
 {id:'cf-da',label:'Depreciation & Amortization',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true},
 {id:'cf-sbc',label:'Stock-based Compensation',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true},
-{id:'cf-ar',label:'Change in Accounts Receivable',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true},
-{id:'cf-inv',label:'Change in Inventory',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true},
-{id:'cf-ap',label:'Change in Accounts Payable',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true},
+{id:'cf-ar',label:'Change in Accounts Receivable',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true,linked:true,linkLabel:'from Balance Sheet'},
+{id:'cf-inv',label:'Change in Inventory',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true,linked:true,linkLabel:'from Balance Sheet'},
+{id:'cf-ap',label:'Change in Accounts Payable',type:'leaf',parentId:'cfo',defaultMode:'manual',deletable:true,linked:true,linkLabel:'from Balance Sheet'},
 {id:'cfi',label:'Cash from Investing',type:'parent',parentId:null,deletable:false},
 {id:'cf-capex',label:'Capital Expenditures (negative)',type:'leaf',parentId:'cfi',defaultMode:'manual',deletable:true},
 {id:'cf-acq',label:'Acquisitions (negative)',type:'leaf',parentId:'cfi',defaultMode:'manual',deletable:true},
@@ -131,7 +131,8 @@ cashFlow:[
 {id:'cf-debt',label:'Debt Issued / (Repaid)',type:'leaf',parentId:'cff',defaultMode:'manual',deletable:true},
 {id:'cf-equity',label:'Equity Issued',type:'leaf',parentId:'cff',defaultMode:'manual',deletable:true},
 {id:'cf-div',label:'Dividends Paid (negative)',type:'leaf',parentId:'cff',defaultMode:'manual',deletable:true},
-{id:'cf-net',label:'Net Change in Cash',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cfi',sign:1},{rowId:'cff',sign:1}]}
+{id:'cf-net',label:'Net Change in Cash',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cfi',sign:1},{rowId:'cff',sign:1}]},
+{id:'cf-fcf',label:'Free Cash Flow',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cfi',sign:1}]}
 ]};
 
 const ROW_LIBRARY={
@@ -196,10 +197,10 @@ other:['Without a known business type, sanity-checking is harder — verify assu
 };
 
 // HELPERS
-function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,manualValues:Array(numPeriods).fill(0)};}
+function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,declineAmount:0,manualValues:Array(numPeriods).fill(0)};}
 function resizeRowData(entry,numPeriods){return{...entry,manualValues:Array(numPeriods).fill(0).map((_,i)=>entry.manualValues[i]??0),customRates:Array(Math.max(0,numPeriods-1)).fill(0).map((_,i)=>entry.customRates[i]??0)};}
 function fmt(n,{paren=false,abbreviate=false}={}){if(n===null||n===undefined||Number.isNaN(n))return'—';const r=Math.round(n);if(r===0)return'0';if(abbreviate){const abs=Math.abs(r);if(abs>=1e6)return(r>=0?'':'−')+(abs/1e6).toFixed(1)+'M';if(abs>=1000)return(r>=0?'':'−')+(abs/1000).toFixed(1)+'K';}if(paren&&r<0)return`(${Math.abs(r).toLocaleString('en-US')})`;return r.toLocaleString('en-US');}
-function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}return out.map(v=>Math.round(v));}
+function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,declineAmount,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}else if(mode==='decline'){const d=+(declineAmount||0);out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=Math.max(0,out[i-1]-d);}return out.map(v=>Math.round(v));}
 
 function computeTree(rows,rowData,numPeriods,totalRevenue){
 const byId=Object.fromEntries(rows.map(r=>[r.id,r]));
@@ -237,7 +238,7 @@ const niArr=isVals['net-inc']||Array(numPeriods).fill(0);
 const arArr=userBS['ar']||Array(numPeriods).fill(0);
 const invArr=userBS['inv']||Array(numPeriods).fill(0);
 const apArr=userBS['ap']||Array(numPeriods).fill(0);
-const blank=(vals)=>({mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,manualValues:vals});
+const blank=(vals)=>({mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,declineAmount:0,manualValues:vals});
 const delta=(arr,sign)=>arr.map((v,i)=>sign*(v-(i===0?0:arr[i-1])));
 const cfOverride={...rowData,'cf-ni':blank(niArr.slice()),'cf-ar':blank(delta(arArr,-1)),'cf-inv':blank(delta(invArr,-1)),'cf-ap':blank(delta(apArr,+1))};
 const cfVals=cfRows.length?computeTree(cfRows,cfOverride,numPeriods,totalRevenue):{};
@@ -338,7 +339,7 @@ const base=computeScenario(rows,rowData,numPeriods);const baseCum=(base.values.n
 const candidates=rows.income.filter(r=>r.type==='leaf');const results=[];
 for(const r of candidates){
 const entry=rowData[r.id];if(!entry)continue;
-const shift=(factor)=>{const s={...rowData};const n={...entry};if(entry.mode==='manual')n.manualValues=entry.manualValues.map(v=>v*factor);else if(entry.mode==='flatGrowth'||entry.mode==='customGrowth')n.baseValue=entry.baseValue*factor;else if(entry.mode==='percentOfRevenue')n.pctOfRev=entry.pctOfRev*factor;s[r.id]=n;return s;};
+const shift=(factor)=>{const s={...rowData};const n={...entry};if(entry.mode==='manual')n.manualValues=entry.manualValues.map(v=>v*factor);else if(entry.mode==='flatGrowth'||entry.mode==='customGrowth'||entry.mode==='decline')n.baseValue=entry.baseValue*factor;else if(entry.mode==='percentOfRevenue')n.pctOfRev=entry.pctOfRev*factor;s[r.id]=n;return s;};
 const upC=(computeScenario(rows,shift(1.2),numPeriods).values.netIncome||[]).reduce((a,b)=>a+b,0);
 const dnC=(computeScenario(rows,shift(0.8),numPeriods).values.netIncome||[]).reduce((a,b)=>a+b,0);
 const uD=upC-baseCum,dD=dnC-baseCum,sw=Math.abs(uD)+Math.abs(dD);
@@ -383,7 +384,7 @@ const lp=pts[pts.length-1];
 return(<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{overflow:'visible',display:'block'}}><path d={areaD} fill={color} fillOpacity={fillOpacity}/>{showZero&&zeroY!==null&&<line x1="0" y1={zeroY} x2={width} y2={zeroY} stroke={C.faint} strokeWidth="0.5" strokeDasharray="2 2"/>}<path d={pathD} fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>{showLastDot&&lp&&<circle cx={lp[0]} cy={lp[1]} r="2" fill={color}/>}</svg>);
 };
 
-const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'}};
+const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'},decline:{label:'Fixed paydown',short:'Paydown',icon:TrendingDown,blurb:'Start at a base, subtract a fixed amount each period (e.g. debt repayment). Floors at 0.'}};
 
 function ModeMenu({currentMode,onChange,allowed}){
 const[open,setOpen]=useState(false);
@@ -512,11 +513,11 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 // Hierarchical TableRow
-function HRow({row,depth,isExpanded,hasChildren,onToggle,entry,computedValues,periods,onUpdateData,onDelete,onOpenCustom,scenarioKey}){
+function HRow({row,depth,isExpanded,hasChildren,onToggle,entry,computedValues,revenueValues,periods,onUpdateData,onDelete,onOpenCustom,scenarioKey}){
 const indent=8+depth*20;
 const isParent=row.type==='parent',isComp=row.type==='computed',isLeaf=row.type==='leaf';
 const sColor=(()=>{if(!computedValues||computedValues.length<2)return C.ink2;if(isComp)return C.green;if(isParent)return C.ink;const l=computedValues[computedValues.length-1],f=computedValues[0];if(l<0)return C.rust;if(l<f)return C.gold;return C.green;})();
-const isTotal=isComp&&(row.id==='net-inc'||row.id==='cf-net'||row.id==='total-le');
+const isTotal=isComp&&(row.id==='net-inc'||row.id==='cf-net'||row.id==='cf-fcf'||row.id==='total-le');
 const grid={gridTemplateColumns:`300px repeat(${periods.length},minmax(78px,1fr)) 84px 56px`};
 
 if(isParent||isComp){
@@ -534,12 +535,41 @@ return(<div className="grid items-center" style={{...grid,background:bg,borderTo
 </div>);
 }
 
+// Linked rows (e.g. cash-flow Net Income) pull their value from another
+// statement — render read-only so users don't try to overtype a 0.
+if(row.linked){
+return(<div className="grid items-center" style={{...grid,borderTop:`1px solid ${C.borderSoft}`,background:C.bgWarm}}>
+<div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
+<span style={{width:18,display:'inline-block'}}/>
+<div className="flex-1 min-w-0">
+<div className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</div>
+<div className="mt-0.5"><span className="ff-body text-[10px] px-1.5 py-0.5 rounded-sm inline-flex items-center gap-1" style={{color:C.green,background:C.greenSoft,border:`1px solid ${C.green}44`}}><RefreshCw size={9}/>{row.linkLabel||'auto-linked'}</span></div>
+</div>
+</div>
+{periods.map((_,i)=>{const v=computedValues?.[i]??0;return(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:v<0?C.rust:C.ink2}}><AnimatedNumber value={v} tweenKey={`${row.id}-${i}-${scenarioKey}`} format={x=>fmt(x,{paren:true})}/></div>);})}
+<div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
+<div/>
+</div>);
+}
+
 const mode=entry?.mode||'manual';
 const isRevRow=row.parentId==='rev';
-const allowed=['manual','flatGrowth','customGrowth',...(isRevRow?[]:['percentOfRevenue'])];
+const allowed=['manual','flatGrowth','customGrowth','decline',...(isRevRow?[]:['percentOfRevenue'])];
+// Switching mode carries the current computed series into the new mode's
+// inputs so the numbers never reset to zero.
+const changeMode=(m)=>{
+  if(m===mode)return;
+  const cur=computedValues||[];const patch={mode:m};
+  if(m==='manual'){patch.manualValues=periods.map((_,i)=>cur[i]??0);}
+  else if(m==='flatGrowth'){patch.baseValue=cur[0]??0;}
+  else if(m==='decline'){patch.baseValue=cur[0]??0;if(!entry.declineAmount&&cur.length>1){patch.declineAmount=Math.max(0,Math.round((cur[0]-cur[cur.length-1])/Math.max(1,cur.length-1)));}}
+  else if(m==='customGrowth'){patch.baseValue=cur[0]??0;patch.customRates=periods.slice(1).map((_,i)=>{const a=cur[i],b=cur[i+1];return(a&&a!==0)?Math.round(((b-a)/Math.abs(a))*1000)/10:0;});}
+  else if(m==='percentOfRevenue'){const r0=revenueValues?.[0]||0;patch.pctOfRev=r0>0?Math.round((cur[0]/r0)*1000)/10:(entry.pctOfRev||0);}
+  onUpdateData(patch);
+};
 const cells=[];
 if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
-else if(mode==='flatGrowth'||mode==='customGrowth'){cells.push(<NumberInput key={0} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
+else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 else if(mode==='percentOfRevenue'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 
 return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1px solid ${C.borderSoft}`}}>
@@ -548,8 +578,9 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 <div className="flex-1 min-w-0">
 <div className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</div>
 <div className="mt-0.5 flex items-center gap-2 flex-wrap">
-<ModeMenu currentMode={mode} onChange={m=>onUpdateData({mode:m})} allowed={allowed}/>
+<ModeMenu currentMode={mode} onChange={changeMode} allowed={allowed}/>
 {mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
+{mode==='decline'&&<div className="flex items-center gap-1"><span className="ff-num text-[10.5px]" style={{color:C.muted}}>−</span><input type="number" value={entry.declineAmount||0} onChange={e=>onUpdateData({declineAmount:+e.target.value||0})} className="w-16 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>/per</span></div>}
 {mode==='percentOfRevenue'&&<div className="flex items-center gap-1"><input type="number" value={entry.pctOfRev||0} onChange={e=>onUpdateData({pctOfRev:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>% of rev</span></div>}
 {mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit rates →</button>}
 </div>
@@ -577,7 +608,7 @@ return(<div className="rounded-lg overflow-hidden" style={{background:C.surface,
 {periods.map((p,i)=>(<div key={i} className="px-3 py-2.5 ff-body text-right" style={{color:C.ink2}}><span className="ff-num text-[11px]">{p}</span></div>))}
 <div className="px-3 py-2.5 label-eyebrow ff-body text-center" style={{color:C.muted}}>Trend</div><div/>
 </div>
-{visible.map(({row,depth,hasChildren})=>(<HRow key={row.id} row={row} depth={depth} hasChildren={hasChildren} isExpanded={expandedIds.has(row.id)} onToggle={()=>onToggleExpand(row.id)} entry={rowData[row.id]} computedValues={computedValues[row.id]} periods={periods} onUpdateData={p=>onUpdateRowData(row.id,p)} onDelete={()=>onDeleteRow(row.id)} onOpenCustom={()=>onOpenCustom(row)} scenarioKey={scenarioKey}/>))}
+{visible.map(({row,depth,hasChildren})=>(<HRow key={row.id} row={row} depth={depth} hasChildren={hasChildren} isExpanded={expandedIds.has(row.id)} onToggle={()=>onToggleExpand(row.id)} entry={rowData[row.id]} computedValues={computedValues[row.id]} revenueValues={computedValues.revenue} periods={periods} onUpdateData={p=>onUpdateRowData(row.id,p)} onDelete={()=>onDeleteRow(row.id)} onOpenCustom={()=>onOpenCustom(row)} scenarioKey={scenarioKey}/>))}
 <div className="px-4 py-3" style={{background:C.surfaceAlt,borderTop:`1px solid ${C.border}`}}><button onClick={onAddRow} className="ff-body text-[12px] flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{color:C.ink2,background:C.surface,border:`1px solid ${C.border}`}}><Plus size={13}/>Add line item</button></div>
 </div>);
 }
@@ -588,7 +619,6 @@ const rev=computed.values.revenue||[];const gp=computed.values.grossProfit||[];c
 const gM=rev.map((r,i)=>r>0?(gp[i]/r)*100:0);const oM=rev.map((r,i)=>r>0?(op[i]/r)*100:0);const nM=rev.map((r,i)=>r>0?(ni[i]/r)*100:0);
 const rw=ni.map((inc,i)=>{if(inc>=0)return null;const mb=Math.abs(inc)/pm;if(mb===0)return null;return Math.round(cash[i]/mb);});
 const Row=({label,vals,suffix='%',toneFn,hint,sparkValues,sparkColor})=>(<div className="grid items-center" style={{gridTemplateColumns:`220px repeat(${periods.length},minmax(70px,1fr)) 90px`,borderTop:`1px solid ${C.borderSoft}`}}><div className="px-5 py-2.5"><div className="ff-body text-[12.5px]" style={{color:C.ink2}}>{label}</div>{hint&&<div className="ff-body text-[10px] mt-0.5" style={{color:C.faint}}>{hint}</div>}</div>{vals.map((v,i)=>{const d=(v===null||Number.isNaN(v))?'—':(Math.round(v*10)/10).toFixed(1);const tone=toneFn?toneFn(v):C.ink;return(<div key={i} className="ff-num text-[12.5px] px-3 py-2.5 text-right" style={{color:tone}}>{d}{d!=='—'&&<span className="ml-0.5" style={{color:C.muted,fontSize:10}}>{suffix}</span>}</div>);})}<div className="flex items-center justify-center px-2"><Sparkline values={sparkValues} color={sparkColor||C.ink2} width={72} height={20} smooth/></div></div>);
-const niMax=Math.max(...ni.map(Math.abs),1);
 return(<div className="space-y-5">
 <div className="rounded-lg overflow-hidden" style={{background:C.surface,border:`1px solid ${C.border}`}}>
 <div className="px-5 pt-4 pb-3 flex items-baseline justify-between flex-wrap gap-2" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Per-period analysis</Eyebrow><h3 className="ff-display text-[24px] leading-tight mt-0.5" style={{color:C.ink}}>Margin & runway profile</h3></div><span className="ff-body text-[11px]" style={{color:C.muted}}>{granularity==='annual'?'Annual':'Quarterly'} · {periods.length} periods</span></div>
@@ -599,15 +629,16 @@ return(<div className="space-y-5">
 <Row label="Runway (months)" hint="Cash ÷ monthly net loss; ∞ if profitable" vals={rw} suffix="mo" sparkValues={rw.map(v=>v===null?0:Math.max(0,v))} sparkColor={C.gold} toneFn={v=>v===null?C.green:v<12?C.rust:C.ink}/>
 </div>
 <div className="rounded-lg p-6" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-<div className="flex items-baseline justify-between mb-4 flex-wrap gap-2"><div><Eyebrow color={C.gold}>Visualization</Eyebrow><h3 className="ff-display text-[24px] leading-tight mt-0.5" style={{color:C.ink}}>Net income across the horizon</h3></div><div className="ff-body text-[11px]" style={{color:C.muted}}>Bars below zero = loss period</div></div>
-<div className="flex items-end gap-2 h-40 px-2 relative" style={{borderBottom:`1px solid ${C.border}`}}>
-<div className="absolute left-0 right-0" style={{top:'50%',height:1,background:C.border,zIndex:0}}/>
-{ni.map((v,i)=>{const h=Math.max(2,Math.abs(v)/niMax*70);const pos=v>=0;return(<div key={i} className="flex-1 flex flex-col items-center" style={{height:'100%',justifyContent:'center',position:'relative'}}>
-<div style={{height:'50%',display:'flex',alignItems:'flex-end',justifyContent:'center',visibility:pos?'visible':'hidden'}}><div className="w-full mx-1 rounded-t-sm relative" style={{height:pos?`${h}%`:0,background:C.green,opacity:0.85}}><span className="ff-num text-[9.5px] absolute left-0 right-0 text-center" style={{top:-14,color:C.green}}>{fmt(v,{abbreviate:true})}</span></div></div>
-<div style={{height:'50%',display:'flex',alignItems:'flex-start',justifyContent:'center',visibility:pos?'hidden':'visible'}}><div className="w-full mx-1 rounded-b-sm relative" style={{height:pos?0:`${h}%`,background:C.rust,opacity:0.85}}><span className="ff-num text-[9.5px] absolute left-0 right-0 text-center" style={{bottom:-14,color:C.rust}}>{fmt(v,{abbreviate:true})}</span></div></div>
-</div>);})}
-</div>
-<div className="flex pt-3 px-2">{periods.map((p,i)=>(<div key={i} className="flex-1 ff-num text-[10.5px] text-center" style={{color:C.muted}}>{p}</div>))}</div>
+<div className="flex items-baseline justify-between mb-4 flex-wrap gap-2"><div><Eyebrow color={C.gold}>Visualization</Eyebrow><h3 className="ff-display text-[24px] leading-tight mt-0.5" style={{color:C.ink}}>Net income across the horizon</h3></div><div className="ff-body text-[11px]" style={{color:C.muted}}>Line below zero = loss period</div></div>
+{(()=>{const W=1000,H=150,padTop=22,padBot=10,gh=H-padTop-padBot;const max=Math.max(...ni,0),min=Math.min(...ni,0),range=(max-min)||1;const x=i=>ni.length>1?(i/(ni.length-1))*W:W/2;const y=v=>padTop+gh-((v-min)/range)*gh;const zeroY=y(0);const pts=ni.map((v,i)=>[x(i),y(v)]);const lineD=pts.length>1?(pts.length>2?smoothPath(pts):'M '+pts.map(p=>p.join(',')).join(' L ')):'';const areaD=lineD?`${lineD} L ${x(ni.length-1)},${zeroY} L ${x(0)},${zeroY} Z`:'';const lastPos=ni[ni.length-1]>=0;const lineColor=lastPos?C.green:C.rust;return(
+<svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{display:'block',height:160,overflow:'visible'}}>
+<defs><linearGradient id="niFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={lineColor} stopOpacity="0.22"/><stop offset="100%" stopColor={lineColor} stopOpacity="0.02"/></linearGradient></defs>
+<line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke={C.border} strokeWidth="1" strokeDasharray="4 4"/>
+{areaD&&<path d={areaD} fill="url(#niFill)"/>}
+{lineD&&<path d={lineD} fill="none" stroke={lineColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>}
+{pts.map((p,i)=>{const v=ni[i];const pos=v>=0;return(<g key={i}><circle cx={p[0]} cy={p[1]} r="4" fill={pos?C.green:C.rust} stroke={C.surface} strokeWidth="1.5"/><text x={p[0]} y={pos?p[1]-10:p[1]+18} textAnchor="middle" style={{fontSize:13,fill:pos?C.green:C.rust,fontWeight:600}} className="ff-num">{fmt(v,{abbreviate:true})}</text></g>);})}
+</svg>);})()}
+<div className="flex pt-2 px-2" style={{borderTop:`1px solid ${C.border}`}}>{periods.map((p,i)=>(<div key={i} className="flex-1 ff-num text-[10.5px] text-center" style={{color:C.muted}}>{p}</div>))}</div>
 </div>
 </div>);
 }

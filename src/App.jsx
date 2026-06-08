@@ -1,9 +1,9 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { page } from './lib/analytics';
 
 const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
@@ -45,10 +45,29 @@ function PageTracker() {
   return null;
 }
 
+// After an OAuth round-trip the browser may land on the homepage (depending on
+// Supabase's Site URL config). Once the session resolves, send the user to the
+// destination we stashed before redirecting.
+function PostAuthRedirect() {
+  const user = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!user) return;
+    let dest;
+    try { dest = sessionStorage.getItem('koala:postAuthRedirect'); } catch {}
+    if (dest) {
+      try { sessionStorage.removeItem('koala:postAuthRedirect'); } catch {}
+      navigate(dest, { replace: true });
+    }
+  }, [user, navigate]);
+  return null;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <PageTracker />
+      <PostAuthRedirect />
       <Routes>
         <Route path="/"           element={<LandingPage />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
