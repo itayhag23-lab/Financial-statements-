@@ -36,19 +36,33 @@ export async function signInWithEmail(email, password) {
 
 export async function signUpWithEmail(email, password) {
   if (!supabase) throw new Error('Auth not configured');
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
   capture('auth_signed_up', { method: 'email' });
-  // Welcome email — fire-and-forget, never blocks the signup flow
-  fetch('/api/send-email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: email,
-      subject: 'Welcome to Koala Statements',
-      html: welcomeEmail(email),
-    }),
-  }).catch(() => {});
+  // Welcome email — fire-and-forget, never blocks the signup flow.
+  // The endpoint requires auth and always mails the authenticated user, so
+  // we only attempt this when sign-up returned a live session (i.e. when
+  // email confirmation is disabled). If confirmation is required, Supabase's
+  // own confirmation email covers the "you're in" moment.
+  const token = data?.session?.access_token;
+  if (token) {
+    fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        subject: 'Welcome to Koala Statements',
+        html: welcomeEmail(email),
+      }),
+    }).catch(() => {});
+  }
+}
+
+export async function getAccessToken() {
+  if (!supabase) return null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch { return null; }
 }
 
 export async function signInWithGoogle() {

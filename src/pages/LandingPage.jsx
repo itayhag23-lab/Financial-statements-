@@ -271,14 +271,13 @@ function DashboardMock() {
   );
 }
 
-// ── Integration badges ──────────────────────────────────────────────────────
+// ── Import / export badges — only formats Koala actually reads & writes ─────
 const INTEGRATIONS = [
-  { name: 'QuickBooks', abbr: 'QB', color: '#2CA01C' },
-  { name: 'Xero',       abbr: 'Xe', color: '#13B5EA' },
-  { name: 'NetSuite',   abbr: 'NS', color: '#FF6C2C' },
-  { name: 'Salesforce', abbr: 'SF', color: '#00A1E0' },
-  { name: 'Stripe',     abbr: 'St', color: '#6772E5' },
-  { name: 'Excel',      abbr: 'Ex', color: '#217346' },
+  { name: 'Excel (.xls)',  abbr: 'Ex', color: '#217346' },
+  { name: 'CSV import',    abbr: 'CSV', color: '#0EA5E9' },
+  { name: 'JSON',          abbr: '{ }', color: '#64748B' },
+  { name: 'Google sign-in',abbr: 'G',  color: '#4285F4' },
+  { name: 'Live share links', abbr: '🔗', color: '#10B981' },
 ];
 
 function IntegrationBadge({ name, abbr, color }) {
@@ -299,7 +298,7 @@ const FEATURES = [
   { icon: BarChart3,   title: 'Automated 3-Statement Integration',  tag: null,       body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
   { icon: TrendingUp,  title: 'Institutional Benchmarking',        tag: null,       body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
   { icon: MessageSquare, title: 'Conversational What-If Analysis', tag: 'Exclusive', body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard — full undo history included.' },
-  { icon: Share2,      title: 'Investor-Ready Live Reports',       tag: 'Exclusive', body: 'Share a live, interactive report — not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
+  { icon: Share2,      title: 'Investor-Ready Live Reports',       tag: 'Exclusive', body: 'Share a live, interactive report with one click — not a dead PDF. Your investors and board explore the real numbers themselves, charts and all.' },
 ];
 
 function FeatureCard({ icon: Icon, title, body: text, tag }) {
@@ -442,7 +441,7 @@ export default function LandingPage() {
               )}
             </div>
             <div style={{ display: 'flex', gap: mob ? 12 : 20, marginTop: mob ? 16 : 22, flexWrap: 'wrap' }}>
-              {['No credit card required', 'SOC 2 compliant', '< 60 sec to first model'].map((t) => (
+              {['No credit card required', 'Free plan available', '< 60 sec to first model'].map((t) => (
                 <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: 'rgba(255,255,255,0.35)' }}>
                   <Check size={13} color={P.accent} />{t}
                 </div>
@@ -460,7 +459,7 @@ export default function LandingPage() {
       {/* INTEGRATION STRIP — scrolling marquee */}
       <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}`, padding: `14px 0` }}>
         <div style={{ ...body, fontSize: 11, color: P.muted, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>
-          Works with your stack
+          Import, export, and share your way
         </div>
         <div style={{ overflow: 'hidden', position: 'relative' }}>
           {/* fade masks at edges */}
@@ -545,17 +544,17 @@ export default function LandingPage() {
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
           <div style={{ display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 32 : 64, alignItems: 'center' }}>
             <div>
-              <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
-              <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
+              <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Privacy</div>
+              <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Built carefully, explained honestly.</h2>
               <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: 'rgba(248,250,252,0.5)', marginBottom: 32 }}>
-                Your financial data stays private and secure. We've built Koala to meet the standards that institutional buyers and investors expect.
+                We're an early-stage product, so we won't claim certifications we don't have. Here's exactly how your data is protected today.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {[
-                  { icon: Shield,    label: 'SOC 2 Type II',             desc: 'Annual third-party audit of our security controls' },
-                  { icon: Lock,      label: '256-bit AES Encryption',     desc: 'At rest and in transit, on every plan' },
-                  { icon: Award,     label: 'GDPR & CCPA Compliant',      desc: 'Full data residency and deletion on request' },
-                  { icon: FileText,  label: 'Role-Based Access Control',  desc: 'Granular permissions for team and board sharing' },
+                  { icon: Lock,      label: 'Encrypted in transit & at rest', desc: 'TLS everywhere, backed by Supabase + Vercel infrastructure' },
+                  { icon: Shield,    label: 'Row-level database security',   desc: 'Your saved models are only ever readable by you — enforced at the database layer' },
+                  { icon: Award,     label: 'Your data stays yours',         desc: "We don't sell it, and we don't use it to train AI models" },
+                  { icon: FileText,  label: 'Share links you control',       desc: 'Public links use unguessable IDs and only ever expose the read-only summary you see — never your full model' },
                 ].map(({ icon: Icon, label, desc }) => (
                   <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                     <div style={{ width: 36, height: 36, borderRadius: 9, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -571,23 +570,26 @@ export default function LandingPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {['SOC 2', 'GDPR', 'ISO 27001', 'CCPA'].map((badge) => (
-                  <div key={badge} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
+                {[
+                  { label: 'TLS encryption', sub: 'In transit, always' },
+                  { label: 'AES-256 at rest', sub: 'Via Supabase' },
+                  { label: 'Row-level security', sub: 'Database-enforced' },
+                  { label: 'No data sold', sub: 'Ever' },
+                ].map(({ label, sub }) => (
+                  <div key={label} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.3)`, margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Shield size={16} color={P.accent} />
                     </div>
-                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{badge}</div>
-                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>Compliant</div>
+                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{label}</div>
+                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>{sub}</div>
                   </div>
                 ))}
               </div>
               <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {['🇺🇸 US East', '🇪🇺 EU West', '🌏 APAC'].map((r) => (
-                    <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
-                  ))}
-                </div>
+                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 8, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Built on certified infrastructure</div>
+                <p style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, margin: 0 }}>
+                  Koala runs on Supabase (SOC 2 Type II certified) and Vercel, with servers in the US and EU. We're a small, early-stage team — formal certifications of our own (SOC 2, ISO 27001) are on our roadmap as we grow, not something we'll claim before they're real.
+                </p>
               </div>
             </div>
           </div>
@@ -600,24 +602,24 @@ export default function LandingPage() {
           <Reveal style={{ textAlign: 'center', marginBottom: mob ? 32 : 52 }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
-            <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
+            <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2 }}>Start free, no card required. Upgrade only when you need cloud sync and more AI.</p>
           </Reveal>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start', flexDirection: mob ? 'column' : 'row' }}>
+            <PriceCard
+              tier="Free"
+              price="$0"
+              period="/ forever"
+              blurb="Build real, fully-linked 3-statement models — no signup, no time limit, no catch."
+              features={['Unlimited models, saved in your browser', '3-statement engine + all scenarios', '17+ industry benchmarks', 'Excel & JSON export', 'AI model generation (sign in, fair use)']}
+              cta="Start building free"
+              ctaHref="/auth"
+            />
             <PriceCard
               tier="Growth"
               price="$79"
               period="/ month"
-              blurb="For founders and analysts who need a serious modeling tool — not a spreadsheet."
-              features={['Unlimited projects', '3-statement engine + all scenarios', '17+ industry benchmarks', 'AI advisor (fair use)', 'JSON export']}
-              cta="Start free trial"
-              ctaHref="/auth"
-            />
-            <PriceCard
-              tier="Pro"
-              price="$249"
-              period="/ month"
-              blurb="For finance teams that need AI-native automation, live sharing, and board-ready exports."
-              features={['Everything in Growth', 'AI builds & edits your model', 'Conversational what-if analysis', 'Shareable live investor reports', 'Pitch one-pager export', 'Priority AI advisor', 'Team collaboration (up to 5)']}
+              blurb="For founders and analysts who want their models backed up and synced everywhere."
+              features={['Everything in Free', 'Cloud sync across every device', 'Shareable live investor reports', 'AI advisor for what-if analysis', 'Priority AI access']}
               cta="Start free trial"
               ctaHref="/auth"
               highlight
@@ -626,9 +628,9 @@ export default function LandingPage() {
               tier="Enterprise"
               price=""
               period=""
-              blurb="For organizations that need custom integrations, SSO, dedicated support, and SLAs."
-              features={['Everything in Pro', 'QuickBooks / Xero / NetSuite sync', 'SAML SSO + SCIM provisioning', 'Custom data residency', 'Dedicated CSM + SLA', 'Audit logs + RBAC', 'Custom AI fine-tuning']}
-              cta="Contact Sales"
+              blurb="For organizations that want a custom fit — integrations, SSO, and dedicated support, scoped to what you actually need."
+              features={['Everything in Growth', 'Custom integrations & data sync (built to spec)', 'SSO on request', 'Dedicated support & SLA', 'Custom data residency']}
+              cta="Talk to us"
               ctaHref="/auth"
               enterprise
             />
@@ -650,7 +652,7 @@ export default function LandingPage() {
             Build your model free <ArrowRight size={18} />
           </Link>
           <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
-            No credit card · Cancel anytime · SOC 2 compliant
+            No credit card · Free plan available · Cancel anytime
           </div>
         </div>
       </section>

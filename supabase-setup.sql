@@ -24,13 +24,16 @@ CREATE POLICY "Users access only their own projects"
   WITH CHECK (auth.uid() = user_id);
 
 -- ── Shares (publicly readable — enables cross-device share links) ─────────────
+-- IMPORTANT: this table is readable by ANYONE with the row's id (see policy
+-- below), so it must only ever contain what the public share page displays —
+-- the read-only summary snapshot and display metadata. Never store the full
+-- editable model or the raw `wizard_answers` business description here; those
+-- stay private to the creator's own browser (see src/lib/persistence.js).
 CREATE TABLE IF NOT EXISTS shares (
   id             TEXT        PRIMARY KEY,
   user_id        UUID        REFERENCES auth.users(id) ON DELETE CASCADE,
   snapshot_json  JSONB       NOT NULL DEFAULT '{}',
   meta_json      JSONB,
-  model_json     JSONB,
-  wizard_answers JSONB,
   created_at     TIMESTAMPTZ DEFAULT NOW(),
   expires_at     TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '90 days')
 );
@@ -61,3 +64,13 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER projects_updated_at
   BEFORE UPDATE ON projects
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ── Migration for existing deployments ────────────────────────────────────────
+-- Earlier versions of this schema stored `model_json` and `wizard_answers` on
+-- the publicly-readable `shares` table — anyone with (or guessing) a share id
+-- could read the full editable model and the raw business description behind
+-- it. Run this once to remove that exposure from any project created before
+-- this fix (existing rows are NOT retroactively re-shared; this just deletes
+-- the leaked columns and their data).
+ALTER TABLE shares DROP COLUMN IF EXISTS model_json;
+ALTER TABLE shares DROP COLUMN IF EXISTS wizard_answers;

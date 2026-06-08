@@ -1,15 +1,17 @@
+const { createClient } = require('@supabase/supabase-js');
+
 // Rate limiting via Upstash Redis REST API (zero extra packages).
 // Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel to activate.
 // Without those vars the function still works — rate limiting is simply skipped.
 const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-const RATE_LIMIT  = 15;   // AI requests per hour per IP
+const RATE_LIMIT  = 15;   // AI requests per hour per signed-in user
 const WINDOW_S    = 3600;
 
-async function checkRateLimit(ip) {
+async function checkRateLimit(userId) {
   if (!REDIS_URL || !REDIS_TOKEN) return { ok: true };
   try {
-    const key = `rl:chat:${ip}`;
+    const key = `rl:chat:${userId}`;
     const r = await fetch(`${REDIS_URL}/pipeline`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
@@ -53,9 +55,29 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Rate limiting
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-  const rl = await checkRateLimit(ip);
+  // Require a signed-in user — the AI backend burns paid quota and must not
+  // be reachable by anonymous callers (open access invites abuse/cost spikes).
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+  const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
+  if (!supabaseUrl || !supabaseAnonKey || !token) {
+    return res.status(401).json({ error: 'Sign in to use the AI assistant.' });
+  }
+
+  let userId;
+  try {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user?.id) return res.status(401).json({ error: 'Sign in to use the AI assistant.' });
+    userId = data.user.id;
+  } catch {
+    return res.status(401).json({ error: 'Sign in to use the AI assistant.' });
+  }
+
+  // Rate limiting — per user, not per IP (IPs are shared/spoofable; accounts aren't)
+  const rl = await checkRateLimit(userId);
   if (!rl.ok) {
     res.setHeader('Retry-After', WINDOW_S);
     return res.status(429).json({ error: `Rate limit exceeded. You can make ${RATE_LIMIT} AI requests per hour.` });

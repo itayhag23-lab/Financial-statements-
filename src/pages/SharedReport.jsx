@@ -55,7 +55,7 @@ function NotFoundView() {
       <Logo size={32} />
       <h2 style={{ ...disp, fontSize: 28, fontWeight: 700, color: P.ink, margin: '24px 0 10px', letterSpacing: '-0.02em' }}>Link not found</h2>
       <p style={{ ...body, fontSize: 15, color: P.muted, marginBottom: 24, textAlign: 'center', maxWidth: 420 }}>
-        This share link was created on a different device or has expired. Share links are stored locally and only work on the same browser that created them.
+        This share link doesn't exist, has expired (links last 90 days), or was created on a different browser without cloud sync enabled.
       </p>
       <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 600, color: '#fff', background: P.ink, padding: '10px 20px', borderRadius: 9, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         Build your own model <ArrowRight size={15} />
@@ -87,9 +87,16 @@ export default function SharedReport() {
     })();
   }, [shareId]);
 
+  // The full editable model is only ever available in the *creator's* own
+  // browser cache (the public share record intentionally stores nothing more
+  // than the read-only summary — see persistence.js saveShare). On any other
+  // device we send people to a fresh model instead of pretending to copy one.
+  const canCopyModel = !!doc?.model;
+
   const openEditable = async () => {
     if (!doc || opening) return;
     setOpening(true);
+    if (!canCopyModel) { navigate('/app'); return; }
     const newId = genId();
     await saveProject(newId, {
       meta: {
@@ -104,6 +111,7 @@ export default function SharedReport() {
     });
     navigate(`/app/${newId}`);
   };
+  const copyLabel = canCopyModel ? 'Open editable copy' : 'Build your own model';
 
   if (notFound) return <NotFoundView />;
   if (!doc) return <LoadingView />;
@@ -143,7 +151,7 @@ export default function SharedReport() {
               disabled={opening}
               style={{ ...body, fontSize: 13, fontWeight: 600, color: '#fff', background: opening ? P.muted : P.bgDark, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: opening ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}
             >
-              {opening ? 'Opening…' : 'Open editable copy'} {!opening && <ExternalLink size={13} />}
+              {opening ? 'Opening…' : copyLabel} {!opening && <ExternalLink size={13} />}
             </button>
           </div>
         </div>
@@ -166,7 +174,7 @@ export default function SharedReport() {
               onClick={openEditable}
               style={{ ...body, fontSize: 14, fontWeight: 600, color: '#fff', background: P.accent, padding: '11px 20px', borderRadius: 9, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
             >
-              Open editable copy <ArrowRight size={15} />
+              {copyLabel} <ArrowRight size={15} />
             </button>
             <Link to="/app" style={{ ...body, fontSize: 14, fontWeight: 500, color: P.ink2, background: P.bg, border: `1px solid ${P.border}`, padding: '11px 20px', borderRadius: 9, textDecoration: 'none' }}>
               Build my own model →
@@ -294,7 +302,7 @@ export default function SharedReport() {
           <Logo size={22} />
           <div style={{ ...body, fontSize: 12, color: P.muted }}>Shared read-only view · Not financial advice</div>
           <button onClick={openEditable} style={{ ...body, fontSize: 13, fontWeight: 600, color: '#fff', background: P.accent, padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer' }}>
-            Open editable copy →
+            {copyLabel} →
           </button>
         </div>
       </footer>

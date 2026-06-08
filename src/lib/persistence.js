@@ -22,6 +22,10 @@ function safeSet(k, v) {
 function safeDel(k) { try { localStorage.removeItem(k); } catch {} }
 
 export function genId() {
+  // crypto.randomUUID() is cryptographically unguessable — required for share
+  // links, where a guessable ID would let strangers enumerate other people's
+  // models. Fall back only for very old browsers that lack the Web Crypto API.
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
@@ -179,18 +183,24 @@ export async function duplicateProject(id) {
 // ── Share links ───────────────────────────────────────────────────────────────
 
 export async function saveShare(id, doc) {
+  // Full payload (including the editable model + raw business description)
+  // is cached locally only — that's private to this browser/device and lets
+  // the *creator* open an editable copy of their own share from here.
   const payload = { ...doc, sharedAt: Date.now() };
   try { localStorage.setItem(shareKey(id), JSON.stringify(payload)); } catch {}
 
   const session = await getSession();
   try {
+    // The `shares` row is PUBLICLY READABLE by anyone with the link (and,
+    // since IDs are random, anyone who could guess one). It must therefore
+    // contain only what the share page actually displays — the read-only
+    // summary snapshot and display metadata. Never the full editable model
+    // or the raw `wizard_answers` business description: those are private.
     await supabase?.from('shares').upsert({
       id,
       user_id:       session?.user?.id || null,
       snapshot_json: doc.snapshot || {},
       meta_json:     doc.meta || {},
-      model_json:    doc.model || null,
-      wizard_answers: doc.wizardAnswers || null,
     });
   } catch (e) {
     console.warn('[koala] cloud share save failed, localStorage only:', e.message);
@@ -202,6 +212,11 @@ export async function saveShare(id, doc) {
 export async function loadShare(id) {
   if (!id) return null;
 
+  // Local cache may hold the full model (only ever written by the creator's
+  // own browser in saveShare above) — used to power "open editable copy"
+  // without ever round-tripping private data through the public share table.
+  const local = safeGet(shareKey(id));
+
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -210,12 +225,13 @@ export async function loadShare(id) {
         .eq('id', id)
         .single();
       if (!error && data) {
+        if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) return local && !isExpired(local) ? local : null;
         return {
-          meta:         data.meta_json || {},
-          model:        data.model_json || null,
-          wizardAnswers: data.wizard_answers || null,
-          snapshot:     data.snapshot_json || {},
-          sharedAt:     new Date(data.created_at).getTime(),
+          meta:          data.meta_json || {},
+          model:         local?.model || null,
+          wizardAnswers: local?.wizardAnswers || null,
+          snapshot:      data.snapshot_json || {},
+          sharedAt:      new Date(data.created_at).getTime(),
         };
       }
     } catch (e) {
@@ -223,5 +239,10 @@ export async function loadShare(id) {
     }
   }
 
-  return safeGet(shareKey(id));
+  return local && !isExpired(local) ? local : null;
+}
+
+function isExpired(doc) {
+  const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+  return !!doc?.sharedAt && (Date.now() - doc.sharedAt) > NINETY_DAYS_MS;
 }

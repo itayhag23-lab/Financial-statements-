@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
+import { getAccessToken } from './contexts/AuthContext';
 import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
@@ -25,6 +26,17 @@ class AppErrorBoundary extends Component {
       </div>
     );
   }
+}
+
+// AI features cost real money (Gemini quota) and must require a signed-in
+// user — the backend enforces this too, but we check client-side first so
+// people get a clear "sign in" message instead of a raw 401.
+const SIGN_IN_REQUIRED={error:{message:'Sign in to use AI features — it keeps the assistant free of abuse and on a fair-use budget for everyone.'},signInRequired:true};
+async function callChatAPI(body){
+const token=await getAccessToken();
+if(!token)return SIGN_IN_REQUIRED;
+const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
+return res.json();
 }
 
 const FontStyles=()=>(<style>{`
@@ -897,9 +909,8 @@ const generate=async()=>{
 const t=desc.trim();if(!t||status==='generating')return;
 setStatus('generating');setErr('');setResult(null);
 try{
-const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
-const data=await res.json();
-if(data.error){setErr('AI error: '+(data.error.message||data.error));setStatus('error');return;}
+const data=await callChatAPI({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]});
+if(data.error){setErr((data.signInRequired?'':'AI error: ')+(data.error.message||data.error));setStatus('error');return;}
 const text=data?.content?.[0]?.text;
 if(!text){setErr('No response from AI.');setStatus('error');return;}
 const raw=parseModelDraftJSON(text);
@@ -927,7 +938,7 @@ React.createElement('div',{style:{padding:'20px 22px'}},
 status!=='success'&&React.createElement('div',null,
 React.createElement('div',{className:'ff-body',style:{fontSize:13,color:C.ink2,marginBottom:10,lineHeight:1.55}},'Describe your business in plain English. The AI will select a sector, set realistic assumptions, and seed a complete model.'),
 React.createElement('textarea',{ref:taRef,value:desc,onChange:e=>setDesc(e.target.value),placeholder:'e.g. "A SaaS startup in Israel with ~$30K MRR targeting B2B clients, 3 employees, pre-Series A"',rows:4,className:'ff-body w-full',style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.bg,color:C.ink,fontSize:13.5,lineHeight:1.55,resize:'vertical',outline:'none',boxSizing:'border-box'}}),
-status==='error'&&React.createElement('div',{style:{marginTop:10,padding:'8px 12px',borderRadius:8,background:C.rustSoft,fontSize:12,color:C.rust,fontFamily:'Inter,system-ui,sans-serif'}},err)
+status==='error'&&React.createElement('div',{style:{marginTop:10,padding:'8px 12px',borderRadius:8,background:C.rustSoft,fontSize:12,color:C.rust,fontFamily:'Inter,system-ui,sans-serif'}},err,err.startsWith('Sign in')&&React.createElement('a',{href:'/auth',style:{color:C.rust,fontWeight:700,marginLeft:6,textDecoration:'underline'}},'Sign in →'))
 ),
 status==='success'&&result&&React.createElement('div',null,
 React.createElement('div',{style:{padding:'14px 16px',borderRadius:10,background:C.greenSoft,border:`1px solid ${C.green}55`,marginBottom:14}},
@@ -972,13 +983,8 @@ useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[msgs,lo
 const callAI=async(apiHistory)=>{
 setLoading(true);setError(null);
 try{
-const res=await fetch('/api/chat',{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
-});
-const data=await res.json();
-if(data.error){setError('API: '+(data.error.message||data.error));setLoading(false);return;}
+const data=await callChatAPI({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory});
+if(data.error){setError((data.signInRequired?'':'API: ')+(data.error.message||data.error));setLoading(false);return;}
 const reply=data?.content?.[0]?.text;
 if(!reply){setError('No response received.');setLoading(false);return;}
 // Detect ```patch [...] ``` blocks — strip from displayed text, show as diff card
@@ -1045,7 +1051,7 @@ React.createElement('div',{className:'anim-fade-in',style:{position:'fixed',zInd
         [0,1,2].map(i=>React.createElement('span',{key:i,style:{width:6,height:6,borderRadius:'50%',background:C.muted,display:'inline-block',animation:'dot 1.2s '+(i*0.2)+'s infinite'}}))
       )
     ),
-    error&&React.createElement('div',{style:{fontSize:11.5,padding:'8px 12px',borderRadius:8,background:C.rustSoft,color:C.rust}},error),
+    error&&React.createElement('div',{style:{fontSize:11.5,padding:'8px 12px',borderRadius:8,background:C.rustSoft,color:C.rust}},error,error.startsWith('Sign in')&&React.createElement('a',{href:'/auth',style:{color:C.rust,fontWeight:700,marginLeft:6,textDecoration:'underline'}},'Sign in →')),
     // What-if patch diff card
     pendingPatch&&!patchApplied&&onApplyPatch&&React.createElement('div',{className:'anim-fade-in',style:{background:C.bgWarm,border:`1px solid ${C.gold}66`,borderRadius:12,padding:'12px 14px',marginTop:4}},
       React.createElement('div',{className:'label-eyebrow ff-body',style:{color:C.gold,marginBottom:8,fontSize:9}},'PROPOSED CHANGES · REVIEW BEFORE APPLYING'),

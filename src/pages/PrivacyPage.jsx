@@ -58,17 +58,20 @@ export default function PrivacyPage() {
         </ul>
 
         <h2 style={S.h2}>4. Data retention</h2>
-        <p style={S.p}>Your account and model data is retained for as long as your account is active. If you delete your account, your data is removed from our systems within 30 days. Share links expire after 90 days by default.</p>
+        <p style={S.p}>Your account and model data is retained for as long as your account is active. Share links expire 90 days after creation and stop resolving after that point.</p>
+        <p style={S.p}>Self-serve account deletion and data export inside the app are on our roadmap but not yet built. Until then, requests are handled manually as described below.</p>
 
         <h2 style={S.h2}>5. Your rights</h2>
-        <p style={S.p}>You have the right to access, correct, export, or delete your personal data at any time. To exercise these rights, email <strong>hello@koalastatements.com</strong>. We will respond within 30 days.</p>
+        <p style={S.p}>You have the right to access, correct, export, or delete your personal data at any time. To exercise these rights, email <strong>hello@koalastatements.com</strong> from your account address — we will export or permanently delete your account and associated data (including saved models and shares) within 30 days and confirm by email when it's done.</p>
         <p style={S.p}>If you are in the EU, you may also lodge a complaint with your local data protection authority.</p>
 
         <h2 style={S.h2}>6. Cookies</h2>
         <p style={S.p}>We use functional cookies for authentication (Supabase session) and, if you consent, analytics cookies from PostHog. You can disable cookies in your browser settings; this may prevent you from signing in.</p>
 
         <h2 style={S.h2}>7. Security</h2>
-        <p style={S.p}>Data is encrypted in transit (TLS) and at rest. Authentication is handled by Supabase, which is SOC 2 Type II certified. Row-level security policies ensure no user can read another user's data.</p>
+        <p style={S.p}>Data is encrypted in transit (TLS) and at rest. Authentication is handled by Supabase, which is SOC 2 Type II certified. Database row-level security policies ensure no user can read another user's saved projects.</p>
+        <p style={S.p}><strong>Shared models:</strong> When you create a public share link, only the read-only summary shown on that page (headline figures and a display name) is stored in the public record — never your full editable model or the description you typed when building it. Share links use unguessable random IDs, so they can only be reached by people you give the link to.</p>
+        <p style={S.p}>Koala Statements itself is an early-stage product and has not (yet) completed third-party certifications such as SOC 2 or ISO 27001. We rely on the certified infrastructure of our vendors (Supabase, Vercel) and will pursue our own audits as the company grows.</p>
 
         <h2 style={S.h2}>8. Changes to this policy</h2>
         <p style={S.p}>We may update this policy from time to time. We will notify you by email or in-app notice when material changes occur.</p>
