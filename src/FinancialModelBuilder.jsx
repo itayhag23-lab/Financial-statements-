@@ -132,7 +132,7 @@ cashFlow:[
 {id:'cf-equity',label:'Equity Issued',type:'leaf',parentId:'cff',defaultMode:'manual',deletable:true},
 {id:'cf-div',label:'Dividends Paid (negative)',type:'leaf',parentId:'cff',defaultMode:'manual',deletable:true},
 {id:'cf-net',label:'Net Change in Cash',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cfi',sign:1},{rowId:'cff',sign:1}]},
-{id:'cf-fcf',label:'Free Cash Flow',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cfi',sign:1}]}
+{id:'cf-fcf',label:'Free Cash Flow',type:'computed',parentId:null,deletable:false,formula:[{rowId:'cfo',sign:1},{rowId:'cf-capex',sign:1}]}
 ]};
 
 const ROW_LIBRARY={
@@ -276,8 +276,14 @@ const loaded=(loadedRows&&loadedRows[stmt])||tmpl.map(r=>({...r}));
 const byId=new Map(loaded.map(r=>[r.id,r]));
 const merged=loaded.map(r=>{
 const t=tmpl.find(tr=>tr.id===r.id);
-if(t&&t.linked&&!r.linked)return{...r,linked:t.linked,linkLabel:t.linkLabel};
-return r;
+if(!t)return r;
+const next={...r};
+// Formula/linked flags are model structure, not user input — always track
+// the latest template so corrected calcs (e.g. Free Cash Flow) reach older
+// saved projects. User-entered values live in rowData and are untouched.
+if(t.linked){next.linked=t.linked;next.linkLabel=t.linkLabel;}
+if(t.type==='computed'&&t.formula)next.formula=t.formula;
+return next;
 });
 for(const t of tmpl){
 if(!byId.has(t.id)){
