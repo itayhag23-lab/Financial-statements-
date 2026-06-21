@@ -127,9 +127,13 @@ export default function AuthPage() {
         await signInWithEmail(email, password);
         navigate('/dashboard', { replace: true });
       } else {
-        await signUpWithEmail(email, password);
-        setSuccess('Check your email for a confirmation link, then sign in.');
-        setMode('signin');
+        const signedIn = await signUpWithEmail(email, password);
+        if (signedIn) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          setSuccess('Check your email for a confirmation link, then sign in.');
+          setMode('signin');
+        }
       }
     } catch (err) {
       setError(friendlyError(err.message));
