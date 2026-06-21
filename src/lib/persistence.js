@@ -22,6 +22,8 @@ function safeSet(k, v) {
 function safeDel(k) { try { localStorage.removeItem(k); } catch {} }
 
 export function genId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  // Fallback for environments without Web Crypto — not security-sensitive, extremely rare today.
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
@@ -208,6 +210,7 @@ export async function loadShare(id) {
         .from('shares')
         .select('*')
         .eq('id', id)
+        .gt('expires_at', new Date().toISOString())
         .single();
       if (!error && data) {
         return {
