@@ -17,10 +17,41 @@ const esbuild = require('esbuild');
 const ROOT = path.resolve(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'build');
 
-// Only static, public, non-lazy routes. /app, /dashboard, /r/* are private or
-// dynamic; the privacy/terms pages are lazy-loaded so they'd render their
-// Suspense fallback, not content — skip them here.
-const ROUTES = ['/'];
+const SITE = 'https://financial-statements-one.vercel.app';
+
+// Static, public, eagerly-imported routes. /app, /dashboard, /r/* are private
+// or dynamic (and code-split), so they stay client-rendered.
+const ROUTES = ['/', '/privacy', '/terms'];
+
+// Per-route <head> overrides. "/" uses the defaults already in index.html.
+const ROUTE_META = {
+  '/privacy': {
+    title: 'Privacy Policy | Koala Statements',
+    description: 'How Koala Statements collects, uses, stores, and protects your data.',
+  },
+  '/terms': {
+    title: 'Terms of Service | Koala Statements',
+    description: 'The terms that govern your use of Koala Statements.',
+  },
+};
+
+// Rewrites the title, meta description, canonical, and og:url/og:title for a
+// given route so each pre-rendered page has its own, accurate <head>.
+function applyMeta(html, route) {
+  const meta = ROUTE_META[route];
+  const canonical = SITE + (route === '/' ? '/' : route);
+  let out = html
+    .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${canonical}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`);
+  if (meta) {
+    out = out
+      .replace(/<title>[\s\S]*?<\/title>/, `<title>${meta.title}</title>`)
+      .replace(/(<meta name="description" content=")[^"]*(")/, `$1${meta.description}$2`)
+      .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${meta.title}$2`)
+      .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${meta.description}$2`);
+  }
+  return out;
+}
 
 async function main() {
   const indexPath = path.join(BUILD_DIR, 'index.html');
@@ -54,7 +85,7 @@ async function main() {
 
   for (const route of ROUTES) {
     const html = renderRoute(route);
-    const page = template.replace(MARKER, `<div id="root">${html}</div>`);
+    const page = applyMeta(template, route).replace(MARKER, `<div id="root">${html}</div>`);
 
     // "/" overwrites index.html; other routes get their own folder/index.html
     // so Vercel serves the pre-rendered file for that path.

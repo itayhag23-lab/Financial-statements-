@@ -1,6 +1,11 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
+// Privacy/Terms are imported eagerly (not lazy) so they can be pre-rendered to
+// static HTML at build time and hydrate without a server/client mismatch. They
+// only use deps already in the main bundle, so the size cost is negligible.
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -10,8 +15,6 @@ const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
 const SharedReport           = lazy(() => import('./pages/SharedReport'));
 const AuthPage               = lazy(() => import('./pages/AuthPage'));
 const Dashboard              = lazy(() => import('./pages/Dashboard'));
-const PrivacyPage            = lazy(() => import('./pages/PrivacyPage'));
-const TermsPage              = lazy(() => import('./pages/TermsPage'));
 
 function Loading() {
   return (
@@ -75,8 +78,8 @@ export default function App() {
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />
-        <Route path="/privacy"    element={<Suspense fallback={<Loading />}><PrivacyPage /></Suspense>} />
-        <Route path="/terms"      element={<Suspense fallback={<Loading />}><TermsPage /></Suspense>} />
+        <Route path="/privacy"    element={<PrivacyPage />} />
+        <Route path="/terms"      element={<TermsPage />} />
         <Route path="*"           element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
