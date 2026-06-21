@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /dashboard
+Disallow: /r/
+
+Sitemap: https://financial-statements-one.vercel.app/sitemap.xml
