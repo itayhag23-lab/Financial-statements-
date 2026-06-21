@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/googlec916730f6bcfe932.html", "destination": "/googlec916730f6bcfe932.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
