@@ -318,59 +318,6 @@ function FeatureCard({ icon: Icon, title, body: text, tag }) {
   );
 }
 
-// ── Price card ──────────────────────────────────────────────────────────────
-function PriceCard({ tier, price, period, blurb, features, cta, ctaHref, highlight, enterprise }) {
-  const btn = {
-    display: 'block', textAlign: 'center',
-    ...body, fontSize: 14, fontWeight: 600,
-    padding: '11px 0', borderRadius: 9, textDecoration: 'none',
-    background: highlight ? P.accent : enterprise ? P.ink : 'transparent',
-    color: highlight ? P.bgDark : '#fff',
-    border: highlight ? 'none' : enterprise ? 'none' : `1.5px solid ${P.border}`,
-  };
-  return (
-    <div style={{
-      background: highlight ? P.bgDarkCard : P.bg,
-      border: highlight ? '1.5px solid transparent' : `1px solid ${P.border}`,
-      backgroundImage: highlight ? 'linear-gradient(#0F172A, #0F172A), linear-gradient(135deg, #10B981 0%, #3B82F6 50%, #10B981 100%)' : 'none',
-      backgroundOrigin: highlight ? 'border-box' : 'padding-box',
-      backgroundClip: highlight ? 'padding-box, border-box' : 'border-box',
-      backgroundSize: highlight ? 'auto, 200% 200%' : 'auto',
-      animation: highlight ? 'shimmerBorder 3s ease infinite' : 'none',
-      borderRadius: 14,
-      padding: '28px 24px',
-      flex: 1,
-      minWidth: 250,
-      boxShadow: highlight ? '0 30px 60px -20px rgba(0,0,0,0.5)' : 'none',
-      position: 'relative',
-    }}>
-      {highlight && (
-        <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: P.accent, ...body, fontSize: 10, fontWeight: 700, color: P.bgDark, padding: '3px 14px', borderRadius: 20, letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Most Popular</div>
-      )}
-      <div style={{ ...body, fontSize: 10.5, letterSpacing: '0.18em', textTransform: 'uppercase', color: highlight ? P.accent : P.muted, fontWeight: 600 }}>{tier}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 12, marginBottom: 4 }}>
-        {enterprise
-          ? <span style={{ ...disp, fontSize: 30, fontWeight: 700, color: P.ink, letterSpacing: '-0.02em' }}>Contact us</span>
-          : <>
-              <span style={{ ...disp, fontSize: 40, fontWeight: 700, color: highlight ? '#F1F5F9' : P.ink, letterSpacing: '-0.025em' }}>{price}</span>
-              <span style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.4)' : P.muted }}>{period}</span>
-            </>
-        }
-      </div>
-      <p style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.5)' : P.ink2, marginBottom: 20, lineHeight: 1.55 }}>{blurb}</p>
-      <Link to={ctaHref} style={btn}>{cta}</Link>
-      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {features.map((f) => (
-          <div key={f} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-            <Check size={14} color={P.accent} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span style={{ ...body, fontSize: 13, color: highlight ? 'rgba(255,255,255,0.6)' : P.ink2 }}>{f}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Main ────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const mob = useIsMobile(640);   // phone
@@ -386,11 +333,6 @@ export default function LandingPage() {
           0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); }
           60%      { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
         }
-        @keyframes shimmerBorder {
-          0%   { background-position: 0% 50%; }
-          50%  { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
         @keyframes marquee {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
@@ -405,7 +347,7 @@ export default function LandingPage() {
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
-            <a href="#pricing"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Pricing</a>
+            <a href="#free"     style={{ ...body, fontSize: 14, color: P.accent, fontWeight: 600, textDecoration: 'none' }}>Free</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 6 : 10, marginLeft: 'auto' }}>
             {!mob && <Link to="/auth" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
@@ -594,45 +536,41 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
+      {/* FREE FOR EVERYONE */}
+      <section id="free" style={{ background: P.bgAlt, borderTop: `1px solid ${P.border}`, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
-          <Reveal style={{ textAlign: 'center', marginBottom: mob ? 32 : 52 }}>
-            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Pricing</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 10px', letterSpacing: '-0.02em' }}>Transparent pricing. No surprises.</h2>
-            <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2 }}>Start with a free trial. Upgrade when you need more power.</p>
+          <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: 18 }}>
+              <Zap size={12} color={P.accent} />
+              <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>100% Free</span>
+            </div>
+            <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Free for everyone.</h2>
+            <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2, lineHeight: 1.65 }}>
+              No plans, no paywalls, no credit card. Every feature is unlocked from the start — build, model, and share as much as you want, completely free.
+            </p>
           </Reveal>
-          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'flex-start', flexDirection: mob ? 'column' : 'row' }}>
-            <PriceCard
-              tier="Growth"
-              price="$79"
-              period="/ month"
-              blurb="For founders and analysts who need a serious modeling tool — not a spreadsheet."
-              features={['Unlimited projects', '3-statement engine + all scenarios', '17+ industry benchmarks', 'AI advisor (fair use)', 'JSON export']}
-              cta="Start free trial"
-              ctaHref="/auth"
-            />
-            <PriceCard
-              tier="Pro"
-              price="$249"
-              period="/ month"
-              blurb="For finance teams that need AI-native automation, live sharing, and board-ready exports."
-              features={['Everything in Growth', 'AI builds & edits your model', 'Conversational what-if analysis', 'Shareable live investor reports', 'Pitch one-pager export', 'Priority AI advisor', 'Team collaboration (up to 5)']}
-              cta="Start free trial"
-              ctaHref="/auth"
-              highlight
-            />
-            <PriceCard
-              tier="Enterprise"
-              price=""
-              period=""
-              blurb="For organizations that need custom integrations, SSO, dedicated support, and SLAs."
-              features={['Everything in Pro', 'QuickBooks / Xero / NetSuite sync', 'SAML SSO + SCIM provisioning', 'Custom data residency', 'Dedicated CSM + SLA', 'Audit logs + RBAC', 'Custom AI fine-tuning']}
-              cta="Contact Sales"
-              ctaHref="/auth"
-              enterprise
-            />
-          </div>
+
+          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 12 : 16, marginTop: mob ? 28 : 44, maxWidth: 880, marginLeft: 'auto', marginRight: 'auto' }}>
+            {[
+              { icon: Sparkles, title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports — all included.' },
+              { icon: GitBranch, title: 'Unlimited models',       body: 'Create, edit, and save as many financial models as you need. No project caps, no limits.' },
+              { icon: Share2,    title: 'No credit card',          body: 'Sign up with email or Google and start building in seconds. Nothing to pay, now or ever.' },
+            ].map(({ icon: Icon, title, body: text }) => (
+              <div key={title} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: '24px 22px', textAlign: 'center' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 11, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <Icon size={20} color={P.accent} />
+                </div>
+                <h3 style={{ ...disp, fontSize: 16.5, fontWeight: 700, color: P.ink, marginBottom: 7, letterSpacing: '-0.01em' }}>{title}</h3>
+                <p style={{ ...body, fontSize: 13.5, lineHeight: 1.6, color: P.ink2 }}>{text}</p>
+              </div>
+            ))}
+          </Reveal>
+
+          <Reveal delay={200} style={{ textAlign: 'center', marginTop: mob ? 28 : 40 }}>
+            <Link to="/auth" style={{ ...body, fontSize: mob ? 14 : 15, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '12px 24px' : '14px 28px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              Get started free <ArrowRight size={16} />
+            </Link>
+          </Reveal>
         </div>
       </section>
 
@@ -650,7 +588,7 @@ export default function LandingPage() {
             Build your model free <ArrowRight size={18} />
           </Link>
           <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
-            No credit card · Cancel anytime · SOC 2 compliant
+            No credit card · Free forever · SOC 2 compliant
           </div>
         </div>
       </section>

@@ -1,7 +1,7 @@
 // Koala Statements — shared design tokens.
 // Single source of truth for the clean, professional light UI used across the
 // app (inline styles) and the marketing site / nav. Dark surfaces are reserved
-// for the Home and Pricing pages only; everything else is light.
+// for the Home page sections only; everything else is light.
 export const C = {
   bg: '#F8FAFC',          // slate-50 — page background
   bgWarm: '#F1F5F9',      // slate-100 — subtle alternate
