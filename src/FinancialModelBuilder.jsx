@@ -1,11 +1,24 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
+import { supabase } from './lib/supabase';
+import { useAuth } from './contexts/AuthContext';
+
+// /api/chat now requires a signed-in Supabase session — attach the access
+// token so the AI features (model generation + advisor chat) keep working.
+async function authedJSONHeaders(){
+const headers={'Content-Type':'application/json'};
+if(supabase){
+try{const{data:{session}}=await supabase.auth.getSession();if(session?.access_token)headers.Authorization='Bearer '+session.access_token;}catch{}
+}
+return headers;
+}
 
 // Error boundary — prevents a crash from showing a blank page.
 class AppErrorBoundary extends Component {
@@ -897,7 +910,7 @@ const generate=async()=>{
 const t=desc.trim();if(!t||status==='generating')return;
 setStatus('generating');setErr('');setResult(null);
 try{
-const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
+const res=await fetch('/api/chat',{method:'POST',headers:await authedJSONHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
 const data=await res.json();
 if(data.error){setErr('AI error: '+(data.error.message||data.error));setStatus('error');return;}
 const text=data?.content?.[0]?.text;
@@ -974,7 +987,7 @@ setLoading(true);setError(null);
 try{
 const res=await fetch('/api/chat',{
 method:'POST',
-headers:{'Content-Type':'application/json'},
+headers:await authedJSONHeaders(),
 body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
 });
 const data=await res.json();
@@ -1136,6 +1149,8 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 function FinancialModelBuilderInner({projectId}={}){
+const user=useAuth();const navigate=useNavigate();
+const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
@@ -1281,9 +1296,9 @@ if(isPortraitMob)return(
 </div>
 );
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>setShowAIGen(true)} onImport={()=>setShowSaveLoad(true)}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)}/></div>
 
-<button onClick={()=>setShowAI(true)} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>{if(requireAuthForAI())setShowAI(true);}} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
 </button>
 <button onClick={()=>setShowAnalysisDrawer(true)} className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-analysis" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>

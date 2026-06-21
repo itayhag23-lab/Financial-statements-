@@ -1,15 +1,16 @@
+const { createClient } = require('@supabase/supabase-js');
+
 // Rate limiting via Upstash Redis REST API (zero extra packages).
 // Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel to activate.
 // Without those vars the function still works — rate limiting is simply skipped.
 const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-const RATE_LIMIT  = 15;   // AI requests per hour per IP
+const RATE_LIMIT  = 15;   // AI requests per hour per signed-in user
 const WINDOW_S    = 3600;
 
-async function checkRateLimit(ip) {
+async function checkRateLimit(key) {
   if (!REDIS_URL || !REDIS_TOKEN) return { ok: true };
   try {
-    const key = `rl:chat:${ip}`;
     const r = await fetch(`${REDIS_URL}/pipeline`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
@@ -20,6 +21,21 @@ async function checkRateLimit(ip) {
   } catch {
     return { ok: true }; // fail open — never block legitimate users due to Redis errors
   }
+}
+
+// AI features require a signed-in Supabase user — verifies the bearer token
+// server-side rather than trusting anything the client claims.
+async function getAuthedUser(req) {
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+  const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return null;
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return null;
+  const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user) return null;
+  return data.user;
 }
 
 // Preference order for which Gemini model to use. The first one that both
@@ -53,9 +69,13 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Rate limiting
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-  const rl = await checkRateLimit(ip);
+  const user = await getAuthedUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Sign in required to use AI features.' });
+  }
+
+  // Rate limiting (per signed-in user, now that every caller is authenticated)
+  const rl = await checkRateLimit(`rl:chat:${user.id}`);
   if (!rl.ok) {
     res.setHeader('Retry-After', WINDOW_S);
     return res.status(429).json({ error: `Rate limit exceeded. You can make ${RATE_LIMIT} AI requests per hour.` });
