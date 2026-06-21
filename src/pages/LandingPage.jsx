@@ -7,10 +7,11 @@ import {
 import { FONTS } from '../brand/theme';
 
 // Detects viewport width for truly responsive inline styles.
+// Starts as `false` (desktop) so the first client render matches the
+// pre-rendered HTML — the real value is set in the effect right after mount,
+// which keeps hydration free of server/client mismatches.
 function useIsMobile(bp = 640) {
-  const [mob, setMob] = React.useState(() =>
-    typeof window !== 'undefined' && window.innerWidth <= bp
-  );
+  const [mob, setMob] = React.useState(false);
   React.useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${bp}px)`);
     setMob(mq.matches);

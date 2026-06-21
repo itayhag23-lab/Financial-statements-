@@ -15,9 +15,18 @@ if (process.env.REACT_APP_SENTRY_DSN) {
   });
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+const container = document.getElementById('root');
+const app = (
   <BrowserRouter>
     <App />
   </BrowserRouter>
 );
+
+// If the page was pre-rendered at build time (see scripts/prerender.js), the
+// #root already contains server-rendered markup — hydrate it so the existing
+// HTML stays put and becomes interactive. Otherwise mount fresh.
+if (container.hasChildNodes()) {
+  ReactDOM.hydrateRoot(container, app);
+} else {
+  ReactDOM.createRoot(container).render(app);
+}
