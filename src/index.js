@@ -1,17 +1,22 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
 import './index.css';
-import './lib/analytics'; // side effect: initialises PostHog
 import App from './App';
 
+// @sentry/react is ~25KB gzipped and only catches errors after it loads, so
+// deferring it slightly off the critical path is a worthwhile trade — it
+// still loads well before a user could meaningfully interact with the page.
 if (process.env.REACT_APP_SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.REACT_APP_SENTRY_DSN,
-    environment: process.env.NODE_ENV,
-    tracesSampleRate: 0.1,
-    replaysOnErrorSampleRate: 0,
+  window.addEventListener('load', () => {
+    import('@sentry/react').then(Sentry => {
+      Sentry.init({
+        dsn: process.env.REACT_APP_SENTRY_DSN,
+        environment: process.env.NODE_ENV,
+        tracesSampleRate: 0.1,
+        replaysOnErrorSampleRate: 0,
+      });
+    });
   });
 }
 
