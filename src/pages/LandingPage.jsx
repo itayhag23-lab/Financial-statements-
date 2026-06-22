@@ -114,6 +114,11 @@ const P = {
   faint:      '#94A3B8',
   accent:     '#10B981',
   accentDark: '#059669',
+  // #10B981 only passes WCAG AA as text on dark surfaces (~7.6:1); on white/
+  // bgAlt it drops to ~2.2:1. accentText is the same hue darkened enough to
+  // pass on light backgrounds (~5:1) — use it instead of `accent` for any
+  // text sitting on a light surface.
+  accentText: '#047857',
   accentSoft: 'rgba(16,185,129,0.1)',
   accentGlow: 'rgba(16,185,129,0.2)',
   blue:       '#3B82F6',
@@ -308,7 +313,7 @@ function FeatureCard({ icon: Icon, title, body: text, tag }) {
   return (
     <div {...hp} style={{ background: P.bg, border: `1px solid ${hov ? '#CBD5E1' : P.border}`, borderRadius: 12, padding: '24px 22px', position: 'relative', transform: hov ? 'translateY(-4px)' : 'translateY(0)', boxShadow: hov ? '0 12px 28px -10px rgba(15,23,42,0.12)' : 'none', transition: 'transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms, border-color 200ms' }}>
       {tag && (
-        <span style={{ position: 'absolute', top: 18, right: 18, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accent, background: P.accentSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>
+        <span style={{ position: 'absolute', top: 18, right: 18, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accentText, background: P.accentSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>
       )}
       <div style={{ width: 40, height: 40, borderRadius: 10, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
         <Icon size={19} color={P.accent} />
@@ -348,7 +353,7 @@ export default function LandingPage() {
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
-            <a href="#free"     style={{ ...body, fontSize: 14, color: P.accent, fontWeight: 600, textDecoration: 'none' }}>Free</a>
+            <a href="#free"     style={{ ...body, fontSize: 14, color: P.accentText, fontWeight: 600, textDecoration: 'none' }}>Free</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 6 : 10, marginLeft: 'auto' }}>
             {!mob && <Link to="/auth" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
@@ -448,7 +453,7 @@ export default function LandingPage() {
       <section id="features" style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
           <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: `0 auto ${mob ? '32px' : '52px'}` }}>
-            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Capabilities</div>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accentText, marginBottom: 14 }}>Capabilities</div>
             <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
             <p style={{ ...body, fontSize: mob ? 14 : 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
           </Reveal>
@@ -462,7 +467,7 @@ export default function LandingPage() {
       <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
           <Reveal style={{ textAlign: 'center', marginBottom: mob ? 28 : 52 }}>
-            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accentText, marginBottom: 14 }}>Workflow</div>
             <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
           </Reveal>
           <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: mob ? 12 : 20 }}>
@@ -472,7 +477,7 @@ export default function LandingPage() {
               { n: '03', title: 'Refine, share, raise',   icon: Share2,   body: 'Adjust any assumption, run what-if scenarios with the AI advisor, then share a live interactive report directly with your investors or board.' },
             ].map(({ n, title, icon: Icon, body: text }) => (
               <div key={n} style={{ padding: mob ? '20px 16px' : '28px 24px', background: P.bgAlt, borderRadius: 12, border: `1px solid ${P.border}` }}>
-                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accent, letterSpacing: '0.14em', marginBottom: 12 }}>STEP {n}</div>
+                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accentText, letterSpacing: '0.14em', marginBottom: 12 }}>STEP {n}</div>
                 <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <Icon size={18} color={P.accent} />
                 </div>
@@ -544,7 +549,7 @@ export default function LandingPage() {
           <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: 18 }}>
               <Zap size={12} color={P.accent} />
-              <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>100% Free</span>
+              <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accentText, letterSpacing: '0.14em', textTransform: 'uppercase' }}>100% Free</span>
             </div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Free for everyone.</h2>
             <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2, lineHeight: 1.65 }}>
