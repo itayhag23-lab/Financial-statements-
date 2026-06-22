@@ -1,0 +1,15 @@
+# Koala Statements
+
+> Free AI-native financial modeling tool that turns a one-sentence business description into a complete, investor-ready 3-statement financial model — income statement, balance sheet, and cash flow — with AI-driven assumptions, multi-scenario forecasts, and industry benchmarks.
+
+Koala Statements is free for everyone: build, edit, and save financial models with no paid tiers and no project caps. The pages listed below are the public, crawlable parts of the site. The in-app model builder, user dashboard, and shared report links require an account or a direct invite and are excluded from indexing (see /robots.txt).
+
+## Pages
+
+- [Home](https://financial-statements-one.vercel.app/): Product overview, how it works, and key features of the AI financial modeling tool.
+- [Privacy Policy](https://financial-statements-one.vercel.app/privacy): How Koala Statements collects, uses, stores, and protects user data.
+- [Terms of Service](https://financial-statements-one.vercel.app/terms): The terms that govern use of Koala Statements.
+
+## Optional
+
+- [Sitemap](https://financial-statements-one.vercel.app/sitemap.xml): Full list of indexable URLs.
