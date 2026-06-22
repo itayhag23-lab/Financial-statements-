@@ -112,7 +112,14 @@
     <link rel="icon" href="/koala-logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap" rel="stylesheet" />
+    <!-- Load fonts off the critical render path so they don't block first paint.
+         display=swap shows fallback text immediately; the stylesheet is applied
+         once it finishes loading (media flip), with a noscript fallback. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap" />
+    <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap" />
+    </noscript>
   </head>
   <body style="margin:0; background:#F4F1E9; overflow-x:hidden; max-width:100vw;">
     <div id="root"></div>

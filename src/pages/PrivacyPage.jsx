@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <Link to="/" style={{ fontFamily: FONTS.body, fontSize: 13, color: '#64748B', textDecoration: 'none' }}>← Back to home</Link>
       </nav>
 
-      <div style={S.wrap}>
+      <main style={S.wrap}>
         <div style={S.badge}>Legal</div>
         <h1 style={S.h1}>Privacy Policy</h1>
         <p style={S.meta}>Effective date: June 2026 · Last updated: June 2026</p>
@@ -74,8 +74,8 @@ export default function PrivacyPage() {
         <p style={S.p}>We may update this policy from time to time. We will notify you by email or in-app notice when material changes occur.</p>
 
         <hr style={S.hr} />
-        <p style={{ ...S.p, color: '#94A3B8' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#10B981' }}>hello@koalastatements.com</a></p>
-      </div>
+        <p style={{ ...S.p, color: '#64748B' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#047857' }}>hello@koalastatements.com</a></p>
+      </main>
     </div>
   );
 }

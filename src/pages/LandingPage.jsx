@@ -357,6 +357,7 @@ export default function LandingPage() {
         </div>
       </header>
 
+      <main id="main-content">
       {/* HERO */}
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -120, right: -80, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
@@ -593,6 +594,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* FOOTER */}
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>

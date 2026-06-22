@@ -25,7 +25,7 @@ export default function TermsPage() {
         <Link to="/" style={{ fontFamily: FONTS.body, fontSize: 13, color: '#64748B', textDecoration: 'none' }}>← Back to home</Link>
       </nav>
 
-      <div style={S.wrap}>
+      <main style={S.wrap}>
         <div style={S.badge}>Legal</div>
         <h1 style={S.h1}>Terms of Service</h1>
         <p style={S.meta}>Effective date: June 2026 · Last updated: June 2026</p>
@@ -82,8 +82,8 @@ export default function TermsPage() {
         <p style={S.p}>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. We will notify you of material changes via email or in-app notice at least 14 days in advance.</p>
 
         <hr style={S.hr} />
-        <p style={{ ...S.p, color: '#94A3B8' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#10B981' }}>hello@koalastatements.com</a></p>
-      </div>
+        <p style={{ ...S.p, color: '#64748B' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#047857' }}>hello@koalastatements.com</a></p>
+      </main>
     </div>
   );
 }
