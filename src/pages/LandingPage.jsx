@@ -392,7 +392,7 @@ export default function LandingPage() {
             </div>
             <div style={{ display: 'flex', gap: mob ? 12 : 20, marginTop: mob ? 16 : 22, flexWrap: 'wrap' }}>
               {['No credit card required', 'SOC 2 compliant', '< 60 sec to first model'].map((t) => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: 'rgba(255,255,255,0.35)' }}>
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: 'rgba(255,255,255,0.5)' }}>
                   <Check size={13} color={P.accent} />{t}
                 </div>
               ))}
@@ -512,7 +512,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <div style={{ ...body, fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 2 }}>{label}</div>
-                      <div style={{ ...body, fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>{desc}</div>
+                      <div style={{ ...body, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{desc}</div>
                     </div>
                   </div>
                 ))}
@@ -526,12 +526,12 @@ export default function LandingPage() {
                       <Shield size={16} color={P.accent} />
                     </div>
                     <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{badge}</div>
-                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>Compliant</div>
+                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>Compliant</div>
                   </div>
                 ))}
               </div>
               <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
+                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {['🇺🇸 US East', '🇪🇺 EU West', '🌏 APAC'].map((r) => (
                     <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
@@ -594,7 +594,7 @@ export default function LandingPage() {
           <Link to="/auth" style={{ ...body, fontSize: mob ? 15 : 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '13px 24px' : '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
             Build your model free <ArrowRight size={18} />
           </Link>
-          <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.25)' }}>
+          <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>
             No credit card · Free forever · SOC 2 compliant
           </div>
         </div>
@@ -612,13 +612,13 @@ export default function LandingPage() {
             </svg>
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
-          <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.22)' }}>
+          <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>
             © {new Date().getFullYear()} Koala Statements · Not financial advice.
           </div>
           <div style={{ display: 'flex', gap: 20 }}>
-            <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Privacy</Link>
-            <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Terms</Link>
-            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.32)', textDecoration: 'none' }}>Contact</a>
+            <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Privacy</Link>
+            <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Terms</Link>
+            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>
