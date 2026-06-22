@@ -186,12 +186,12 @@ function DashboardMock() {
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E' }} />
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
         </div>
-        <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginLeft: 6, flex: 1 }}>
+        <div style={{ ...body, fontSize: 11, color: '#94A3B8', marginLeft: 6, flex: 1 }}>
           Acme Corp — Financial Model · FY 2025–2026
         </div>
         <div style={{ display: 'flex', gap: 5 }}>
           {['Base', 'Optimistic', 'Stress'].map((s, i) => (
-            <span key={s} style={{ ...body, fontSize: 9, padding: '2px 7px', borderRadius: 4, background: i === 0 ? P.accent : 'rgba(255,255,255,0.07)', color: i === 0 ? P.bgDark : 'rgba(255,255,255,0.35)', fontWeight: i === 0 ? 700 : 400, cursor: 'default' }}>{s}</span>
+            <span key={s} style={{ ...body, fontSize: 9, padding: '2px 7px', borderRadius: 4, background: i === 0 ? P.accent : 'rgba(255,255,255,0.07)', color: i === 0 ? P.bgDark : '#94A3B8', fontWeight: i === 0 ? 700 : 400, cursor: 'default' }}>{s}</span>
           ))}
         </div>
       </div>
@@ -199,7 +199,7 @@ function DashboardMock() {
       {/* Tab bar */}
       <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0 14px', display: 'flex', borderBottom: `1px solid ${P.borderDark}` }}>
         {['Income Statement', 'Cash Flow', 'Balance Sheet', 'Analytics'].map((t, i) => (
-          <div key={t} style={{ ...body, fontSize: 10.5, padding: '8px 12px', color: i === 0 ? P.accent : 'rgba(255,255,255,0.3)', fontWeight: i === 0 ? 600 : 400, borderBottom: `2px solid ${i === 0 ? P.accent : 'transparent'}`, cursor: 'default', whiteSpace: 'nowrap' }}>{t}</div>
+          <div key={t} style={{ ...body, fontSize: 10.5, padding: '8px 12px', color: i === 0 ? P.accent : '#94A3B8', fontWeight: i === 0 ? 600 : 400, borderBottom: `2px solid ${i === 0 ? P.accent : 'transparent'}`, cursor: 'default', whiteSpace: 'nowrap' }}>{t}</div>
         ))}
       </div>
 
@@ -207,7 +207,7 @@ function DashboardMock() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: `1px solid ${P.borderDark}` }}>
         {kpis.map(({ label, value, change, spk, sc }, i) => (
           <div key={label} style={{ padding: '10px 12px', borderRight: i < 3 ? `1px solid ${P.borderDark}` : 'none' }}>
-            <div style={{ ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
+            <div style={{ ...body, fontSize: 8.5, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <div>
                 <div style={{ ...mono, fontSize: 15, fontWeight: 600, color: '#F1F5F9', letterSpacing: '-0.02em' }}>{value}</div>
@@ -222,10 +222,10 @@ function DashboardMock() {
       {/* Chart */}
       <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${P.borderDark}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <div style={{ ...body, fontSize: 9.5, color: 'rgba(255,255,255,0.35)' }}>Revenue & Net Income — H1 2025</div>
+          <div style={{ ...body, fontSize: 9.5, color: '#94A3B8' }}>Revenue & Net Income — H1 2025</div>
           <div style={{ display: 'flex', gap: 10 }}>
             {[[P.accent, 'Revenue'], [P.blue, 'Net Income']].map(([c, l]) => (
-              <span key={l} style={{ ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span key={l} style={{ ...body, fontSize: 8.5, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 10, height: 2, background: c, display: 'inline-block', borderRadius: 1 }} />{l}
               </span>
             ))}
@@ -243,21 +243,21 @@ function DashboardMock() {
           <polyline points={niPts}  fill="none" stroke={P.blue}   strokeWidth="1.4" strokeDasharray="4,3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-          {periods.map(p => <span key={p} style={{ ...body, fontSize: 8, color: 'rgba(255,255,255,0.18)' }}>{p}</span>)}
+          {periods.map(p => <span key={p} style={{ ...body, fontSize: 8, color: '#94A3B8' }}>{p}</span>)}
         </div>
       </div>
 
       {/* Data table */}
       <div>
         <div style={{ display: 'flex', padding: '5px 14px', background: 'rgba(255,255,255,0.02)', borderBottom: `1px solid ${P.borderDark}` }}>
-          <div style={{ flex: 1, ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Line item</div>
-          {['Q1 25', 'Q2 25', 'Q3 25', 'Q4 25'].map(q => <div key={q} style={{ width: 62, textAlign: 'right', ...body, fontSize: 8.5, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.05em' }}>{q}</div>)}
+          <div style={{ flex: 1, ...body, fontSize: 8.5, color: '#94A3B8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Line item</div>
+          {['Q1 25', 'Q2 25', 'Q3 25', 'Q4 25'].map(q => <div key={q} style={{ width: 62, textAlign: 'right', ...body, fontSize: 8.5, color: '#94A3B8', letterSpacing: '0.05em' }}>{q}</div>)}
         </div>
         {rows.map(({ label, q, bold, neg, accent: rowAccent }) => (
           <div key={label} style={{ display: 'flex', padding: `${bold ? 6 : 4}px 14px`, background: bold ? 'rgba(255,255,255,0.02)' : 'transparent', borderBottom: `1px solid ${P.borderDark}` }}>
-            <div style={{ flex: 1, ...body, fontSize: 9.5, color: bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : 'rgba(255,255,255,0.75)') : 'rgba(255,255,255,0.38)', fontWeight: bold ? 600 : 400 }}>{label}</div>
+            <div style={{ flex: 1, ...body, fontSize: 9.5, color: bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : '#CBD5E1') : '#94A3B8', fontWeight: bold ? 600 : 400 }}>{label}</div>
             {q.map((v, vi) => (
-              <div key={vi} style={{ width: 62, textAlign: 'right', ...mono, fontSize: 9.5, color: v.startsWith('(') ? P.red : bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : '#F1F5F9') : 'rgba(255,255,255,0.4)', fontWeight: bold ? 600 : 400 }}>{v}</div>
+              <div key={vi} style={{ width: 62, textAlign: 'right', ...mono, fontSize: 9.5, color: v.startsWith('(') ? P.red : bold ? (rowAccent === P.blue ? P.blue : rowAccent ? P.accent : '#F1F5F9') : '#94A3B8', fontWeight: bold ? 600 : 400 }}>{v}</div>
             ))}
           </div>
         ))}
@@ -268,7 +268,7 @@ function DashboardMock() {
         <span style={{ width: 18, height: 18, borderRadius: '50%', background: P.accent, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <span style={{ ...body, fontSize: 9, fontWeight: 800, color: P.bgDark }}>AI</span>
         </span>
-        <span style={{ ...body, fontSize: 9.5, color: 'rgba(255,255,255,0.38)', fontStyle: 'italic', flex: 1 }}>
+        <span style={{ ...body, fontSize: 9.5, color: '#94A3B8', fontStyle: 'italic', flex: 1 }}>
           "What if headcount increases 30% in Q3?"
         </span>
         <span style={{ ...body, fontSize: 9.5, color: P.accent, fontWeight: 600, cursor: 'default', whiteSpace: 'nowrap' }}>Ask AI →</span>
@@ -392,7 +392,7 @@ export default function LandingPage() {
             </div>
             <div style={{ display: 'flex', gap: mob ? 12 : 20, marginTop: mob ? 16 : 22, flexWrap: 'wrap' }}>
               {['No credit card required', 'SOC 2 compliant', '< 60 sec to first model'].map((t) => (
-                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: 'rgba(255,255,255,0.5)' }}>
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: '#CBD5E1' }}>
                   <Check size={13} color={P.accent} />{t}
                 </div>
               ))}
@@ -512,7 +512,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <div style={{ ...body, fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 2 }}>{label}</div>
-                      <div style={{ ...body, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{desc}</div>
+                      <div style={{ ...body, fontSize: 13, color: '#CBD5E1' }}>{desc}</div>
                     </div>
                   </div>
                 ))}
@@ -526,12 +526,12 @@ export default function LandingPage() {
                       <Shield size={16} color={P.accent} />
                     </div>
                     <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{badge}</div>
-                    <div style={{ ...body, fontSize: 10.5, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>Compliant</div>
+                    <div style={{ ...body, fontSize: 10.5, color: '#CBD5E1', marginTop: 3 }}>Compliant</div>
                   </div>
                 ))}
               </div>
               <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ ...body, fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
+                <div style={{ ...body, fontSize: 11, color: '#CBD5E1', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {['🇺🇸 US East', '🇪🇺 EU West', '🌏 APAC'].map((r) => (
                     <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
@@ -594,7 +594,7 @@ export default function LandingPage() {
           <Link to="/auth" style={{ ...body, fontSize: mob ? 15 : 16, fontWeight: 700, color: P.bgDark, background: P.accent, padding: mob ? '13px 24px' : '15px 32px', borderRadius: 11, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
             Build your model free <ArrowRight size={18} />
           </Link>
-          <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>
+          <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: '#CBD5E1' }}>
             No credit card · Free forever · SOC 2 compliant
           </div>
         </div>
@@ -612,13 +612,13 @@ export default function LandingPage() {
             </svg>
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
-          <div style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)' }}>
+          <div style={{ ...body, fontSize: 12.5, color: '#CBD5E1' }}>
             © {new Date().getFullYear()} Koala Statements · Not financial advice.
           </div>
           <div style={{ display: 'flex', gap: 20 }}>
-            <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Privacy</Link>
-            <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Terms</Link>
-            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Contact</a>
+            <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: '#CBD5E1', textDecoration: 'none' }}>Privacy</Link>
+            <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: '#CBD5E1', textDecoration: 'none' }}>Terms</Link>
+            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: '#CBD5E1', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>
