@@ -80,8 +80,20 @@ async function main() {
   });
 
   const { renderRoute } = require(outfile);
-  const template = fs.readFileSync(indexPath, 'utf8');
+  let template = fs.readFileSync(indexPath, 'utf8');
   const MARKER = '<div id="root"></div>';
+
+  // Inline the app's own stylesheet so the browser never has to make a
+  // second, chained request for it (Lighthouse's "critical request chain"
+  // diagnostic) -- at ~13 KB raw it's cheap enough to ship inline.
+  const cssLink = template.match(/<link href="(\/static\/css\/[^"]+\.css)" rel="stylesheet">/);
+  if (cssLink) {
+    const cssPath = path.join(BUILD_DIR, cssLink[1]);
+    if (fs.existsSync(cssPath)) {
+      const css = fs.readFileSync(cssPath, 'utf8');
+      template = template.replace(cssLink[0], `<style>${css}</style>`);
+    }
+  }
 
   for (const route of ROUTES) {
     const html = renderRoute(route);
