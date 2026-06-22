@@ -327,7 +327,6 @@ function FeatureCard({ icon: Icon, title, body: text, tag }) {
 // ── Main ────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const mob = useIsMobile(640);   // phone
-  const tab = useIsMobile(860);   // tablet/collapse-2col
 
   const sp = mob ? '16px' : '24px';          // side padding
   const vp = mob ? '44px' : '84px';          // vertical section padding
@@ -367,7 +366,7 @@ export default function LandingPage() {
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -120, right: -80, width: 700, height: 700, borderRadius: '50%', background: `radial-gradient(circle, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
-        <div style={{ ...maxW, padding: `${mob ? '44px' : '84px'} ${sp} ${mob ? '40px' : '80px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: mob ? 28 : 60, alignItems: 'center', position: 'relative' }}>
+        <div className="hero-grid" style={{ ...maxW, padding: `${mob ? '44px' : '84px'} ${sp} ${mob ? '40px' : '80px'}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: mob ? 28 : 60, alignItems: 'center', position: 'relative' }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22, animation: 'badgePulse 2.4s ease-in-out infinite' }}>
               <Zap size={12} color={P.accent} />
@@ -398,11 +397,9 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-          {!tab && (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <DashboardMock />
-            </div>
-          )}
+          <div className="hero-mock" style={{ display: 'flex', justifyContent: 'center' }}>
+            <DashboardMock />
+          </div>
         </div>
       </section>
 
@@ -492,7 +489,7 @@ export default function LandingPage() {
       {/* SECURITY */}
       <section id="security" style={{ background: P.bgDark }}>
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
-          <div style={{ display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 32 : 64, alignItems: 'center' }}>
+          <div className="security-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
             <div>
               <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
               <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
@@ -628,6 +625,16 @@ export default function LandingPage() {
         * { box-sizing: border-box; }
         @media (max-width: 640px) {
           header a, header button { min-height: 44px; display: inline-flex; align-items: center; }
+        }
+        /* Below mirror the useIsMobile(860) breakpoint so the 2→1 column
+           collapse (and the dashboard mock's visibility) happens in the
+           browser's first paint instead of after JS hydration corrects a
+           desktop-default layout — that correction was the layout shift
+           Lighthouse flagged as CLS on mobile. */
+        @media (max-width: 860px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-mock { display: none !important; }
+          .security-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
         }
       `}</style>
     </div>
