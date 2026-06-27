@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Sparkles, MessageSquare, GitBranch, BarChart3, Share2, FileText,
-  ArrowRight, Check, Shield, Lock, TrendingUp, Zap, Award,
+  Sparkles, Share2, FileText,
+  ArrowRight, Check, Shield, Lock, Zap, Award, Eye, Link2,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
@@ -432,28 +432,172 @@ function IntegrationBadge({ name, abbr, color }) {
   );
 }
 
-// ── Feature card ────────────────────────────────────────────────────────────
+// ── Feature visuals — each one illustrates its specific capability with real
+// numbers/UI moments instead of a generic icon-in-a-square. ───────────────
+function VisualFrame({ children }) {
+  return (
+    <div style={{ borderRadius: 10, background: P.bgSlate, border: `1px solid ${P.border}`, padding: '13px 14px', marginBottom: 16, minHeight: 112, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      {children}
+    </div>
+  );
+}
+
+function AssumptionVisual() {
+  const tags = [['Revenue growth', '8.5%/mo'], ['Gross margin', '72%'], ['Opex ratio', '41%']];
+  return (
+    <VisualFrame>
+      <div style={{ ...mono, fontSize: 11, color: P.ink2, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 7, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span>&ldquo;B2B SaaS, $30K MRR, 18mo runway&rdquo;</span>
+        <span style={{ width: 1, height: 12, background: P.accent, display: 'inline-block', animation: 'caretBlink 1s step-end infinite', flexShrink: 0 }} />
+      </div>
+      <div style={{ ...body, fontSize: 11, color: P.faint, textAlign: 'center', margin: '7px 0' }}>↓ AI extracts</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {tags.map(([k, v]) => (
+          <span key={k} style={{ ...body, fontSize: 10.5, color: P.accentText, background: P.accentSoft, border: '1px solid rgba(16,185,129,0.22)', borderRadius: 6, padding: '4px 8px' }}>
+            {k} <b style={mono}>{v}</b>
+          </span>
+        ))}
+      </div>
+    </VisualFrame>
+  );
+}
+
+function ScenarioFanVisual() {
+  const w = 220, h = 84, x0 = 8, y0 = 42;
+  const lines = [
+    { to: [w - 8, 12], color: P.blue,   dash: '4,3', label: 'Optimistic' },
+    { to: [w - 8, 42], color: P.accent, dash: '0',   label: 'Base' },
+    { to: [w - 8, 68], color: P.amber,  dash: '4,3', label: 'Stress' },
+  ];
+  return (
+    <VisualFrame>
+      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+        <circle cx={x0} cy={y0} r="2.5" fill={P.ink2} />
+        {lines.map((l) => (
+          <path key={l.label} d={`M ${x0} ${y0} Q ${w * 0.45} ${y0}, ${l.to[0]} ${l.to[1]}`} fill="none" stroke={l.color} strokeWidth="2" strokeDasharray={l.dash} strokeLinecap="round" />
+        ))}
+      </svg>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 2, flexWrap: 'wrap' }}>
+        {lines.map((l) => (
+          <span key={l.label} style={{ ...body, fontSize: 9.5, color: P.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 8, height: 2, background: l.color, display: 'inline-block', borderRadius: 1 }} />{l.label}
+          </span>
+        ))}
+      </div>
+    </VisualFrame>
+  );
+}
+
+function LinkageFlowVisual() {
+  const steps = ['Income Statement', 'Cash Flow', 'Balance Sheet'];
+  return (
+    <VisualFrame>
+      {steps.map((s, i) => (
+        <React.Fragment key={s}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 7, padding: '6px 10px' }}>
+            <span style={{ ...body, fontSize: 11, color: P.ink2 }}>{s}</span>
+            <span style={{ ...mono, fontSize: 10.5, color: P.accentText, fontWeight: 700 }}>$201K</span>
+          </div>
+          {i < steps.length - 1 && <div style={{ width: 1, height: 8, background: P.accent, marginLeft: 14 }} />}
+        </React.Fragment>
+      ))}
+    </VisualFrame>
+  );
+}
+
+function BenchmarkVisual() {
+  const rows = [
+    { label: 'Your gross margin', value: 72, color: P.accent },
+    { label: 'Industry median',   value: 64, color: P.faint },
+  ];
+  return (
+    <VisualFrame>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+        {rows.map((r) => (
+          <div key={r.label}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{ ...body, fontSize: 10.5, color: P.muted }}>{r.label}</span>
+              <span style={{ ...mono, fontSize: 10.5, color: P.ink2, fontWeight: 700 }}>{r.value}%</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 4, background: P.border, overflow: 'hidden' }}>
+              <div style={{ width: `${r.value}%`, height: '100%', background: r.color, borderRadius: 4 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </VisualFrame>
+  );
+}
+
+function WhatIfDiffVisual() {
+  const deltas = [['Opex', '+$42K', true], ['Net Income', '-$18K', true], ['Cash runway', '-3 mo', true]];
+  return (
+    <VisualFrame>
+      <div style={{ ...body, fontSize: 11.5, color: P.ink2, fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+        <span style={{ ...body, fontSize: 9, fontWeight: 800, color: '#fff', background: P.ink, borderRadius: 4, padding: '2px 5px', fontStyle: 'normal', flexShrink: 0 }}>AI</span>
+        &ldquo;What if headcount grows 30% in Q3?&rdquo;
+      </div>
+      <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+        {deltas.map(([k, v, bad]) => (
+          <div key={k}>
+            <div style={{ ...body, fontSize: 9.5, color: P.faint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k}</div>
+            <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: bad ? P.red : P.accentText }}>{v}</div>
+          </div>
+        ))}
+      </div>
+    </VisualFrame>
+  );
+}
+
+function LiveReportVisual() {
+  return (
+    <VisualFrame>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 7, padding: '8px 10px', marginBottom: 10 }}>
+        <Link2 size={12} color={P.muted} style={{ flexShrink: 0 }} />
+        <span style={{ ...mono, fontSize: 10.5, color: P.ink2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>koala.app/r/acme-fy26</span>
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: P.accent, animation: 'livePulse 1.6s ease-in-out infinite', flexShrink: 0 }} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex' }}>
+          {['JD', 'KP'].map((init, i) => (
+            <div key={init} style={{ width: 22, height: 22, borderRadius: '50%', background: P.bgDarkAlt, color: '#fff', ...body, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${P.bgSlate}`, marginLeft: i ? -7 : 0 }}>{init}</div>
+          ))}
+        </div>
+        <span style={{ ...body, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Eye size={12} /> 2 investors viewing now
+        </span>
+      </div>
+    </VisualFrame>
+  );
+}
+
+// ── Feature card — bento layout: span-2 cards carry the three exclusive
+// capabilities, span-1 cards fill the gaps. No two cards share a visual idiom. ─
 const FEATURES = [
-  { icon: Sparkles,    title: 'AI-Driven Assumption Engine',      tag: 'Exclusive', body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions — no spreadsheet, no accounting data required.' },
-  { icon: GitBranch,   title: 'Dynamic Multi-Scenario Architecture', tag: null,       body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding — toggle and compare in real time.' },
-  { icon: BarChart3,   title: 'Automated 3-Statement Integration',  tag: null,       body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
-  { icon: TrendingUp,  title: 'Institutional Benchmarking',        tag: null,       body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
-  { icon: MessageSquare, title: 'Conversational What-If Analysis', tag: 'Exclusive', body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard — full undo history included.' },
-  { icon: Share2,      title: 'Investor-Ready Live Reports',       tag: 'Exclusive', body: 'Share a live, interactive report — not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
+  { title: 'AI-Driven Assumption Engine', tag: 'Exclusive', span: 2, visual: <AssumptionVisual />,
+    body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions — no spreadsheet, no accounting data required.' },
+  { title: 'Dynamic Multi-Scenario Architecture', tag: null, span: 1, visual: <ScenarioFanVisual />,
+    body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding — toggle and compare in real time.' },
+  { title: 'Conversational What-If Analysis', tag: 'Exclusive', span: 2, visual: <WhatIfDiffVisual />,
+    body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard — full undo history included.' },
+  { title: 'Automated 3-Statement Integration', tag: null, span: 1, visual: <LinkageFlowVisual />,
+    body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
+  { title: 'Investor-Ready Live Reports', tag: 'Exclusive', span: 2, visual: <LiveReportVisual />,
+    body: 'Share a live, interactive report — not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
+  { title: 'Institutional Benchmarking', tag: null, span: 1, visual: <BenchmarkVisual />,
+    body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
 ];
 
-function FeatureCard({ icon: Icon, title, body: text, tag }) {
+function FeatureCard({ title, body: text, tag, span, visual, mob }) {
   const [hov, hp] = useHover();
   return (
-    <div {...hp} style={{ background: P.bg, border: `1px solid ${hov ? '#CBD5E1' : P.border}`, borderRadius: 12, padding: '24px 22px', position: 'relative', transform: hov ? 'translateY(-4px)' : 'translateY(0)', boxShadow: hov ? '0 12px 28px -10px rgba(15,23,42,0.12)' : 'none', transition: 'transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms, border-color 200ms' }}>
+    <div {...hp} style={{ gridColumn: mob ? 'auto' : `span ${span}`, background: P.bg, border: `1px solid ${hov ? '#CBD5E1' : P.border}`, borderRadius: 12, padding: '20px 20px 22px', position: 'relative', transform: hov ? 'translateY(-3px)' : 'translateY(0)', boxShadow: hov ? '0 14px 30px -12px rgba(15,23,42,0.14)' : 'none', transition: 'transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms, border-color 200ms' }}>
       {tag && (
-        <span style={{ position: 'absolute', top: 18, right: 18, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accentText, background: P.accentSoft, padding: '3px 8px', borderRadius: 20 }}>{tag}</span>
+        <span style={{ position: 'absolute', top: 16, right: 16, ...body, fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: P.accentText, background: P.accentSoft, padding: '3px 8px', borderRadius: 20, zIndex: 1 }}>{tag}</span>
       )}
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-        <Icon size={19} color={P.accent} />
-      </div>
-      <h3 style={{ ...disp, fontSize: 17, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
-      <p style={{ ...body, fontSize: 13.5, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
+      {visual}
+      <h3 style={{ ...disp, fontSize: 16.5, fontWeight: 700, color: P.ink, marginBottom: 7, letterSpacing: '-0.01em' }}>{title}</h3>
+      <p style={{ ...body, fontSize: 13.5, lineHeight: 1.65, color: P.ink2, margin: 0 }}>{text}</p>
     </div>
   );
 }
@@ -476,6 +620,14 @@ export default function LandingPage() {
         @keyframes marquee {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
+        }
+        @keyframes caretBlink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        @keyframes livePulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+          60%      { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
         }
       `}</style>
 
@@ -593,8 +745,8 @@ export default function LandingPage() {
             <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
             <p style={{ ...body, fontSize: mob ? 14 : 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
           </Reveal>
-          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: mob ? 12 : 16 }}>
-            {FEATURES.map((f) => <FeatureCard key={f.title} {...f} />)}
+          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 12 : 16, alignItems: 'start' }}>
+            {FEATURES.map((f) => <FeatureCard key={f.title} {...f} mob={mob} />)}
           </Reveal>
         </div>
       </section>
@@ -693,18 +845,16 @@ export default function LandingPage() {
             </p>
           </Reveal>
 
-          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 12 : 16, marginTop: mob ? 28 : 44, maxWidth: 880, marginLeft: 'auto', marginRight: 'auto' }}>
+          <Reveal delay={120} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, display: 'flex', flexDirection: mob ? 'column' : 'row', marginTop: mob ? 28 : 44, maxWidth: 880, marginLeft: 'auto', marginRight: 'auto', overflow: 'hidden' }}>
             {[
-              { icon: Sparkles, title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports — all included.' },
-              { icon: GitBranch, title: 'Unlimited models',       body: 'Create, edit, and save as many financial models as you need. No project caps, no limits.' },
-              { icon: Share2,    title: 'No credit card',          body: 'Sign up with email or Google and start building in seconds. Nothing to pay, now or ever.' },
-            ].map(({ icon: Icon, title, body: text }) => (
-              <div key={title} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: '24px 22px', textAlign: 'center' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 11, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                  <Icon size={20} color={P.accent} />
-                </div>
+              { n: '01', title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports — all included.' },
+              { n: '02', title: 'Unlimited models',       body: 'Create, edit, and save as many financial models as you need. No project caps, no limits.' },
+              { n: '03', title: 'No credit card',          body: 'Sign up with email or Google and start building in seconds. Nothing to pay, now or ever.' },
+            ].map(({ n, title, body: text }, i) => (
+              <div key={n} style={{ flex: 1, padding: mob ? '20px 22px' : '28px 26px', borderTop: (mob && i) ? `1px solid ${P.border}` : 'none', borderLeft: (!mob && i) ? `1px solid ${P.border}` : 'none' }}>
+                <div style={{ ...disp, fontSize: 13, fontWeight: 800, color: P.accentText, letterSpacing: '0.05em', marginBottom: 10 }}>{n}</div>
                 <h3 style={{ ...disp, fontSize: 16.5, fontWeight: 700, color: P.ink, marginBottom: 7, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ ...body, fontSize: 13.5, lineHeight: 1.6, color: P.ink2 }}>{text}</p>
+                <p style={{ ...body, fontSize: 13.5, lineHeight: 1.6, color: P.ink2, margin: 0 }}>{text}</p>
               </div>
             ))}
           </Reveal>
