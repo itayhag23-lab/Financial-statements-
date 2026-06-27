@@ -218,10 +218,8 @@ function AITeaser({ mob }) {
 // Brand lockup — clean geometric K monogram mark + wordmark.
 function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: size * 1.3, height: size * 1.3, borderRadius: size * 0.32, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', flexShrink: 0 }}>
-        <img src="/koala-mascot.png" alt="" width={size * 0.85} height={size * 0.85} style={{ display: 'block', objectFit: 'contain' }} />
-      </span>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <img src="/koala-mascot.png" alt="" width={size * 1.6} height={size * 1.6} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
         <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
         <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: size * 0.29, color: accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
@@ -743,7 +741,7 @@ export default function LandingPage() {
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ ...maxW, padding: `28px ${sp}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/koala-mascot.png" alt="" width={26} height={26} style={{ display: 'block', objectFit: 'contain' }} />
+            <img src="/koala-mascot.png" alt="" width={40} height={40} style={{ display: 'block', objectFit: 'contain' }} />
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
           <div style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8' }}>

@@ -26,10 +26,8 @@ const disp = { fontFamily: FONTS.display };
 
 function BrandLockup() {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: P.accentSoft, border: `1px solid ${P.accentBorder}`, flexShrink: 0 }}>
-        <img src="/koala-mascot.png" alt="" width={26} height={26} style={{ display: 'block', objectFit: 'contain' }} />
-      </span>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+      <img src="/koala-mascot.png" alt="" width={48} height={48} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
       <span style={{ ...disp, fontSize: 20, fontWeight: 700, color: P.ink, letterSpacing: '-0.03em' }}>
         Koala <span style={{ color: P.accent, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', verticalAlign: 'middle', marginLeft: 2 }}>Statements</span>
       </span>
