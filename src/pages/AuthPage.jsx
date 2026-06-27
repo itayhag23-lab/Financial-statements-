@@ -28,11 +28,7 @@ function BrandLockup() {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: P.accentSoft, border: `1px solid ${P.accentBorder}`, flexShrink: 0 }}>
-        <svg width={18} height={18} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <line x1="20" y1="14" x2="20" y2="50" stroke={P.accent} strokeWidth="6" strokeLinecap="round"/>
-          <line x1="20" y1="31" x2="43" y2="14" stroke={P.accent} strokeWidth="6" strokeLinecap="round"/>
-          <line x1="20" y1="31" x2="43" y2="50" stroke={P.accent} strokeWidth="6" strokeLinecap="round"/>
-        </svg>
+        <img src="/koala-mascot.png" alt="" width={26} height={26} style={{ display: 'block', objectFit: 'contain' }} />
       </span>
       <span style={{ ...disp, fontSize: 20, fontWeight: 700, color: P.ink, letterSpacing: '-0.03em' }}>
         Koala <span style={{ color: P.accent, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', verticalAlign: 'middle', marginLeft: 2 }}>Statements</span>

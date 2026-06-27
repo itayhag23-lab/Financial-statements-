@@ -220,11 +220,7 @@ function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 11 }}>
       <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: size * 1.3, height: size * 1.3, borderRadius: size * 0.32, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', flexShrink: 0 }}>
-        <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <line x1="20" y1="14" x2="20" y2="50" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
-          <line x1="20" y1="31" x2="43" y2="14" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
-          <line x1="20" y1="31" x2="43" y2="50" stroke={accent} strokeWidth="6" strokeLinecap="round"/>
-        </svg>
+        <img src="/koala-mascot.png" alt="" width={size * 0.85} height={size * 0.85} style={{ display: 'block', objectFit: 'contain' }} />
       </span>
       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
         <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
@@ -747,11 +743,7 @@ export default function LandingPage() {
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ ...maxW, padding: `28px ${sp}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="26" height="26" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <line x1="20" y1="14" x2="20" y2="50" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
-              <line x1="20" y1="31" x2="43" y2="14" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
-              <line x1="20" y1="31" x2="43" y2="50" stroke="#10B981" strokeWidth="6" strokeLinecap="round"/>
-            </svg>
+            <img src="/koala-mascot.png" alt="" width={26} height={26} style={{ display: 'block', objectFit: 'contain' }} />
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
           <div style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8' }}>
