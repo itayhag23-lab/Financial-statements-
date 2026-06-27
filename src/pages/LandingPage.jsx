@@ -110,8 +110,8 @@ function TypingLine({ lines, typeMs = 38, eraseMs = 22, holdMs = 1800 }) {
   );
 }
 
-// Primary hero CTA — scales up and brightens on hover so the button feels
-// clickable instead of static.
+// Primary hero CTA — pulses to draw the eye while idle (works on touch
+// devices, unlike a :hover-only effect), then scales/brightens on hover.
 function HeroCTA({ onClick, mob }) {
   const [hov, hp] = useHover();
   return (
@@ -121,10 +121,97 @@ function HeroCTA({ onClick, mob }) {
       textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8,
       transform: hov ? 'scale(1.04)' : 'scale(1)',
       boxShadow: hov ? '0 10px 28px -8px rgba(16,185,129,0.55)' : '0 0 0 rgba(0,0,0,0)',
+      animation: hov ? 'none' : 'badgePulse 2.4s ease-in-out infinite',
       transition: 'transform 180ms cubic-bezier(0.16,1,0.3,1), box-shadow 180ms, background 180ms',
     }}>
       Build your model free <ArrowRight size={16} />
     </Link>
+  );
+}
+
+// Illustrative example output per segment — clearly framed as a preview,
+// not a live calculation (same convention as DashboardMock's "Acme Corp").
+const AI_TEASER_SEGMENTS = {
+  'B2B SaaS':   [{ label: 'ARR target',           value: '$1.2M' },   { label: 'Monthly burn rate',    value: '$84K' },    { label: 'Runway',     value: '14 months' }],
+  'E-commerce': [{ label: 'Revenue run-rate',      value: '$3.4M' },   { label: 'Gross margin',         value: '42%' },     { label: 'Inventory turns', value: '6.1x/yr' }],
+  'Consulting': [{ label: 'Utilization rate',      value: '71%' },     { label: 'Revenue / consultant', value: '$186K' },   { label: 'Net margin', value: '18%' }],
+  'Other':      [{ label: 'Revenue growth',        value: '+24% YoY' },{ label: 'Burn rate',            value: '$52K/mo' }, { label: 'Runway',     value: '11 months' }],
+};
+
+// Click-driven "AI thinking" demo in the hero — gives every visitor (mobile
+// included, unlike DashboardMock) a real, hands-on AI moment before signup.
+function AITeaser({ mob }) {
+  const [segment, setSegment] = React.useState(null);
+  const [phase, setPhase] = React.useState('idle'); // idle | analyzing | result
+
+  React.useEffect(() => {
+    if (phase !== 'analyzing') return;
+    const t = setTimeout(() => setPhase('result'), 1100);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  function pick(seg) {
+    capture('cta_click', { location: 'ai_teaser_start', segment: seg });
+    setSegment(seg);
+    setPhase('analyzing');
+  }
+  function reset() {
+    setPhase('idle');
+    setSegment(null);
+  }
+
+  return (
+    <div style={{ marginTop: mob ? 18 : 22, background: 'rgba(255,255,255,0.04)', border: `1px solid ${P.borderDark}`, borderRadius: 14, padding: mob ? 16 : 20, maxWidth: mob ? '100%' : 460 }}>
+      {phase === 'idle' && (
+        <>
+          <div style={{ ...body, fontSize: 13, fontWeight: 600, color: '#F8FAFC', marginBottom: 10 }}>
+            Try it — 10 second preview
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {Object.keys(AI_TEASER_SEGMENTS).map((seg) => (
+              <button key={seg} onClick={() => pick(seg)} style={{
+                ...body, fontSize: 12.5, fontWeight: 500, color: P.accent, background: P.accentSoft,
+                border: '1px solid rgba(16,185,129,0.25)', borderRadius: 8, padding: '7px 13px', cursor: 'pointer',
+              }}>
+                {seg}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {phase === 'analyzing' && (
+        <div style={{ ...body, fontSize: 13.5, color: 'rgba(248,250,252,0.75)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Zap size={14} color={P.accent} />
+          AI is analyzing your {segment} numbers…
+        </div>
+      )}
+      {phase === 'result' && (
+        <>
+          <div style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Example {segment} model
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
+            {AI_TEASER_SEGMENTS[segment].map((row) => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, ...body, color: 'rgba(248,250,252,0.85)' }}>
+                <span style={{ color: 'rgba(248,250,252,0.55)' }}>{row.label}</span>
+                <span style={{ ...mono, fontWeight: 600 }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <Link to="/auth" onClick={() => capture('cta_click', { location: 'ai_teaser_result', segment })} style={{
+              ...body, fontSize: 13, fontWeight: 600, color: P.bgDark, background: P.accent,
+              padding: '9px 16px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              Build your real model free <ArrowRight size={14} />
+            </Link>
+            <button onClick={reset} style={{ ...body, fontSize: 12.5, color: 'rgba(248,250,252,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              Try another →
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -422,7 +509,7 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', bottom: -100, left: -120, width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ ...maxW, padding: `${mob ? '44px' : '84px'} ${sp} ${mob ? '40px' : '80px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: mob ? 28 : 60, alignItems: 'center', position: 'relative' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22, animation: 'badgePulse 2.4s ease-in-out infinite' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.25)`, borderRadius: 20, padding: '5px 14px', marginBottom: mob ? 16 : 22 }}>
               <Zap size={12} color={P.accent} />
               <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.14em', textTransform: 'uppercase' }}>AI-Native Financial Modeling</span>
             </div>
@@ -448,6 +535,10 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+            <p style={{ ...body, fontSize: mob ? 12 : 13, color: 'rgba(248,250,252,0.4)', margin: `${mob ? 14 : 18}px 0 0` }}>
+              No spreadsheets. No finance degree. Free.
+            </p>
+            <AITeaser mob={mob} />
           </div>
           {!tab && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
