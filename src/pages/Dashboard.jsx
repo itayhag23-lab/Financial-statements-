@@ -114,6 +114,9 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
 }
 
 function EmptyState() {
+  // Fresh id per mount so this always opens a genuinely new (wizard-open) model,
+  // never the last-active one.
+  const [newId] = useState(() => genId());
   return (
     <div style={{ textAlign: 'center', padding: '64px 24px' }}>
       <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -124,7 +127,7 @@ function EmptyState() {
         Create your first financial model — describe your business and AI builds it in under 60 seconds.
       </div>
       <Link
-        to="/app"
+        to={`/app/${newId}`}
         style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '11px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
       >
         <Plus size={16} /> New model
@@ -140,6 +143,10 @@ export default function Dashboard() {
   const [loading, setLoading]     = useState(true);
   const [localCount, setLocalCount] = useState(0);
   const [importing, setImporting] = useState(false);
+  // Fresh ids per mount so the header CTAs always open a genuinely new
+  // (wizard/AI-open) model, never the last-active one.
+  const [newModelId]   = useState(() => genId());
+  const [newAIModelId] = useState(() => genId());
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -241,13 +248,13 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link
-              to="/app"
+              to={`/app/${newAIModelId}?ai=1`}
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               <Sparkles size={15} /> New with AI
             </Link>
             <Link
-              to="/app"
+              to={`/app/${newModelId}`}
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}
             >
               <Plus size={15} /> New model

@@ -1,7 +1,7 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { capture } from './lib/analytics';
@@ -339,6 +339,29 @@ if(rowData[sc]['tax'])rowData[sc]['tax'].pctOfRev=sc==='base'?region.taxRate:sc=
 for(const ent of extraIds){const e=rowData[sc][ent.id];if(!e)continue;if(ent.defaultMode==='percentOfRevenue'&&ent.pctOfRev!=null)e.pctOfRev=Math.max(1,ent.pctOfRev+(sc==='worst'?3:sc==='best'?-2:0));if((ent.defaultMode==='flatGrowth'||ent.defaultMode==='manual')&&ent.baseValue!=null){e.baseValue=Math.round(ent.baseValue*mult*oM);if(ent.flatRate!=null)e.flatRate=Math.max(0,ent.flatRate);}}
 if(rowData[sc]['cash']){const sc2=Math.round(sb.opexBase*mult*1.5);rowData[sc]['cash'].manualValues=Array(numPeriods).fill(0).map((_,i)=>Math.round(sc2*Math.pow(sc==='worst'?0.85:sc==='best'?1.4:1.15,i)));}
 if(rowData[sc]['common']){const se=Math.round(sb.opexBase*mult*1.2);rowData[sc]['common'].manualValues=Array(numPeriods).fill(se);}
+}
+return{rows,rowData,enabledStatements};
+}
+
+// Manual "build without AI" path: same row structure (sector extra lines,
+// enabled statements) as seedProjectForWizard, but every value starts at
+// zero so it's visibly distinct from an AI-generated model.
+function seedBlankProject({sectorKey,statements,numPeriods}){
+const sector=BB[sectorKey]||BB.other;
+const stmtMode=statements||'incomeOnly';
+const enabledStatements=stmtMode==='full'?{income:true,balance:true,cashFlow:true}:stmtMode==='incomeAndCF'?{income:true,balance:false,cashFlow:true}:{income:true,balance:false,cashFlow:false};
+const rows={income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))};
+for(const extra of(sector.extraRows||[])){
+const id=newRowId(extra.parentId||'income');
+const newRow={id,label:extra.label,type:'leaf',parentId:extra.parentId,defaultMode:extra.defaultMode,deletable:true};
+const list=rows.income;let lastIdx=-1;
+for(let i=0;i<list.length;i++)if(list[i].parentId===extra.parentId)lastIdx=i;
+list.splice(lastIdx>=0?lastIdx+1:list.length,0,newRow);
+}
+const rowData={};
+for(const sc of SCENARIOS){
+rowData[sc]={};
+for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt])if(r.type==='leaf')rowData[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);
 }
 return{rows,rowData,enabledStatements};
 }
@@ -1149,15 +1172,16 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 function FinancialModelBuilderInner({projectId}={}){
-const user=useAuth();const navigate=useNavigate();
+const user=useAuth();const navigate=useNavigate();const[searchParams]=useSearchParams();
+const startInAIGen=searchParams.get('ai')==='1';
 const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
-const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
+const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(!startInAIGen);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
-const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
+const[showAIGen,setShowAIGen]=useState(startInAIGen);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
@@ -1166,11 +1190,10 @@ const[expandedCashFlow,setExpandedCashFlow]=useState(()=>new Set());
 
 const[rows,setRows]=useState({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});
 const[rowData,setRowData]=useState(()=>{
+// Zero-filled until the wizard/AI-generation seeds real numbers — never a
+// hardcoded sample model (and never negative) on first paint.
 const all={};
 for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,5);}
-all.base['rev-ops'].baseValue=1000;all.base['rev-ops'].flatRate=25;all.base['cogs-direct'].pctOfRev=35;all.base['opex-sm'].pctOfRev=18;all.base['opex-ga'].baseValue=400;all.base['opex-ga'].flatRate=15;all.base['tax'].pctOfRev=5;if(all.base['cash'])all.base['cash'].manualValues=[500,600,800,1000,1300];
-all.best['rev-ops'].baseValue=1200;all.best['rev-ops'].flatRate=40;all.best['cogs-direct'].pctOfRev=28;all.best['opex-sm'].pctOfRev=14;all.best['opex-ga'].baseValue=360;all.best['opex-ga'].flatRate=12;all.best['tax'].pctOfRev=8;if(all.best['cash'])all.best['cash'].manualValues=[600,900,1400,2200,3500];
-all.worst['rev-ops'].baseValue=800;all.worst['rev-ops'].flatRate=10;all.worst['cogs-direct'].pctOfRev=50;all.worst['opex-sm'].pctOfRev=26;all.worst['opex-ga'].baseValue=480;all.worst['opex-ga'].flatRate=22;all.worst['tax'].pctOfRev=2;if(all.worst['cash'])all.worst['cash'].manualValues=[400,300,150,50,-100];
 return all;
 });
 const[customGrowthRow,setCustomGrowthRow]=useState(null);const[addRowFor,setAddRowFor]=useState(null);const[showSaveLoad,setShowSaveLoad]=useState(false);
@@ -1187,7 +1210,7 @@ const computedAll=useMemo(()=>{const m={};for(const sc of SCENARIOS)m[sc]=comput
 const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[activeScenario]:{...prev[activeScenario],[rowId]:{...prev[activeScenario][rowId],...patch}}}));},[activeScenario]);
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
-const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
+const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedBlankProject({sectorKey:answers.sectorKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
 const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
@@ -1263,8 +1286,9 @@ a.click();URL.revokeObjectURL(url);
 const pidRef=useRef(projectId||getLastActive()||genId());
 const didLoadRef=useRef(false);
 useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
-// No saved project: seed a populated, editable starter so the builder is never empty behind the wizard.
-const s=seedProjectForWizard({sectorKey:'other',regionKey:'us',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}})();},[]); // eslint-disable-line
+// No saved project: zero-filled starter behind the wizard/AI modal — real
+// numbers only appear once the user finishes the wizard or generates with AI.
+const s=seedBlankProject({sectorKey:'other',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}})();},[]); // eslint-disable-line
 useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
