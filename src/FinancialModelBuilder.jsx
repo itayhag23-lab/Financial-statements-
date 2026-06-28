@@ -1338,6 +1338,22 @@ useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(
 if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
 else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAuthForAI,navigate]);
 useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
+// Keep the latest save payload in a ref so we can flush it the instant the user
+// leaves the builder (navigates back to the dashboard, closes the tab, etc.).
+// The 800ms debounce above can otherwise drop the final edits if they leave fast.
+const saveRef=useRef(null);
+saveRef.current={meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers};
+const showWizardRef=useRef(showWizard);showWizardRef.current=showWizard;
+const flushSave=useCallback(()=>{if(showWizardRef.current)return;try{saveProject(pidRef.current,saveRef.current);}catch{}},[]);
+useEffect(()=>{
+// Save on unmount (route change) AND on tab close / refresh. saveProject writes
+// localStorage synchronously before any await, so the model is persisted even
+// as the component tears down — going back never loses the current model.
+const onHide=()=>flushSave();
+window.addEventListener('pagehide',onHide);
+window.addEventListener('beforeunload',onHide);
+return()=>{window.removeEventListener('pagehide',onHide);window.removeEventListener('beforeunload',onHide);flushSave();};
+},[flushSave]);
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
 const BUILD_TABS=useMemo(()=>{const t=[{id:'income',label:'Income Statement'}];if(enabledStatements.balance)t.push({id:'balance',label:'Balance Sheet'});if(enabledStatements.cashFlow)t.push({id:'cashFlow',label:'Cash Flow'});return t;},[enabledStatements]);
