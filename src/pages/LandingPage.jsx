@@ -743,11 +743,11 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how" style={{ background: P.bg, borderBottom: `1px solid ${P.border}` }}>
+      <section id="how" style={{ background: P.bgDark, borderBottom: `1px solid ${P.borderDark}` }}>
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
           <Reveal style={{ textAlign: 'center', marginBottom: mob ? 28 : 52 }}>
-            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accentText, marginBottom: 14 }}>Workflow</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
+            <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Workflow</div>
+            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: '#F8FAFC', margin: 0, letterSpacing: '-0.02em' }}>From a sentence to an investor-ready model.</h2>
           </Reveal>
           <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: mob ? 12 : 20 }}>
             {[
@@ -755,13 +755,13 @@ export default function LandingPage() {
               { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet — seeded with sector-calibrated assumptions and three live scenarios — in under 60 seconds.' },
               { n: '03', title: 'Refine, share, raise',   icon: Share2,   body: 'Adjust any assumption, run what-if scenarios with the AI advisor, then share a live interactive report directly with your investors or board.' },
             ].map(({ n, title, icon: Icon, body: text }) => (
-              <div key={n} style={{ padding: mob ? '20px 16px' : '28px 24px', background: P.bgAlt, borderRadius: 12, border: `1px solid ${P.border}` }}>
-                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accentText, letterSpacing: '0.14em', marginBottom: 12 }}>STEP {n}</div>
-                <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+              <div key={n} style={{ padding: mob ? '20px 16px' : '28px 24px', background: P.bgDarkAlt, borderRadius: 12, border: `1px solid ${P.borderDark}` }}>
+                <div style={{ ...body, fontSize: 11, fontWeight: 700, color: P.accent, letterSpacing: '0.14em', marginBottom: 12 }}>STEP {n}</div>
+                <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <Icon size={18} color={P.accent} />
                 </div>
-                <h3 style={{ ...disp, fontSize: mob ? 17 : 20, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ ...body, fontSize: mob ? 13 : 14, lineHeight: 1.65, color: P.ink2 }}>{text}</p>
+                <h3 style={{ ...disp, fontSize: mob ? 17 : 20, fontWeight: 700, color: '#F1F5F9', marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
+                <p style={{ ...body, fontSize: mob ? 13 : 14, lineHeight: 1.65, color: mob ? '#CBD5E1' : '#94A3B8' }}>{text}</p>
               </div>
             ))}
           </Reveal>
