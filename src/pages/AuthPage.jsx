@@ -71,6 +71,21 @@ function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onTogg
   );
 }
 
+// Where to send the user after a successful sign-in/sign-up. Honors a
+// destination an auth gate stashed before sending them here (e.g. "sign in
+// to use AI" from inside a project), so they return to what they were doing
+// instead of always landing on the dashboard.
+function postAuthDestination(fallback = '/dashboard') {
+  try {
+    const dest = sessionStorage.getItem('koala:postAuthRedirect');
+    if (dest) {
+      sessionStorage.removeItem('koala:postAuthRedirect');
+      return dest;
+    }
+  } catch {}
+  return fallback;
+}
+
 function friendlyError(msg = '') {
   const m = msg.toLowerCase();
   if (m.includes('email rate limit') || m.includes('over_email_send_rate_limit'))
@@ -119,11 +134,11 @@ export default function AuthPage() {
     try {
       if (mode === 'signin') {
         await signInWithEmail(email, password);
-        navigate('/dashboard', { replace: true });
+        navigate(postAuthDestination(), { replace: true });
       } else {
         const signedIn = await signUpWithEmail(email, password);
         if (signedIn) {
-          navigate('/dashboard', { replace: true });
+          navigate(postAuthDestination(), { replace: true });
         } else {
           setSuccess('Check your email for a confirmation link, then sign in.');
           setMode('signin');
