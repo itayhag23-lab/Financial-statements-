@@ -677,7 +677,7 @@ export default function LandingPage() {
               )}
             </div>
             <div style={{ display: 'flex', gap: mob ? 12 : 20, marginTop: mob ? 16 : 22, flexWrap: 'wrap' }}>
-              {['< 60 sec to first model', 'No credit card required', 'SOC 2 compliant'].map((t) => (
+              {['< 60 sec to first model', 'No credit card required', 'Encrypted & private'].map((t) => (
                 <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 5, ...body, fontSize: mob ? 11.5 : 12.5, color: mob ? '#CBD5E1' : '#94A3B8' }}>
                   <Check size={13} color={P.accent} />{t}
                 </div>
@@ -787,14 +787,14 @@ export default function LandingPage() {
               <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
               <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
               <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: 'rgba(248,250,252,0.5)', marginBottom: 32 }}>
-                Your financial data stays private and secure. We've built Koala to meet the standards that institutional buyers and investors expect.
+                Your financial data stays private and secure. Koala is built on SOC 2 Type II certified infrastructure, with encryption and per-account isolation by default.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {[
-                  { icon: Shield,    label: 'SOC 2 Type II',             desc: 'Annual third-party audit of our security controls' },
-                  { icon: Lock,      label: '256-bit AES Encryption',     desc: 'At rest and in transit, on every plan' },
-                  { icon: Award,     label: 'GDPR & CCPA Compliant',      desc: 'Full data residency and deletion on request' },
-                  { icon: FileText,  label: 'Role-Based Access Control',  desc: 'Granular permissions for team and board sharing' },
+                  { icon: Shield,    label: 'SOC 2 Type II infrastructure', desc: 'Built on Supabase and Vercel — SOC 2 Type II certified platforms' },
+                  { icon: Lock,      label: '256-bit AES encryption',       desc: 'Encrypted at rest (AES-256) and in transit (TLS)' },
+                  { icon: Award,     label: 'Your data, your control',      desc: 'Export or delete your data anytime — removed within 30 days' },
+                  { icon: FileText,  label: 'Private by default',           desc: 'Row-level security keeps every account isolated from others' },
                 ].map(({ icon: Icon, label, desc }) => (
                   <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                     <div style={{ width: 36, height: 36, borderRadius: 9, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -810,20 +810,25 @@ export default function LandingPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {['SOC 2', 'GDPR', 'ISO 27001', 'CCPA'].map((badge) => (
-                  <div key={badge} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
+                {[
+                  { label: 'AES-256', sub: 'Encrypted at rest' },
+                  { label: 'TLS',     sub: 'Encrypted in transit' },
+                  { label: 'RLS',     sub: 'Per-account isolation' },
+                  { label: 'SOC 2',   sub: 'Certified infrastructure' },
+                ].map(({ label, sub }) => (
+                  <div key={label} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.3)`, margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Shield size={16} color={P.accent} />
                     </div>
-                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{badge}</div>
-                    <div style={{ ...body, fontSize: 10.5, color: mob ? '#CBD5E1' : '#94A3B8', marginTop: 3 }}>Compliant</div>
+                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{label}</div>
+                    <div style={{ ...body, fontSize: 10.5, color: mob ? '#CBD5E1' : '#94A3B8', marginTop: 3 }}>{sub}</div>
                   </div>
                 ))}
               </div>
               <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ ...body, fontSize: 11, color: mob ? '#CBD5E1' : '#94A3B8', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Data Residency</div>
+                <div style={{ ...body, fontSize: 11, color: mob ? '#CBD5E1' : '#94A3B8', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Infrastructure</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {['🇺🇸 US East', '🇪🇺 EU West', '🌏 APAC'].map((r) => (
+                  {['Supabase', 'Vercel', 'EU & US data centers'].map((r) => (
                     <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
                   ))}
                 </div>
@@ -884,7 +889,7 @@ export default function LandingPage() {
             Build your model free <ArrowRight size={18} />
           </Link>
           <div style={{ marginTop: 20, ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8' }}>
-            No credit card · Free forever · SOC 2 compliant
+            No credit card · Free forever · Encrypted &amp; private
           </div>
         </div>
       </section>
