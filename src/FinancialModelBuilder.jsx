@@ -7,6 +7,7 @@ import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib
 import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
+import HelpTooltip from './components/ui/HelpTooltip';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 
@@ -573,7 +574,8 @@ return(<div className="grid items-center" style={{...grid,background:bg,borderTo
 <div className="ff-body py-2.5 text-[13px] flex items-center gap-1" style={{color:isComp?C.green:C.ink,fontWeight:fw,paddingLeft:indent}}>
 {isParent&&hasChildren?<button onClick={onToggle} className="p-0.5 rounded" style={{color:C.muted,marginLeft:-4}}><ChevronRight size={14} className={isExpanded?'chevron-exp':'chevron-col'}/></button>:<span style={{width:18,display:'inline-block'}}/>}
 {isComp&&<span className="ff-display text-[14px] italic" style={{color:C.green,marginRight:2}}>=</span>}
-{row.label}
+<span className="truncate">{row.label}</span>
+<HelpTooltip glossaryKey={row.id} term={row.label}/>
 </div>
 {periods.map((_,i)=>{const v=computedValues?.[i]??0;return(<div key={i} className="ff-num px-3 py-2.5 text-right text-[13px]" style={{color:isComp?C.green:v<0?C.rust:C.ink,fontWeight:fw}}><AnimatedNumber value={v} tweenKey={`${row.id}-${i}-${scenarioKey}`} format={x=>fmt(x,{paren:true})}/></div>);})}
 <div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
@@ -588,7 +590,7 @@ return(<div className="grid items-center" style={{...grid,borderTop:`1px solid $
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
 <span style={{width:18,display:'inline-block'}}/>
 <div className="flex-1 min-w-0">
-<div className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</div>
+<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label}/></div>
 <div className="mt-0.5"><span className="ff-body text-[10px] px-1.5 py-0.5 rounded-sm inline-flex items-center gap-1" style={{color:C.green,background:C.greenSoft,border:`1px solid ${C.green}44`}}><RefreshCw size={9}/>{row.linkLabel||'auto-linked'}</span></div>
 </div>
 </div>
@@ -622,7 +624,7 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
 <span style={{width:18,display:'inline-block'}}/>
 <div className="flex-1 min-w-0">
-<div className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</div>
+<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label}/></div>
 <div className="mt-0.5 flex items-center gap-2 flex-wrap">
 <ModeMenu currentMode={mode} onChange={changeMode} allowed={allowed}/>
 {mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
@@ -802,8 +804,8 @@ function SectorBenchmarkPanel({computed,periods,sectorKey}){
 const sector=BB[sectorKey]||BB.other;const rev=computed.values.revenue||[];const gp=computed.values.grossProfit||[];const op=computed.values.operatingIncome||[];const ni=computed.values.netIncome||[];const li=periods.length-1;const lR=rev[li]||0;
 const lGM=lR>0?(gp[li]/lR)*100:0;const lOM=lR>0?(op[li]/lR)*100:0;const lNM=lR>0?(ni[li]/lR)*100:0;
 const status=(val,[lo,hi])=>val<lo?{tone:C.rust,label:'below typical',sym:'↓'}:val>hi?{tone:C.green,label:'above typical',sym:'↑'}:{tone:C.green,label:'in range',sym:'✓'};
-const Row=({label,value,range,hint})=>{const s=status(value,range);const mn=Math.min(value,range[0],0),mx=Math.max(value,range[1]);const sp=mx-mn||1;const vP=((value-mn)/sp)*100;const lP=((range[0]-mn)/sp)*100;const hP=((range[1]-mn)/sp)*100;return(<div className="py-3" style={{borderTop:`1px solid ${C.borderSoft}`}}><div className="flex items-baseline justify-between mb-2"><div><div className="ff-body text-[12.5px]" style={{color:C.ink2,fontWeight:500}}>{label}</div><div className="ff-body text-[10.5px] mt-0.5" style={{color:C.muted}}>{hint}</div></div><div className="text-right"><div className="ff-num text-[16px]" style={{color:s.tone,fontWeight:500}}>{value.toFixed(1)}<span className="text-[11px]" style={{color:C.muted}}>%</span></div><div className="ff-body text-[10px] mt-0.5" style={{color:s.tone}}>{s.sym} {s.label}</div></div></div><div className="relative h-2.5 rounded-full" style={{background:C.surfaceAlt}}><div className="absolute h-full rounded-full" style={{left:`${lP}%`,width:`${hP-lP}%`,background:`${C.green}33`}}/><div className="absolute h-3.5 w-0.5" style={{left:`calc(${Math.max(0,Math.min(100,vP))}% - 1px)`,top:-2,background:s.tone}}/></div><div className="flex justify-between mt-1"><span className="ff-num text-[9.5px]" style={{color:C.muted}}>{range[0]}%</span><span className="ff-body text-[9.5px]" style={{color:C.faint,letterSpacing:'0.1em'}}>SECTOR TYPICAL</span><span className="ff-num text-[9.5px]" style={{color:C.muted}}>{range[1]}%</span></div></div>);};
-return(<div className="rounded-lg p-5" style={{background:C.surface,border:`1px solid ${C.border}`}}><div className="flex items-baseline justify-between mb-2 flex-wrap gap-2"><div><div className="label-eyebrow ff-body" style={{color:C.gold}}>Sector check</div><h3 className="ff-display text-[20px] leading-tight mt-0.5" style={{color:C.ink,fontWeight:500}}>How you stack up · {sector.label}</h3></div><span className="ff-body text-[10.5px]" style={{color:C.muted}}>{periods[li]} margins</span></div><Row label="Gross margin" value={lGM} range={sector.benchmarks.grossMargin} hint="What's left after direct costs"/><Row label="Operating margin" value={lOM} range={sector.benchmarks.opMargin} hint="Profit from core operations, before interest and tax"/><Row label="Net margin" value={lNM} range={sector.benchmarks.netMargin} hint="Bottom line — what stays as profit"/></div>);
+const Row=({label,value,range,hint,glossaryKey})=>{const s=status(value,range);const mn=Math.min(value,range[0],0),mx=Math.max(value,range[1]);const sp=mx-mn||1;const vP=((value-mn)/sp)*100;const lP=((range[0]-mn)/sp)*100;const hP=((range[1]-mn)/sp)*100;return(<div className="py-3" style={{borderTop:`1px solid ${C.borderSoft}`}}><div className="flex items-baseline justify-between mb-2"><div><div className="flex items-center gap-1"><span className="ff-body text-[12.5px]" style={{color:C.ink2,fontWeight:500}}>{label}</span><HelpTooltip glossaryKey={glossaryKey} term={label}/></div><div className="ff-body text-[10.5px] mt-0.5" style={{color:C.muted}}>{hint}</div></div><div className="text-right"><div className="ff-num text-[16px]" style={{color:s.tone,fontWeight:500}}>{value.toFixed(1)}<span className="text-[11px]" style={{color:C.muted}}>%</span></div><div className="ff-body text-[10px] mt-0.5" style={{color:s.tone}}>{s.sym} {s.label}</div></div></div><div className="relative h-2.5 rounded-full" style={{background:C.surfaceAlt}}><div className="absolute h-full rounded-full" style={{left:`${lP}%`,width:`${hP-lP}%`,background:`${C.green}33`}}/><div className="absolute h-3.5 w-0.5" style={{left:`calc(${Math.max(0,Math.min(100,vP))}% - 1px)`,top:-2,background:s.tone}}/></div><div className="flex justify-between mt-1"><span className="ff-num text-[9.5px]" style={{color:C.muted}}>{range[0]}%</span><span className="ff-body text-[9.5px]" style={{color:C.faint,letterSpacing:'0.1em'}}>SECTOR TYPICAL</span><span className="ff-num text-[9.5px]" style={{color:C.muted}}>{range[1]}%</span></div></div>);};
+return(<div className="rounded-lg p-5" style={{background:C.surface,border:`1px solid ${C.border}`}}><div className="flex items-baseline justify-between mb-2 flex-wrap gap-2"><div><div className="label-eyebrow ff-body" style={{color:C.gold}}>Sector check</div><h3 className="ff-display text-[20px] leading-tight mt-0.5" style={{color:C.ink,fontWeight:500}}>How you stack up · {sector.label}</h3></div><span className="ff-body text-[10.5px]" style={{color:C.muted}}>{periods[li]} margins</span></div><Row label="Gross margin" value={lGM} range={sector.benchmarks.grossMargin} hint="What's left after direct costs" glossaryKey="gross-margin"/><Row label="Operating margin" value={lOM} range={sector.benchmarks.opMargin} hint="Profit from core operations, before interest and tax" glossaryKey="op-margin"/><Row label="Net margin" value={lNM} range={sector.benchmarks.netMargin} hint="Bottom line — what stays as profit" glossaryKey="net-margin"/></div>);
 }
 
 function CompactKPIGrid({computed,periods,granularity,enabledStatements}){
