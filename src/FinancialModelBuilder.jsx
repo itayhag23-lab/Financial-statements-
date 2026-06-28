@@ -326,16 +326,67 @@ list.splice(lastIdx>=0?lastIdx+1:list.length,0,newRow);
 extraIds.push({id,...extra});
 }
 const rowData={};const sb=sector.seedBase;
+const marginFloor=Math.max(3,(sector.benchmarks?.netMargin?.[0])||3);
+let revK=1;
+const perScenario={};
 for(const sc of SCENARIOS){
 rowData[sc]={};
 for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt])if(r.type==='leaf')rowData[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);
 const rM=sc==='best'?1.25:sc==='worst'?0.7:1;const gA=sc==='best'?12:sc==='worst'?-10:0;const cA=sc==='best'?-5:sc==='worst'?8:0;const oM=sc==='best'?0.92:sc==='worst'?1.12:1;
-if(rowData[sc]['rev-ops']){rowData[sc]['rev-ops'].baseValue=Math.round(sb.revenue*mult*rM);rowData[sc]['rev-ops'].flatRate=Math.max(0,sb.revGrowth+gA);}
-if(rowData[sc]['cogs-direct'])rowData[sc]['cogs-direct'].pctOfRev=Math.max(5,Math.min(85,sb.cogsPct+cA));
-if(rowData[sc]['opex-sm'])rowData[sc]['opex-sm'].pctOfRev=sc==='worst'?25:sc==='best'?12:18;
-if(rowData[sc]['opex-ga']){rowData[sc]['opex-ga'].baseValue=Math.round(sb.opexBase*mult*oM*0.45);rowData[sc]['opex-ga'].flatRate=Math.max(0,sb.opexGrowth+(sc==='worst'?4:0));}
+
+// Carve scenario-adjusted extraRow rates/values out of their generic sibling line instead of
+// adding them on top of it — the old code double-budgeted cogs/opex this way, which is what
+// pushed "Base" net income negative by default for most sectors.
+let cogsExtraSum=0,opexExtraPctSum=0,opexExtraFixedSum=0;
+for(const ent of extraIds){
+if(ent.defaultMode==='percentOfRevenue'&&ent.pctOfRev!=null){
+const v=Math.max(1,ent.pctOfRev+(sc==='worst'?3:sc==='best'?-2:0));
+if(ent.parentId==='cogs')cogsExtraSum+=v; else if(ent.parentId==='opex')opexExtraPctSum+=v;
+}
+if((ent.defaultMode==='flatGrowth'||ent.defaultMode==='manual')&&ent.baseValue!=null&&ent.parentId==='opex'){
+opexExtraFixedSum+=Math.round(ent.baseValue*mult*oM);
+}
+}
+
+const cogsTotalTarget=Math.max(5,Math.min(85,sb.cogsPct+cA));
+if(rowData[sc]['cogs-direct'])rowData[sc]['cogs-direct'].pctOfRev=Math.max(2,cogsTotalTarget-cogsExtraSum);
+
+const smTarget=sc==='worst'?25:sc==='best'?12:18;
+if(rowData[sc]['opex-sm'])rowData[sc]['opex-sm'].pctOfRev=Math.max(2,smTarget-opexExtraPctSum);
+
+const gaTarget=Math.round(sb.opexBase*mult*oM*0.45);
+if(rowData[sc]['opex-ga']){rowData[sc]['opex-ga'].baseValue=Math.max(0,gaTarget-opexExtraFixedSum);rowData[sc]['opex-ga'].flatRate=Math.max(0,sb.opexGrowth+(sc==='worst'?4:0));}
+
 if(rowData[sc]['opex-rd']){const rd=(sectorKey==='saas'||sectorKey==='mobileapp');rowData[sc]['opex-rd'].baseValue=rd?Math.round(sb.opexBase*mult*0.35):0;rowData[sc]['opex-rd'].flatRate=rd?25:0;}
-if(rowData[sc]['tax'])rowData[sc]['tax'].pctOfRev=sc==='base'?region.taxRate:sc==='best'?Math.round(region.taxRate*0.8):Math.round(region.taxRate*0.5);
+
+const totalPctCosts=(rowData[sc]['cogs-direct']?.pctOfRev||0)+cogsExtraSum+(rowData[sc]['opex-sm']?.pctOfRev||0)+opexExtraPctSum;
+const fixedCosts=(rowData[sc]['opex-ga']?.baseValue||0)+(rowData[sc]['opex-rd']?.baseValue||0)+opexExtraFixedSum;
+const revenue0=sb.revenue*mult*rM;
+perScenario[sc]={rM,gA,totalPctCosts,fixedCosts,revenue0};
+
+// Bounded revenue-scaling safety net: if Base's own cost structure can't clear a minimum net
+// margin (e.g. fixed costs too large relative to a low seed revenue), scale every scenario's
+// revenue up by the same factor rather than letting fixed costs swamp Base. No-op when unneeded.
+if(sc==='base'&&totalPctCosts<95){
+const headroom=100-totalPctCosts-marginFloor;
+if(headroom>0&&revenue0>0)revK=Math.min(6,Math.max(1,(fixedCosts*100)/(revenue0*headroom)));
+}
+}
+
+for(const sc of SCENARIOS){
+const{rM,gA,totalPctCosts,fixedCosts,revenue0}=perScenario[sc];
+const revenue1=Math.round(revenue0*revK);
+if(rowData[sc]['rev-ops']){rowData[sc]['rev-ops'].baseValue=revenue1;rowData[sc]['rev-ops'].flatRate=Math.max(0,sb.revGrowth+gA);}
+
+// Tax should be a share of pretax PROFIT, not of revenue — taxing revenue at the region's raw
+// corporate rate (independent of profitability) is what made every sector's margin collapse.
+// Derive the period-1 pretax margin analytically from the cost structure above, then express
+// the equivalent tax burden as %-of-revenue so the same percentOfRevenue engine mode still applies.
+const pretaxMarginPct=revenue1>0?(100-totalPctCosts)-(fixedCosts/revenue1*100):0;
+const taxRatePct=sc==='base'?region.taxRate:sc==='best'?Math.round(region.taxRate*0.8):Math.round(region.taxRate*0.5);
+if(rowData[sc]['tax'])rowData[sc]['tax'].pctOfRev=pretaxMarginPct>0?Math.round(taxRatePct*pretaxMarginPct)/100:0;
+
+const oM=sc==='best'?0.92:sc==='worst'?1.12:1;
 for(const ent of extraIds){const e=rowData[sc][ent.id];if(!e)continue;if(ent.defaultMode==='percentOfRevenue'&&ent.pctOfRev!=null)e.pctOfRev=Math.max(1,ent.pctOfRev+(sc==='worst'?3:sc==='best'?-2:0));if((ent.defaultMode==='flatGrowth'||ent.defaultMode==='manual')&&ent.baseValue!=null){e.baseValue=Math.round(ent.baseValue*mult*oM);if(ent.flatRate!=null)e.flatRate=Math.max(0,ent.flatRate);}}
 if(rowData[sc]['cash']){const sc2=Math.round(sb.opexBase*mult*1.5);rowData[sc]['cash'].manualValues=Array(numPeriods).fill(0).map((_,i)=>Math.round(sc2*Math.pow(sc==='worst'?0.85:sc==='best'?1.4:1.15,i)));}
 if(rowData[sc]['common']){const se=Math.round(sb.opexBase*mult*1.2);rowData[sc]['common'].manualValues=Array(numPeriods).fill(se);}
@@ -1150,7 +1201,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 
 function FinancialModelBuilderInner({projectId}={}){
 const user=useAuth();const navigate=useNavigate();
-const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
+const requireAuthForAI=useCallback(()=>{if(!user){try{sessionStorage.setItem('koala:postAuthRedirect',window.location.pathname);}catch{}navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
