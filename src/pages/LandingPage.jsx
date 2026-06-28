@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
+import ContactForm from '../components/ContactForm';
 
 // Detects viewport width for truly responsive inline styles.
 // Starts as `false` (desktop) so the first client render matches the
@@ -640,6 +641,7 @@ export default function LandingPage() {
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
             <a href="#free"     style={{ ...body, fontSize: 14, color: P.accentText, fontWeight: 600, textDecoration: 'none' }}>Free</a>
+            <a href="#contact"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 6 : 10, marginLeft: 'auto' }}>
             {!mob && <Link to="/auth" style={{ ...body, fontSize: 14, color: P.muted, textDecoration: 'none', padding: '8px 12px' }}>Log in</Link>}
@@ -886,6 +888,25 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      {/* CONTACT / FEEDBACK */}
+      <section id="contact" style={{ background: P.bgDark, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ ...maxW, padding: `${vp} ${sp}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 28 : 56, alignItems: 'start' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: P.accentSoft, border: '1px solid rgba(16,185,129,0.25)', borderRadius: 20, padding: '5px 14px', marginBottom: 18 }}>
+              <span style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accentText, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Get in touch</span>
+            </div>
+            <h2 style={{ ...disp, fontSize: 'clamp(24px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 14px', letterSpacing: '-0.02em' }}>
+              Questions or feedback?
+            </h2>
+            <p style={{ ...body, fontSize: mob ? 14.5 : 16, color: 'rgba(248,250,252,0.55)', lineHeight: 1.65, maxWidth: 420 }}>
+              Tell us what you’re building, report a bug, or suggest a feature. We read every message and usually reply within a day.
+            </p>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: mob ? '20px 18px' : '26px 24px' }}>
+            <ContactForm theme="dark" source="landing" />
+          </div>
+        </div>
+      </section>
       </main>
 
       {/* FOOTER */}
@@ -901,7 +922,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', gap: 20 }}>
             <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Privacy</Link>
             <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Terms</Link>
-            <a href="mailto:hello@koalastatements.com" style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Contact</a>
+            <a href="#contact" style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>

@@ -9,6 +9,7 @@ import { Logo } from '../brand/Logo';
 import { listProjects, deleteProject, duplicateProject, genId, saveProject } from '../lib/persistence';
 import { useAuth, signOut } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import ContactForm from '../components/ContactForm';
 
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
@@ -124,10 +125,10 @@ function EmptyState() {
         Create your first financial model — describe your business and AI builds it in under 60 seconds.
       </div>
       <Link
-        to="/app"
+        to="/app?new=ai"
         style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '11px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
       >
-        <Plus size={16} /> New model
+        <Sparkles size={16} /> Create with AI
       </Link>
     </div>
   );
@@ -241,7 +242,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link
-              to="/app"
+              to="/app?new=ai"
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               <Sparkles size={15} /> New with AI
@@ -288,6 +289,17 @@ export default function Dashboard() {
             ))}
           </div>
         )}
+
+        {/* Feedback / contact */}
+        <div style={{ marginTop: 48, borderTop: '1px solid #E2E8F0', paddingTop: 32 }}>
+          <div style={{ maxWidth: 560 }}>
+            <h2 style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Send feedback</h2>
+            <p style={{ ...body, fontSize: 13.5, color: '#64748B', margin: '4px 0 18px' }}>
+              Found a bug or have an idea? We’d love to hear from you.
+            </p>
+            <ContactForm theme="light" source="dashboard" defaultEmail={userEmail} />
+          </div>
+        </div>
       </div>
 
       <style>{`

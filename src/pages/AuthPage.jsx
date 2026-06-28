@@ -99,9 +99,20 @@ export default function AuthPage() {
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState('');
 
+  // Where to send the user after a successful auth. If they were sent here from
+  // somewhere in the app (e.g. trying an AI feature), return them there; this is
+  // stashed in sessionStorage by the caller. Otherwise default to the dashboard.
+  const postAuthDest = () => {
+    try {
+      const d = sessionStorage.getItem('koala:postAuthRedirect');
+      if (d) { sessionStorage.removeItem('koala:postAuthRedirect'); return d; }
+    } catch {}
+    return '/dashboard';
+  };
+
   // Redirect if already signed in
   useEffect(() => {
-    if (user) navigate('/dashboard', { replace: true });
+    if (user) navigate(postAuthDest(), { replace: true });
   }, [user, navigate]);
 
   // If Supabase isn't configured, skip straight to app
@@ -119,11 +130,11 @@ export default function AuthPage() {
     try {
       if (mode === 'signin') {
         await signInWithEmail(email, password);
-        navigate('/dashboard', { replace: true });
+        navigate(postAuthDest(), { replace: true });
       } else {
         const signedIn = await signUpWithEmail(email, password);
         if (signedIn) {
-          navigate('/dashboard', { replace: true });
+          navigate(postAuthDest(), { replace: true });
         } else {
           setSuccess('Check your email for a confirmation link, then sign in.');
           setMode('signin');

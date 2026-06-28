@@ -72,12 +72,18 @@ export async function signUpWithEmail(email, password) {
 export async function signInWithGoogle() {
   if (!supabase) throw new Error('Auth not configured');
   capture('auth_initiated', { method: 'google' });
-  // Flag the pending OAuth so we can route to the dashboard once the session
-  // resolves — even if Supabase's Site URL config lands us on the homepage.
-  try { sessionStorage.setItem('koala:postAuthRedirect', '/dashboard'); } catch {}
+  // Flag the pending OAuth so we can route the user once the session resolves —
+  // even if Supabase's Site URL config lands us on the homepage. Preserve any
+  // destination already stashed (e.g. an in-progress model the user came from);
+  // only fall back to the dashboard when nothing was set.
+  let dest = '/dashboard';
+  try {
+    const existing = sessionStorage.getItem('koala:postAuthRedirect');
+    if (existing) dest = existing; else sessionStorage.setItem('koala:postAuthRedirect', dest);
+  } catch {}
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + '/dashboard' },
+    options: { redirectTo: window.location.origin + dest },
   });
   if (error) throw error;
 }

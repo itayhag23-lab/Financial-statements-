@@ -1,7 +1,7 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { capture } from './lib/analytics';
@@ -342,6 +342,39 @@ if(rowData[sc]['cash']){const sc2=Math.round(sb.opexBase*mult*1.5);rowData[sc]['
 if(rowData[sc]['common']){const se=Math.round(sb.opexBase*mult*1.2);rowData[sc]['common'].manualValues=Array(numPeriods).fill(se);}
 }
 return{rows,rowData,enabledStatements};
+}
+
+// Calc-engine guardrail: guarantee the BASE scenario turns a profit in the first
+// period. AI/wizard assumptions (especially large absolute opex relative to a
+// small starting revenue) can otherwise produce an unrealistic steep year-1 loss.
+// We solve for it deterministically: scale down the absolute opex lines, and if
+// that alone is not enough, lift starting revenue — applying the SAME adjustment
+// to every scenario so the Base/Best/Worst spread is preserved.
+function ensureBaseProfit(rows,rowData,numPeriods,{targetNetMargin=0.08}={}){
+if(!rowData||!rowData.base)return rowData;
+// Absolute (non-%-of-revenue) opex leaves are the lever we scale.
+const absOpexIds=(rows.income||[]).filter(r=>r.type==='leaf'&&r.parentId==='opex').map(r=>r.id);
+const isAbs=e=>e&&(e.mode==='flatGrowth'||e.mode==='manual'||e.mode==='customGrowth');
+const scaleAbsOpex=(scData,f)=>{const nd={...scData};for(const id of absOpexIds){const e=nd[id];if(isAbs(e))nd[id]={...e,baseValue:Math.round((e.baseValue||0)*f),manualValues:(e.manualValues||[]).map(v=>Math.round(v*f))};}return nd;};
+const base0=computeScenario(rows,rowData.base,numPeriods).values;
+const rev0=base0.revenue?.[0]||0;const ni0=base0.netIncome?.[0]||0;
+if(rev0<=0)return rowData; // no revenue to anchor against — leave as-is
+const target=rev0*targetNetMargin;
+if(ni0>=target)return rowData; // already healthy
+// How much absolute opex is there in period 0? That caps how much we can cut.
+let absTotal=0;for(const id of absOpexIds){const e=rowData.base[id];if(isAbs(e))absTotal+=computeLeafValues(e,numPeriods,base0.revenue)[0];}
+const gap=target-ni0;
+const f=absTotal>0?Math.max(0.15,Math.min(1,(absTotal-gap)/absTotal)):1;
+const nd={};for(const sc of SCENARIOS)nd[sc]=rowData[sc]?scaleAbsOpex(rowData[sc],f):rowData[sc];
+// Still short (opex couldn't absorb the whole gap)? Lift starting revenue.
+const base1=computeScenario(rows,nd.base,numPeriods).values;
+const ni1=base1.netIncome?.[0]||0;
+if(ni1<target){
+const gm=rev0>0?(base0.grossProfit?.[0]||0)/rev0:0.5; // gross margin proxy
+const lift=gm>0.05?Math.ceil((target-ni1)/gm):0;
+if(lift>0){for(const sc of SCENARIOS){const e=nd[sc]?.['rev-ops'];if(e)nd[sc]={...nd[sc],'rev-ops':{...e,baseValue:Math.round((e.baseValue||0)+lift)}};}}
+}
+return nd;
 }
 
 function computeFeasibilityScore(computedAll,periods,sectorKey,granularity,enabledStatements){
@@ -1121,7 +1154,7 @@ return(<div className="flex items-center gap-2 flex-wrap"><span className="label
 }
 
 // Wizard
-function WizardModal({initialAnswers,onComplete,onClose,allowSkip}){
+function WizardModal({initialAnswers,onComplete,onClose,onStartManual,allowSkip}){
 const[step,setStep]=useState(0);const[name,setName]=useState(initialAnswers?.name||'');const[sK,setSK]=useState(initialAnswers?.sectorKey||null);const[rK,setRK]=useState(initialAnswers?.regionKey||null);const[cK,setCK]=useState(initialAnswers?.currencyKey||'usd');const[stmts,setStmts]=useState(initialAnswers?.statements||'incomeOnly');const[search,setSearch]=useState('');
 const STEPS=[{id:'name',ey:'Step 01 of 05',title:'Name your project',sub:'Give this idea a working title.'},{id:'business',ey:'Step 02 of 05',title:'What kind of business?',sub:'Pick the closest match.'},{id:'region',ey:'Step 03 of 05',title:'Where will it operate?',sub:'Sets a default tax rate.'},{id:'currency',ey:'Step 04 of 05',title:'Pick a currency',sub:'Used for display.'},{id:'statements',ey:'Step 05 of 05',title:'Which statements?',sub:'Income is always on.'}];
 const canAdv=step===0?name.trim().length>0:step===1?!!sK:step===2?!!rK:step===3?!!cK:!!stmts;
@@ -1146,13 +1179,17 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 {step===3&&(<div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(CURRENCIES).map(([key,c])=>(<Card key={key} active={cK===key} onClick={()=>setCK(key)} title={`${c.symbol}  ${c.label}`} blurb={c.name}/>))}</div>)}
 {step===4&&(<div className="grid grid-cols-1 md:grid-cols-3 gap-2">{Object.entries(STATEMENT_OPTIONS).map(([key,s])=>(<Card key={key} active={stmts===key} onClick={()=>setStmts(key)} title={s.label} blurb={s.blurb}/>))}</div>)}
 </div>
-<div className="flex items-center justify-between px-7 py-4 gap-3 flex-none" style={{borderTop:`1px solid ${C.border}`,background:C.surface}}><button onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:step===0?C.faint:C.ink2,opacity:step===0?0.5:1,pointerEvents:step===0?'none':'auto'}}>← Back</button><div className="flex items-center gap-3"><span className="ff-body text-[11px]" style={{color:C.muted}}>{step+1} of {STEPS.length}</span>{!canAdv&&<button onClick={skipStep} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.ink2,background:'transparent',border:`1px solid ${C.border}`}}>Skip →</button>}<button onClick={next} disabled={!canAdv} className="px-5 py-2 rounded-md ff-body text-[12.5px]" style={{background:canAdv?C.ink:C.surfaceAlt,color:canAdv?C.surface:C.faint,fontWeight:500,cursor:canAdv?'pointer':'not-allowed'}}>{step===STEPS.length-1?'Build my model →':'Continue →'}</button></div></div>
+<div className="flex items-center justify-between px-7 py-4 gap-3 flex-none" style={{borderTop:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-center gap-3"><button onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:step===0?C.faint:C.ink2,opacity:step===0?0.5:1,pointerEvents:step===0?'none':'auto'}}>← Back</button>{onStartManual&&<button onClick={onStartManual} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.muted,background:'transparent'}} title="Skip the wizard and start with an empty model (all values 0)">Start blank →</button>}</div><div className="flex items-center gap-3"><span className="ff-body text-[11px]" style={{color:C.muted}}>{step+1} of {STEPS.length}</span>{!canAdv&&<button onClick={skipStep} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.ink2,background:'transparent',border:`1px solid ${C.border}`}}>Skip →</button>}<button onClick={next} disabled={!canAdv} className="px-5 py-2 rounded-md ff-body text-[12.5px]" style={{background:canAdv?C.ink:C.surfaceAlt,color:canAdv?C.surface:C.faint,fontWeight:500,cursor:canAdv?'pointer':'not-allowed'}}>{step===STEPS.length-1?'Build my model →':'Continue →'}</button></div></div>
 </div></div>);
 }
 
 function FinancialModelBuilderInner({projectId}={}){
-const user=useAuth();const navigate=useNavigate();
-const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
+const user=useAuth();const navigate=useNavigate();const location=useLocation();
+const requireAuthForAI=useCallback(()=>{if(!user){
+// Remember where they were so PostAuthRedirect returns them to this workspace
+// (their in-progress model) after sign-in — not the public landing page.
+try{sessionStorage.setItem('koala:postAuthRedirect',window.location.pathname+window.location.search);}catch{}
+navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
@@ -1160,6 +1197,9 @@ const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswe
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
 const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
+// Tracks whether a real model exists yet (loaded / wizard / AI). When false,
+// dismissing the wizard means "start in Manual Mode" → a blank, all-zero model.
+const[hasModel,setHasModel]=useState(false);
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
@@ -1168,11 +1208,10 @@ const[expandedCashFlow,setExpandedCashFlow]=useState(()=>new Set());
 
 const[rows,setRows]=useState({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});
 const[rowData,setRowData]=useState(()=>{
+// Manual Mode default: every P&L numeric field starts at 0. The wizard / AI
+// flows explicitly seed realistic numbers on top of this blank baseline.
 const all={};
 for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,5);}
-all.base['rev-ops'].baseValue=1000;all.base['rev-ops'].flatRate=25;all.base['cogs-direct'].pctOfRev=35;all.base['opex-sm'].pctOfRev=18;all.base['opex-ga'].baseValue=400;all.base['opex-ga'].flatRate=15;all.base['tax'].pctOfRev=5;if(all.base['cash'])all.base['cash'].manualValues=[500,600,800,1000,1300];
-all.best['rev-ops'].baseValue=1200;all.best['rev-ops'].flatRate=40;all.best['cogs-direct'].pctOfRev=28;all.best['opex-sm'].pctOfRev=14;all.best['opex-ga'].baseValue=360;all.best['opex-ga'].flatRate=12;all.best['tax'].pctOfRev=8;if(all.best['cash'])all.best['cash'].manualValues=[600,900,1400,2200,3500];
-all.worst['rev-ops'].baseValue=800;all.worst['rev-ops'].flatRate=10;all.worst['cogs-direct'].pctOfRev=50;all.worst['opex-sm'].pctOfRev=26;all.worst['opex-ga'].baseValue=480;all.worst['opex-ga'].flatRate=22;all.worst['tax'].pctOfRev=2;if(all.worst['cash'])all.worst['cash'].manualValues=[400,300,150,50,-100];
 return all;
 });
 const[customGrowthRow,setCustomGrowthRow]=useState(null);const[addRowFor,setAddRowFor]=useState(null);const[showSaveLoad,setShowSaveLoad]=useState(false);
@@ -1189,8 +1228,10 @@ const computedAll=useMemo(()=>{const m={};for(const sc of SCENARIOS)m[sc]=comput
 const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[activeScenario]:{...prev[activeScenario],[rowId]:{...prev[activeScenario][rowId],...patch}}}));},[activeScenario]);
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
-const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
-const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
+const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(ensureBaseProfit(s.rows,s.rowData,numPeriods));setEnabledStatements(s.enabledStatements);setHasModel(true);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
+const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setHasModel(false);setShowWizard(true);},[]);
+// Manual mode: start a blank report with every P&L field defaulting to 0.
+const handleStartManual=useCallback(()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);setWizardAnswers(null);setEnabledStatements({income:true,balance:false,cashFlow:false});setBuildTab('income');setHasModel(true);setShowWizard(false);},[numPeriods]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
 const handleAIGenComplete=useCallback((draft)=>{
@@ -1199,7 +1240,9 @@ setWizardAnswers(answers);setProjectName(answers.name);setCurrencyKey('usd');
 const s=seedProjectForWizard({sectorKey:draft.sectorKey,regionKey:draft.regionKey,statements:draft.statements,numPeriods});
 // Apply overrides to all scenarios
 if(draft.overrides&&draft.overrides.length>0){const rd={...s.rowData};for(const sc of SCENARIOS){rd[sc]={...rd[sc]};for(const ov of draft.overrides){if(rd[sc][ov.rowId]){rd[sc][ov.rowId]={...rd[sc][ov.rowId]};if(ov.mode)rd[sc][ov.rowId].mode=ov.mode;if(ov.baseValue!==undefined)rd[sc][ov.rowId].baseValue=ov.baseValue;if(ov.flatRate!==undefined)rd[sc][ov.rowId].flatRate=ov.flatRate;if(ov.pctOfRev!==undefined)rd[sc][ov.rowId].pctOfRev=ov.pctOfRev;}}}s.rowData=rd;}
-setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);
+// Guardrail: keep the Base scenario profitable in year 1 even if the AI overshot opex.
+s.rowData=ensureBaseProfit(s.rows,s.rowData,numPeriods);
+setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);setHasModel(true);
 if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');
 if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');
 setShowAIGen(false);},[numPeriods,buildTab]);
@@ -1264,9 +1307,19 @@ a.click();URL.revokeObjectURL(url);
 // --- Persistence: load saved project on mount, then debounced autosave ---
 const pidRef=useRef(projectId||getLastActive()||genId());
 const didLoadRef=useRef(false);
-useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
-// No saved project: seed a populated, editable starter so the builder is never empty behind the wizard.
-const s=seedProjectForWizard({sectorKey:'other',regionKey:'us',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}})();},[]); // eslint-disable-line
+useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setHasModel(true);setShowWizard(false);}
+// No saved project: leave the blank, all-zero Manual Mode baseline in place.
+// The wizard sits on top; dismissing it keeps the zeros (manual start).
+})();},[]); // eslint-disable-line
+// Deep-link: arriving at /app?new=ai (e.g. the "New with AI" button on the
+// dashboard) skips the wizard and opens the AI Generate modal directly, which
+// fires the live /api/chat request on submit. Runs once.
+const aiDeepLinkRef=useRef(false);
+useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(location.search||'');if(params.get('new')==='ai'){aiDeepLinkRef.current=true;
+// requireAuthForAI redirects to /auth (stashing this URL incl. ?new=ai) when
+// signed out — so on return the modal re-opens. Only proceed + clean the param
+// when authenticated, otherwise the cleanup would cancel the /auth redirect.
+if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}},[location.search,location.pathname,requireAuthForAI,navigate]);
 useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
@@ -1353,7 +1406,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {customGrowthRow&&<CustomGrowthModal row={customGrowthRow} entry={rowData[activeScenario][customGrowthRow.id]} periods={periods} onClose={()=>setCustomGrowthRow(null)} onChange={p=>updateRowData(customGrowthRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
-{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onClose={()=>setShowWizard(false)} allowSkip={true}/>}
+{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true}/>}
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>

@@ -80,6 +80,12 @@ Rules:
 - Valid override rowIds: rev-ops, cogs-direct, opex-sm, opex-ga, opex-rd, tax
 - statements: "full" for mature, "incomeAndCF" for growth-stage, "incomeOnly" for early/idea
 - regionKey: detect country from description; default "us"
+- PROFITABILITY (important): the numbers describe the BASE (realistic) case, which must be
+  profitable in year 1. Keep total first-year operating costs below gross profit. Concretely:
+  cogs pctOfRev + opex-sm pctOfRev should leave a positive gross/operating margin, and the sum of
+  ALL absolute opex baseValues (opex-ga + opex-rd) must be LESS than first-year gross profit
+  (gross profit ≈ rev-ops.baseValue × (1 − cogs-direct.pctOfRev/100)). If unsure, size opex-ga at
+  20–35% of first-year revenue and keep opex-rd modest so Net Income year 1 is clearly positive.
 - Respond with ONLY the JSON object. Nothing else.`;
 
 // System prompt addition for what-if patch suggestions (appended to advisor prompt).

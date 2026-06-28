@@ -12,24 +12,46 @@ export default function TopNav() {
 
   return (
     <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, position: 'sticky', top: 0, zIndex: 40 }}>
-      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <Link to="/" style={{ textDecoration: 'none' }}><Logo size={26} /></Link>
+      {/* `min-w-0` + `flex-shrink` on the brand and `flex-shrink-0` on the actions
+          guarantee the logo and the user avatar can never collide on a narrow
+          (mobile) viewport — the brand text truncates before it overlaps. */}
+      <div
+        className="mx-auto flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5"
+        style={{ maxWidth: 1400 }}
+      >
+        <Link to="/" className="min-w-0 shrink overflow-hidden" style={{ textDecoration: 'none' }}>
+          {/* Smaller mark on phones so the lockup stays clear of the avatar */}
+          <span className="hidden sm:inline-flex"><Logo size={26} /></span>
+          <span className="inline-flex sm:hidden"><Logo size={22} /></span>
+        </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="flex shrink-0 items-center gap-2.5">
           {user ? (
             <>
               <Link
                 to="/dashboard"
-                style={{ fontFamily: FONTS.body, fontSize: 13, color: C.ink2, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                className="hidden sm:inline-flex"
+                style={{ fontFamily: FONTS.body, fontSize: 13, color: C.ink2, textDecoration: 'none', alignItems: 'center', gap: 5 }}
               >
                 <LayoutDashboard size={14} /> My models
               </Link>
-              <div style={{ width: 1, height: 16, background: C.border }} />
+              <div className="hidden sm:block" style={{ width: 1, height: 16, background: C.border }} />
+              {/* On mobile the "My models" label collapses to this icon-only link
+                  so the row stays compact instead of crowding the avatar. */}
+              <Link
+                to="/dashboard"
+                aria-label="My models"
+                className="inline-flex sm:hidden"
+                style={{ color: C.ink2, textDecoration: 'none', padding: 4 }}
+              >
+                <LayoutDashboard size={18} />
+              </Link>
               <button
                 onClick={async () => { await signOut(); navigate('/auth'); }}
-                style={{ fontFamily: FONTS.body, fontSize: 13, color: C.muted, background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, padding: 0 }}
+                aria-label="Sign out"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 0, flexShrink: 0 }}
               >
-                <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#059669' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#059669' }}>
                   {initial}
                 </div>
               </button>
