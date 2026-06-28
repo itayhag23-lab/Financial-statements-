@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Sparkles, Share2, FileText,
-  ArrowRight, Check, Shield, Lock, Zap, Award, Eye, Link2,
+  Sparkles, Share2,
+  ArrowRight, Check, Zap, Eye, Link2,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
@@ -639,7 +639,6 @@ export default function LandingPage() {
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 22, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
-            <a href="#security" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Security</a>
             <a href="#free"     style={{ ...body, fontSize: 14, color: P.accentText, fontWeight: 600, textDecoration: 'none' }}>Free</a>
             <a href="#contact"  style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>
@@ -776,65 +775,6 @@ export default function LandingPage() {
               </div>
             ))}
           </Reveal>
-        </div>
-      </section>
-
-      {/* SECURITY */}
-      <section id="security" style={{ background: P.bgDark }}>
-        <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
-          <div style={{ display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 32 : 64, alignItems: 'center' }}>
-            <div>
-              <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accent, marginBottom: 14 }}>Security & Compliance</div>
-              <h2 style={{ ...disp, fontSize: 'clamp(26px, 3.4vw, 38px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>Enterprise-ready from day one.</h2>
-              <p style={{ ...body, fontSize: 16, lineHeight: 1.65, color: 'rgba(248,250,252,0.5)', marginBottom: 32 }}>
-                Your financial data stays private and secure. Koala is built on SOC 2 Type II certified infrastructure, with encryption and per-account isolation by default.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                {[
-                  { icon: Shield,    label: 'SOC 2 Type II infrastructure', desc: 'Built on Supabase and Vercel — SOC 2 Type II certified platforms' },
-                  { icon: Lock,      label: '256-bit AES encryption',       desc: 'Encrypted at rest (AES-256) and in transit (TLS)' },
-                  { icon: Award,     label: 'Your data, your control',      desc: 'Export or delete your data anytime — removed within 30 days' },
-                  { icon: FileText,  label: 'Private by default',           desc: 'Row-level security keeps every account isolated from others' },
-                ].map(({ icon: Icon, label, desc }) => (
-                  <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 9, background: P.accentSoft, border: `1px solid rgba(16,185,129,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon size={16} color={P.accent} />
-                    </div>
-                    <div>
-                      <div style={{ ...body, fontSize: 14, fontWeight: 600, color: '#F1F5F9', marginBottom: 2 }}>{label}</div>
-                      <div style={{ ...body, fontSize: 13, color: mob ? '#CBD5E1' : '#94A3B8' }}>{desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {[
-                  { label: 'AES-256', sub: 'Encrypted at rest' },
-                  { label: 'TLS',     sub: 'Encrypted in transit' },
-                  { label: 'RLS',     sub: 'Per-account isolation' },
-                  { label: 'SOC 2',   sub: 'Certified infrastructure' },
-                ].map(({ label, sub }) => (
-                  <div key={label} style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: P.accentSoft, border: `1px solid rgba(16,185,129,0.3)`, margin: '0 auto 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Shield size={16} color={P.accent} />
-                    </div>
-                    <div style={{ ...body, fontSize: 13, fontWeight: 700, color: '#F1F5F9' }}>{label}</div>
-                    <div style={{ ...body, fontSize: 10.5, color: mob ? '#CBD5E1' : '#94A3B8', marginTop: 3 }}>{sub}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background: P.bgDarkAlt, border: `1px solid ${P.borderDark}`, borderRadius: 12, padding: '18px 20px' }}>
-                <div style={{ ...body, fontSize: 11, color: mob ? '#CBD5E1' : '#94A3B8', marginBottom: 10, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Infrastructure</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {['Supabase', 'Vercel', 'EU & US data centers'].map((r) => (
-                    <div key={r} style={{ ...body, fontSize: 12, color: '#F1F5F9', padding: '5px 10px', background: 'rgba(255,255,255,0.04)', borderRadius: 6, border: `1px solid ${P.borderDark}` }}>{r}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
