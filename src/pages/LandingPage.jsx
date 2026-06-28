@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles, Share2,
-  ArrowRight, Check, Zap, Eye, Link2,
+  ArrowRight, Check, Zap, Link2,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
@@ -557,16 +557,6 @@ function LiveReportVisual() {
         <Link2 size={12} color={P.muted} style={{ flexShrink: 0 }} />
         <span style={{ ...mono, fontSize: 10.5, color: P.ink2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>koala.app/r/acme-fy26</span>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: P.accent, animation: 'livePulse 1.6s ease-in-out infinite', flexShrink: 0 }} />
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ display: 'flex' }}>
-          {['JD', 'KP'].map((init, i) => (
-            <div key={init} style={{ width: 22, height: 22, borderRadius: '50%', background: P.bgDarkAlt, color: '#fff', ...body, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${P.bgSlate}`, marginLeft: i ? -7 : 0 }}>{init}</div>
-          ))}
-        </div>
-        <span style={{ ...body, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Eye size={12} /> 2 investors viewing now
-        </span>
       </div>
     </VisualFrame>
   );
