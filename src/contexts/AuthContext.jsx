@@ -74,7 +74,12 @@ export async function signInWithGoogle() {
   capture('auth_initiated', { method: 'google' });
   // Flag the pending OAuth so we can route to the dashboard once the session
   // resolves — even if Supabase's Site URL config lands us on the homepage.
-  try { sessionStorage.setItem('koala:postAuthRedirect', '/dashboard'); } catch {}
+  // Mirror it into localStorage too: sessionStorage can be dropped across some
+  // OAuth round-trips, and the localStorage copy is a durable fallback.
+  try {
+    sessionStorage.setItem('koala:postAuthRedirect', '/dashboard');
+    localStorage.setItem('koala:postAuthRedirect', '/dashboard');
+  } catch {}
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.origin + '/dashboard' },

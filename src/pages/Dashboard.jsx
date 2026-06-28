@@ -248,7 +248,7 @@ export default function Dashboard() {
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <Link
-              to={`/app/${newAIModelId}?ai=1`}
+              to={`/app/${newAIModelId}?mode=ai`}
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               <Sparkles size={15} /> New with AI

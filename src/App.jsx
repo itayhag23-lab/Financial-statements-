@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 // Privacy/Terms are imported eagerly (not lazy) so they can be pre-rendered to
@@ -50,19 +50,36 @@ function PageTracker() {
 
 // After an OAuth round-trip the browser may land on the homepage (depending on
 // Supabase's Site URL config). Once the session resolves, send the user to the
-// destination we stashed before redirecting.
+// destination we stashed before redirecting. We also detect the OAuth callback
+// markers directly (PKCE `?code=`, implicit `#access_token=`) so we still
+// forward to the dashboard even if the stashed flag was lost.
 function PostAuthRedirect() {
   const user = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const cameFromOAuth = useRef(
+    typeof window !== 'undefined' &&
+    (/[?&]code=/.test(window.location.search) || /access_token=/.test(window.location.hash))
+  );
   useEffect(() => {
     if (!user) return;
     let dest;
-    try { dest = sessionStorage.getItem('koala:postAuthRedirect'); } catch {}
-    if (dest) {
-      try { sessionStorage.removeItem('koala:postAuthRedirect'); } catch {}
-      navigate(dest, { replace: true });
+    try {
+      dest = sessionStorage.getItem('koala:postAuthRedirect') ||
+             localStorage.getItem('koala:postAuthRedirect');
+    } catch {}
+    // Only force a redirect from the pages OAuth can dump the user on, so a
+    // signed-in user browsing the marketing/auth pages isn't yanked away.
+    const onEntryPage = location.pathname === '/' || location.pathname === '/auth';
+    if (dest || (cameFromOAuth.current && onEntryPage)) {
+      try {
+        sessionStorage.removeItem('koala:postAuthRedirect');
+        localStorage.removeItem('koala:postAuthRedirect');
+      } catch {}
+      cameFromOAuth.current = false;
+      navigate(dest || '/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.pathname]);
   return null;
 }
 

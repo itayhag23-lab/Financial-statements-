@@ -366,6 +366,27 @@ for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt])if(r.
 return{rows,rowData,enabledStatements};
 }
 
+// Guarantee the BASE scenario shows a non-negative net income in every period.
+// Sector seeds (and AI overrides) can legitimately produce an unprofitable base
+// case — but the product decision is that the headline "base assumption" should
+// always look healthy. We trim discretionary opex first, and only cut into COGS
+// as a last resort. Best/Worst are intentionally left as modeled. Mutates the
+// base rowData in place and returns it.
+function ensureBasePositive(rows,rowData,numPeriods){
+const sc='base';
+if(!rowData[sc])return rowData;
+const leafIds=(parent)=>(rows.income||[]).filter(r=>r.type==='leaf'&&r.parentId===parent).map(r=>r.id);
+const opexIds=leafIds('opex');const cogsIds=leafIds('cogs');
+const trim=(ids,f)=>{for(const id of ids){const e=rowData[sc][id];if(!e)continue;if(e.mode==='percentOfRevenue')e.pctOfRev=Math.max(0,+(e.pctOfRev*f).toFixed(2));else e.baseValue=Math.max(0,Math.round((e.baseValue||0)*f));}};
+for(let i=0;i<20;i++){
+const ni=computeScenario(rows,rowData[sc],numPeriods).values.netIncome||[];
+if(!ni.length||Math.min(...ni)>=0)break;
+trim(opexIds,0.8);
+if(i>=6)trim(cogsIds,0.85); // only touch COGS once opex is largely exhausted
+}
+return rowData;
+}
+
 function computeFeasibilityScore(computedAll,periods,sectorKey,granularity,enabledStatements){
 const sector=BB[sectorKey]||BB.other;const stmts=enabledStatements||{income:true,balance:false,cashFlow:false};
 const bV=computedAll.base?.values||{};const wV=computedAll.worst?.values||{};
@@ -1142,7 +1163,7 @@ return(<div className="flex items-center gap-2 flex-wrap"><span className="label
 }
 
 // Wizard
-function WizardModal({initialAnswers,onComplete,onClose,allowSkip}){
+function WizardModal({initialAnswers,onComplete,onClose,allowSkip,aiMode}){
 const[step,setStep]=useState(0);const[name,setName]=useState(initialAnswers?.name||'');const[sK,setSK]=useState(initialAnswers?.sectorKey||null);const[rK,setRK]=useState(initialAnswers?.regionKey||null);const[cK,setCK]=useState(initialAnswers?.currencyKey||'usd');const[stmts,setStmts]=useState(initialAnswers?.statements||'incomeOnly');const[search,setSearch]=useState('');
 const STEPS=[{id:'name',ey:'Step 01 of 05',title:'Name your project',sub:'Give this idea a working title.'},{id:'business',ey:'Step 02 of 05',title:'What kind of business?',sub:'Pick the closest match.'},{id:'region',ey:'Step 03 of 05',title:'Where will it operate?',sub:'Sets a default tax rate.'},{id:'currency',ey:'Step 04 of 05',title:'Pick a currency',sub:'Used for display.'},{id:'statements',ey:'Step 05 of 05',title:'Which statements?',sub:'Income is always on.'}];
 const canAdv=step===0?name.trim().length>0:step===1?!!sK:step===2?!!rK:step===3?!!cK:!!stmts;
@@ -1159,7 +1180,7 @@ const filtered=useMemo(()=>{if(!search.trim())return BB;const q=search.toLowerCa
 const surp=()=>{const ks=Object.keys(BB).filter(k=>k!=='other');setSK(ks[Math.floor(Math.random()*ks.length)]);if(!rK)setRK('us');if(!name.trim())setName(BB[ks[0]]?.label+' — Quick Test');};
 const Card=({active,onClick,title,blurb,right,icon,eyebrow})=>(<button onClick={onClick} className="text-left p-3.5 rounded-md" style={{background:active?C.surface:C.bg,border:`1px solid ${active?C.gold:C.border}`,boxShadow:active?`0 0 0 1px ${C.gold}`:'none'}}><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-2.5 flex-1 min-w-0">{icon&&<span className="text-[20px] flex-none" style={{lineHeight:1,marginTop:1}}>{icon}</span>}<div className="flex-1 min-w-0">{eyebrow&&<div className="label-eyebrow ff-body" style={{color:active?C.gold:C.muted,fontSize:9}}>{eyebrow}</div>}<div className="ff-display text-[16px] mt-0.5" style={{color:C.ink,fontWeight:500,lineHeight:1.15}}>{title}</div>{blurb&&<div className="ff-body text-[11px] mt-1" style={{color:C.muted,lineHeight:1.4}}>{blurb}</div>}</div></div>{right}</div></button>);
 return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={allowSkip?onClose:undefined}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
-<div className="px-7 pt-6 pb-5 flex-none" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="label-eyebrow ff-body" style={{color:C.gold}}>{STEPS[step].ey}</div><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink,fontWeight:500}}>{STEPS[step].title}</h3><p className="ff-body text-[12px] mt-1.5" style={{color:C.muted}}>{STEPS[step].sub}</p></div>{allowSkip&&<button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button>}</div><div className="flex gap-1.5 mt-4">{STEPS.map((_,i)=>(<div key={i} className="flex-1 h-1 rounded-full" style={{background:i<=step?C.gold:C.border,transition:'background 240ms ease-out'}}/>))}</div></div>
+<div className="px-7 pt-6 pb-5 flex-none" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="flex items-center gap-2 flex-wrap"><div className="label-eyebrow ff-body" style={{color:C.gold}}>{STEPS[step].ey}</div>{aiMode&&<span className="ff-body inline-flex items-center gap-1" style={{fontSize:10,fontWeight:700,color:C.gold,background:C.goldSoft,border:`1px solid ${C.gold}55`,borderRadius:20,padding:'1px 8px',letterSpacing:'0.04em'}}><Sparkles size={10}/> AI WILL FILL THE NUMBERS</span>}</div><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink,fontWeight:500}}>{STEPS[step].title}</h3><p className="ff-body text-[12px] mt-1.5" style={{color:C.muted}}>{aiMode&&step===STEPS.length-1?'AI will seed realistic, sector-calibrated figures you can edit.':STEPS[step].sub}</p></div>{allowSkip&&<button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button>}</div><div className="flex gap-1.5 mt-4">{STEPS.map((_,i)=>(<div key={i} className="flex-1 h-1 rounded-full" style={{background:i<=step?C.gold:C.border,transition:'background 240ms ease-out'}}/>))}</div></div>
 <div className="px-7 py-5 overflow-y-auto flex-1" style={{minHeight:0}}>
 {step===0&&(<div><input type="text" value={name} placeholder="e.g. Coffee Shop in Tel Aviv" onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&canAdv)next();}} autoFocus className="w-full px-4 py-3 rounded-md ff-display text-[22px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink,fontWeight:500}}/><div className="ff-body text-[11px] mt-2" style={{color:C.muted}}>Press Enter to continue.</div></div>)}
 {step===1&&(<div><div className="flex items-center gap-2 mb-4 flex-wrap"><div className="relative flex-1 min-w-[220px]"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search 'coffee', 'app', 'gym'..." className="w-full pl-3 pr-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div><button onClick={surp} className="px-3.5 py-2 rounded-md ff-body text-[12px] flex items-center gap-1.5" style={{background:C.goldSoft,border:`1px solid ${C.gold}55`,color:C.gold,fontWeight:500}}>Surprise me</button></div><div className="space-y-4">{BUSINESS_CATEGORIES.map(cat=>{const items=Object.entries(filtered).filter(([_,b])=>b.category===cat);if(!items.length)return null;return(<div key={cat}><div className="label-eyebrow ff-body mb-2" style={{color:C.muted,fontSize:9}}>{cat}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-2">{items.map(([key,biz])=>(<Card key={key} active={sK===key} onClick={()=>setSK(key)} icon={biz.icon} title={biz.label} blurb={biz.blurb} right={<div className="text-right ff-num flex-none" style={{minWidth:60}}><div className="text-[8.5px]" style={{color:C.faint,letterSpacing:'0.1em'}}>NET</div><div className="text-[11px]" style={{color:C.ink2}}>{biz.benchmarks.netMargin[0]}–{biz.benchmarks.netMargin[1]}%</div></div>}/>))}</div></div>);})}{Object.keys(filtered).length===0&&<div className="text-center py-8"><div className="ff-body text-[13px]" style={{color:C.muted}}>No matches for "{search}".</div><button onClick={()=>{setSK('other');setSearch('');}} className="ff-body text-[12px] mt-3 px-3 py-1.5 rounded-md" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}>Use "Something Else" instead →</button></div>}</div></div>)}
@@ -1167,21 +1188,24 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 {step===3&&(<div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(CURRENCIES).map(([key,c])=>(<Card key={key} active={cK===key} onClick={()=>setCK(key)} title={`${c.symbol}  ${c.label}`} blurb={c.name}/>))}</div>)}
 {step===4&&(<div className="grid grid-cols-1 md:grid-cols-3 gap-2">{Object.entries(STATEMENT_OPTIONS).map(([key,s])=>(<Card key={key} active={stmts===key} onClick={()=>setStmts(key)} title={s.label} blurb={s.blurb}/>))}</div>)}
 </div>
-<div className="flex items-center justify-between px-7 py-4 gap-3 flex-none" style={{borderTop:`1px solid ${C.border}`,background:C.surface}}><button onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:step===0?C.faint:C.ink2,opacity:step===0?0.5:1,pointerEvents:step===0?'none':'auto'}}>← Back</button><div className="flex items-center gap-3"><span className="ff-body text-[11px]" style={{color:C.muted}}>{step+1} of {STEPS.length}</span>{!canAdv&&<button onClick={skipStep} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.ink2,background:'transparent',border:`1px solid ${C.border}`}}>Skip →</button>}<button onClick={next} disabled={!canAdv} className="px-5 py-2 rounded-md ff-body text-[12.5px]" style={{background:canAdv?C.ink:C.surfaceAlt,color:canAdv?C.surface:C.faint,fontWeight:500,cursor:canAdv?'pointer':'not-allowed'}}>{step===STEPS.length-1?'Build my model →':'Continue →'}</button></div></div>
+<div className="flex items-center justify-between px-7 py-4 gap-3 flex-none" style={{borderTop:`1px solid ${C.border}`,background:C.surface}}><button onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:step===0?C.faint:C.ink2,opacity:step===0?0.5:1,pointerEvents:step===0?'none':'auto'}}>← Back</button><div className="flex items-center gap-3"><span className="ff-body text-[11px]" style={{color:C.muted}}>{step+1} of {STEPS.length}</span>{!canAdv&&<button onClick={skipStep} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.ink2,background:'transparent',border:`1px solid ${C.border}`}}>Skip →</button>}<button onClick={next} disabled={!canAdv} className="px-5 py-2 rounded-md ff-body text-[12.5px]" style={{background:canAdv?C.ink:C.surfaceAlt,color:canAdv?C.surface:C.faint,fontWeight:500,cursor:canAdv?'pointer':'not-allowed'}}>{step===STEPS.length-1?(aiMode?'Build with AI →':'Build my model →'):'Continue →'}</button></div></div>
 </div></div>);
 }
 
 function FinancialModelBuilderInner({projectId}={}){
 const user=useAuth();const navigate=useNavigate();const[searchParams]=useSearchParams();
-const startInAIGen=searchParams.get('ai')==='1';
+// ?mode=ai => the "New with AI" entry point. The wizard still opens (same as the
+// manual path); the difference is what gets seeded once the wizard is finished:
+// AI mode seeds realistic, positive sector numbers; manual mode seeds zeros.
+const aiMode=searchParams.get('mode')==='ai';
 const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
 const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeriods]=useState(5);const[startYear,setStartYear]=useState(2025);const[activeScenario,setActiveScenario]=useState('base');
-const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(!startInAIGen);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
+const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
-const[showAIGen,setShowAIGen]=useState(startInAIGen);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
+const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
@@ -1210,7 +1234,14 @@ const computedAll=useMemo(()=>{const m={};for(const sc of SCENARIOS)m[sc]=comput
 const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[activeScenario]:{...prev[activeScenario],[rowId]:{...prev[activeScenario][rowId],...patch}}}));},[activeScenario]);
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
-const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedBlankProject({sectorKey:answers.sectorKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
+const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');
+// AI mode: seed realistic, sector-calibrated numbers (and clamp the base case
+// positive). Manual mode: seed an all-zero model the user fills in themselves.
+const s=aiMode
+?seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods})
+:seedBlankProject({sectorKey:answers.sectorKey,statements:answers.statements,numPeriods});
+if(aiMode)ensureBasePositive(s.rows,s.rowData,numPeriods);
+setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{mode:aiMode?'ai':'manual',sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab,aiMode]);
 const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
@@ -1220,6 +1251,9 @@ setWizardAnswers(answers);setProjectName(answers.name);setCurrencyKey('usd');
 const s=seedProjectForWizard({sectorKey:draft.sectorKey,regionKey:draft.regionKey,statements:draft.statements,numPeriods});
 // Apply overrides to all scenarios
 if(draft.overrides&&draft.overrides.length>0){const rd={...s.rowData};for(const sc of SCENARIOS){rd[sc]={...rd[sc]};for(const ov of draft.overrides){if(rd[sc][ov.rowId]){rd[sc][ov.rowId]={...rd[sc][ov.rowId]};if(ov.mode)rd[sc][ov.rowId].mode=ov.mode;if(ov.baseValue!==undefined)rd[sc][ov.rowId].baseValue=ov.baseValue;if(ov.flatRate!==undefined)rd[sc][ov.rowId].flatRate=ov.flatRate;if(ov.pctOfRev!==undefined)rd[sc][ov.rowId].pctOfRev=ov.pctOfRev;}}}s.rowData=rd;}
+// Keep the AI-generated base case profitable, even if the model's assumptions
+// (or the LLM's overrides) would otherwise run it at a loss.
+ensureBasePositive(s.rows,s.rowData,numPeriods);
 setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);
 if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');
 if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');
@@ -1375,7 +1409,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {customGrowthRow&&<CustomGrowthModal row={customGrowthRow} entry={rowData[activeScenario][customGrowthRow.id]} periods={periods} onClose={()=>setCustomGrowthRow(null)} onChange={p=>updateRowData(customGrowthRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
-{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onClose={()=>setShowWizard(false)} allowSkip={true}/>}
+{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onClose={()=>setShowWizard(false)} allowSkip={true} aiMode={aiMode}/>}
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
