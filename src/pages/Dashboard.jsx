@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
-  LogOut, User, ChevronRight, FileText, Sparkles,
+  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
@@ -220,6 +220,15 @@ export default function Dashboard() {
               <span style={{ ...body, fontSize: 13, color: '#334155', display: window.innerWidth > 480 ? 'block' : 'none' }}>{userEmail}</span>
             </div>
             <button
+              onClick={() => {
+                const el = document.getElementById('feedback');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{ ...body, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
+            >
+              <MessageSquare size={13} /> Feedback
+            </button>
+            <button
               onClick={async () => { await signOut(); navigate('/auth', { replace: true }); }}
               style={{ ...body, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
             >
@@ -291,11 +300,16 @@ export default function Dashboard() {
         )}
 
         {/* Feedback / contact */}
-        <div style={{ marginTop: 48, borderTop: '1px solid #E2E8F0', paddingTop: 32 }}>
-          <div style={{ maxWidth: 560 }}>
-            <h2 style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Send feedback</h2>
+        <div id="feedback" style={{ marginTop: 48, scrollMarginTop: 80 }}>
+          <div style={{ maxWidth: 560, margin: '0 auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: '28px 26px', boxShadow: '0 8px 24px -16px rgba(15,23,42,0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MessageSquare size={17} color="#059669" />
+              </div>
+              <h2 style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Contact &amp; feedback</h2>
+            </div>
             <p style={{ ...body, fontSize: 13.5, color: '#64748B', margin: '4px 0 18px' }}>
-              Found a bug or have an idea? We’d love to hear from you.
+              Found a bug or have an idea? We’d love to hear from you — we usually reply within a day.
             </p>
             <ContactForm theme="light" source="dashboard" defaultEmail={userEmail} />
           </div>
