@@ -257,7 +257,7 @@ export default function Dashboard() {
               <Sparkles size={15} /> New with AI
             </Link>
             <Link
-              to="/app"
+              to="/app?new=manual"
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}
             >
               <Plus size={15} /> New model

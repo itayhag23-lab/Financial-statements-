@@ -1229,9 +1229,13 @@ const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[acti
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
 const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(ensureBaseProfit(s.rows,s.rowData,numPeriods));setEnabledStatements(s.enabledStatements);setHasModel(true);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
-const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setHasModel(false);setShowWizard(true);},[]);
+// Reset the in-memory model to a blank, all-zero baseline.
+const blankModel=useCallback(()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);setWizardAnswers(null);setEnabledStatements({income:true,balance:false,cashFlow:false});setBuildTab('income');},[numPeriods]);
+// "New project": fresh id (so we never overwrite or resume the old model) + a
+// blank zero canvas, then reopen the wizard. Skipping the wizard keeps the zeros.
+const handleNewProject=useCallback(()=>{pidRef.current=genId();blankModel();setProjectName('Untitled Project');setHasModel(false);setShowWizard(true);},[blankModel]);
 // Manual mode: start a blank report with every P&L field defaulting to 0.
-const handleStartManual=useCallback(()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);setWizardAnswers(null);setEnabledStatements({income:true,balance:false,cashFlow:false});setBuildTab('income');setHasModel(true);setShowWizard(false);},[numPeriods]);
+const handleStartManual=useCallback(()=>{blankModel();setHasModel(true);setShowWizard(false);},[blankModel]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
 const handleAIGenComplete=useCallback((draft)=>{
@@ -1305,9 +1309,21 @@ a.download=(projectName.replace(/[^a-z0-9]/gi,'-')||'model')+'-'+activeScenario+
 a.click();URL.revokeObjectURL(url);
 },[rows,computed,periods,activeScenario,granularity,numPeriods,startYear,enabledStatements,currencyKey,projectName]);
 // --- Persistence: load saved project on mount, then debounced autosave ---
-const pidRef=useRef(projectId||getLastActive()||genId());
+// "New" deep-links (?new=manual / ?new=ai) must start a FRESH project, never
+// resume the last-active one — otherwise a returning user always sees their old
+// saved numbers instead of a clean zero model.
+const newModeRef=useRef((()=>{try{return new URLSearchParams(window.location.search||'').get('new');}catch{return null;}})());
+const pidRef=useRef(projectId||(newModeRef.current?genId():(getLastActive()||genId())));
 const didLoadRef=useRef(false);
-useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setHasModel(true);setShowWizard(false);}
+useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;
+if(newModeRef.current){
+// Fresh start requested. Keep the blank, all-zero baseline already in state.
+// Manual → drop straight into the empty editable model (no wizard, no numbers).
+// AI → the deep-link effect below opens the AI Generate modal.
+if(newModeRef.current==='manual'){setShowWizard(false);setHasModel(true);}
+return;
+}
+(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setHasModel(true);setShowWizard(false);}
 // No saved project: leave the blank, all-zero Manual Mode baseline in place.
 // The wizard sits on top; dismissing it keeps the zeros (manual start).
 })();},[]); // eslint-disable-line
@@ -1319,7 +1335,8 @@ useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(
 // requireAuthForAI redirects to /auth (stashing this URL incl. ?new=ai) when
 // signed out — so on return the modal re-opens. Only proceed + clean the param
 // when authenticated, otherwise the cleanup would cancel the /auth redirect.
-if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}},[location.search,location.pathname,requireAuthForAI,navigate]);
+if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
+else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAuthForAI,navigate]);
 useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 const resetModel=()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);};
 const rowLabels=useMemo(()=>{const m={};for(const stmt of['income','balance','cashFlow'])for(const r of rows[stmt]||[])m[r.id]=r.label;return m;},[rows]);
