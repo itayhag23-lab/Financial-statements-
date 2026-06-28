@@ -29,7 +29,10 @@ function AppRoute() {
   return (
     <Suspense fallback={<Loading />}>
       <TopNav />
-      <FinancialModelBuilder projectId={projectId} />
+      {/* key on projectId forces a clean remount when the id changes (e.g.
+          starting a new model from inside the builder), so stale state from
+          the previous project can never carry over. */}
+      <FinancialModelBuilder key={projectId || 'root'} projectId={projectId} />
     </Suspense>
   );
 }

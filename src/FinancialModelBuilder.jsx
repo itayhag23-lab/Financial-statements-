@@ -378,11 +378,16 @@ if(!rowData[sc])return rowData;
 const leafIds=(parent)=>(rows.income||[]).filter(r=>r.type==='leaf'&&r.parentId===parent).map(r=>r.id);
 const opexIds=leafIds('opex');const cogsIds=leafIds('cogs');
 const trim=(ids,f)=>{for(const id of ids){const e=rowData[sc][id];if(!e)continue;if(e.mode==='percentOfRevenue')e.pctOfRev=Math.max(0,+(e.pctOfRev*f).toFixed(2));else e.baseValue=Math.max(0,Math.round((e.baseValue||0)*f));}};
-for(let i=0;i<20;i++){
-const ni=computeScenario(rows,rowData[sc],numPeriods).values.netIncome||[];
-if(!ni.length||Math.min(...ni)>=0)break;
+for(let i=0;i<24;i++){
+const v=computeScenario(rows,rowData[sc],numPeriods).values;
+const ni=v.netIncome||[];const rev=v.revenue||[];
+if(!ni.length)break;
+// Require a small positive margin every period — not merely break-even — so the
+// headline base case never shows $0 or a loss.
+const floor=Math.max(1,Math.round((rev[0]||0)*0.01));
+if(Math.min(...ni)>=floor)break;
 trim(opexIds,0.8);
-if(i>=6)trim(cogsIds,0.85); // only touch COGS once opex is largely exhausted
+if(i>=8)trim(cogsIds,0.85); // only touch COGS once opex is largely exhausted
 }
 return rowData;
 }
@@ -1198,6 +1203,9 @@ const user=useAuth();const navigate=useNavigate();const[searchParams]=useSearchP
 // manual path); the difference is what gets seeded once the wizard is finished:
 // AI mode seeds realistic, positive sector numbers; manual mode seeds zeros.
 const aiMode=searchParams.get('mode')==='ai';
+// ?new=1 => a brand-new model. Forces the wizard open and skips resuming any
+// saved / last-active project, so "New model" never re-opens an old one.
+const isNew=searchParams.get('new')==='1';
 const requireAuthForAI=useCallback(()=>{if(!user){navigate('/auth');return false;}return true;},[user,navigate]);
 const[isPortraitMob,setIsPortraitMob]=useState(()=>typeof window!=='undefined'&&window.innerWidth<640&&window.innerHeight>window.innerWidth);
 useEffect(()=>{const chk=()=>setIsPortraitMob(window.innerWidth<640&&window.innerHeight>window.innerWidth);window.addEventListener('resize',chk);window.addEventListener('orientationchange',chk);return()=>{window.removeEventListener('resize',chk);window.removeEventListener('orientationchange',chk);};},[]);
@@ -1242,7 +1250,7 @@ const s=aiMode
 :seedBlankProject({sectorKey:answers.sectorKey,statements:answers.statements,numPeriods});
 if(aiMode)ensureBasePositive(s.rows,s.rowData,numPeriods);
 setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{mode:aiMode?'ai':'manual',sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab,aiMode]);
-const handleNewProject=useCallback(()=>{setWizardAnswers(null);setProjectName('Untitled Project');setShowWizard(true);},[]);
+const handleNewProject=useCallback(()=>{navigate(`/app/${genId()}?new=1`);},[navigate]);
 
 // AI generation: apply a validated ModelDraft (from AIGenerateModal)
 const handleAIGenComplete=useCallback((draft)=>{
@@ -1319,7 +1327,11 @@ a.click();URL.revokeObjectURL(url);
 // --- Persistence: load saved project on mount, then debounced autosave ---
 const pidRef=useRef(projectId||getLastActive()||genId());
 const didLoadRef=useRef(false);
-useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
+useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;(async()=>{
+// Brand-new model: never resume a saved or last-active project. Start clean
+// at the wizard with a zero-filled model behind it.
+if(isNew){const s=seedBlankProject({sectorKey:'other',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);setShowWizard(true);return;}
+const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setShowWizard(false);}else{
 // No saved project: zero-filled starter behind the wizard/AI modal — real
 // numbers only appear once the user finishes the wizard or generates with AI.
 const s=seedBlankProject({sectorKey:'other',statements:'incomeOnly',numPeriods});setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);}})();},[]); // eslint-disable-line

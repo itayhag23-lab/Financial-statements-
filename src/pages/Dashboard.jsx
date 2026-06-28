@@ -114,9 +114,7 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
 }
 
 function EmptyState() {
-  // Fresh id per mount so this always opens a genuinely new (wizard-open) model,
-  // never the last-active one.
-  const [newId] = useState(() => genId());
+  const navigate = useNavigate();
   return (
     <div style={{ textAlign: 'center', padding: '64px 24px' }}>
       <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
@@ -126,12 +124,12 @@ function EmptyState() {
       <div style={{ ...body, fontSize: 14, color: '#64748B', maxWidth: 320, margin: '0 auto 24px' }}>
         Create your first financial model — describe your business and AI builds it in under 60 seconds.
       </div>
-      <Link
-        to={`/app/${newId}`}
-        style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '11px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
+      <button
+        onClick={() => navigate(`/app/${genId()}?new=1`)}
+        style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', border: 'none', cursor: 'pointer', padding: '11px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
       >
         <Plus size={16} /> New model
-      </Link>
+      </button>
     </div>
   );
 }
@@ -143,10 +141,10 @@ export default function Dashboard() {
   const [loading, setLoading]     = useState(true);
   const [localCount, setLocalCount] = useState(0);
   const [importing, setImporting] = useState(false);
-  // Fresh ids per mount so the header CTAs always open a genuinely new
-  // (wizard/AI-open) model, never the last-active one.
-  const [newModelId]   = useState(() => genId());
-  const [newAIModelId] = useState(() => genId());
+  // A fresh project id is minted on every click (not once per mount), so
+  // clicking "New model" repeatedly always starts a genuinely new model with
+  // the wizard open — never the last one.
+  const startNew = (ai) => navigate(`/app/${genId()}${ai ? '?mode=ai&new=1' : '?new=1'}`);
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -247,18 +245,18 @@ export default function Dashboard() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <Link
-              to={`/app/${newAIModelId}?mode=ai`}
-              style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}
+            <button
+              onClick={() => startNew(true)}
+              style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', border: 'none', cursor: 'pointer', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               <Sparkles size={15} /> New with AI
-            </Link>
-            <Link
-              to={`/app/${newModelId}`}
-              style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}
+            </button>
+            <button
+              onClick={() => startNew(false)}
+              style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', border: 'none', cursor: 'pointer', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}
             >
               <Plus size={15} /> New model
-            </Link>
+            </button>
           </div>
         </div>
 
