@@ -63,27 +63,33 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
             </div>
           </div>
         </div>
-        {/* Action buttons — dimmed at rest, full on hover. Kept visible (not
-            opacity:0) so they're tappable on touch devices, which have no hover. */}
-        <div style={{ display: 'flex', gap: 6, opacity: hover ? 1 : 0.55, transition: 'opacity 150ms', flexShrink: 0 }}>
+        {/* Action buttons — always visible (not hover-only) so they're tappable
+            on touch devices, and the delete is clearly marked in red. */}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button
             onClick={e => { e.preventDefault(); onDuplicate(project.id); }}
             title="Duplicate"
-            style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '5px 7px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center' }}
+            style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center' }}
           >
-            <Copy size={13} />
+            <Copy size={14} />
           </button>
           {confirmDel
-            ? <button
-                onClick={e => { e.preventDefault(); onDelete(project.id); }}
-                style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: '#EF4444', fontSize: 11, ...body }}
-              >Confirm</button>
+            ? <>
+                <button
+                  onClick={e => { e.preventDefault(); onDelete(project.id); }}
+                  style={{ background: '#EF4444', border: '1px solid #EF4444', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', color: '#fff', fontSize: 11.5, fontWeight: 600, ...body }}
+                >Delete</button>
+                <button
+                  onClick={e => { e.preventDefault(); setConfirmDel(false); }}
+                  style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', color: '#64748B', fontSize: 11.5, ...body }}
+                >Cancel</button>
+              </>
             : <button
                 onClick={e => { e.preventDefault(); setConfirmDel(true); }}
-                title="Delete"
-                style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '5px 7px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center' }}
+                title="Delete project"
+                style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#EF4444', display: 'flex', alignItems: 'center' }}
               >
-                <Trash2 size={13} />
+                <Trash2 size={14} />
               </button>
           }
         </div>
