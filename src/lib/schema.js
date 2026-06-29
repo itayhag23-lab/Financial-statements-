@@ -5,7 +5,11 @@
 export const VALID_SECTOR_KEYS = [
   'coffeeshop','restaurant','foodtruck','ecommerce','retail',
   'carwash','vending','gym','consulting','saas','mobileapp',
-  'contentcreator','agency','manufacturing','other',
+  'contentcreator','agency','manufacturing',
+  'bakery','bar','subscriptionbox','wholesale','salon','autorepair',
+  'cleaning','realestate','dental','events','hotel','logistics',
+  'marketplace','elearning','construction',
+  'other',
 ];
 export const VALID_REGION_KEYS  = ['us','il','uk','eu','ca','au','sg','ae','other'];
 export const VALID_STMT_KEYS    = ['incomeOnly','incomeAndCF','full'];
@@ -60,7 +64,7 @@ export const MODEL_GEN_SYSTEM_PROMPT = `You are an expert financial modeler. Giv
 
 Schema:
 {
-  "sectorKey": "coffeeshop|restaurant|foodtruck|ecommerce|retail|carwash|vending|gym|consulting|saas|mobileapp|contentcreator|agency|manufacturing|other",
+  "sectorKey": "coffeeshop|restaurant|foodtruck|ecommerce|retail|carwash|vending|gym|consulting|saas|mobileapp|contentcreator|agency|manufacturing|bakery|bar|subscriptionbox|wholesale|salon|autorepair|cleaning|realestate|dental|events|hotel|logistics|marketplace|elearning|construction|other",
   "regionKey": "us|il|uk|eu|ca|au|sg|ae|other",
   "statements": "incomeOnly|incomeAndCF|full",
   "rationale": "1-2 sentences: why this sector, and how you set the key numbers",
