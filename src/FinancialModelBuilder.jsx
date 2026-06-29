@@ -633,7 +633,7 @@ const indent=8+depth*20;
 const isParent=row.type==='parent',isComp=row.type==='computed',isLeaf=row.type==='leaf';
 const sColor=(()=>{if(!computedValues||computedValues.length<2)return C.ink2;if(isComp)return C.green;if(isParent)return C.ink;const l=computedValues[computedValues.length-1],f=computedValues[0];if(l<0)return C.rust;if(l<f)return C.gold;return C.green;})();
 const isTotal=isComp&&(row.id==='net-inc'||row.id==='cf-net'||row.id==='cf-fcf'||row.id==='total-le');
-const grid={gridTemplateColumns:`300px repeat(${periods.length},minmax(78px,1fr)) 84px 56px`};
+const grid={gridTemplateColumns:`300px repeat(${periods.length},minmax(78px,1fr)) 84px`};
 
 if(isParent||isComp){
 const bg=isTotal?C.greenSoft:isParent&&depth===0?C.bgWarm:C.surface;
@@ -647,7 +647,6 @@ return(<div className="grid items-center" style={{...grid,background:bg,borderTo
 </div>
 {periods.map((_,i)=>{const v=computedValues?.[i]??0;return(<div key={i} className="ff-num px-3 py-2.5 text-right text-[13px]" style={{color:isComp?C.green:v<0?C.rust:C.ink,fontWeight:fw}}><AnimatedNumber value={v} tweenKey={`${row.id}-${i}-${scenarioKey}`} format={x=>fmt(x,{paren:true})}/></div>);})}
 <div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
-<div/>
 </div>);
 }
 
@@ -664,7 +663,6 @@ return(<div className="grid items-center" style={{...grid,borderTop:`1px solid $
 </div>
 {periods.map((_,i)=>{const v=computedValues?.[i]??0;return(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:v<0?C.rust:C.ink2}}><AnimatedNumber value={v} tweenKey={`${row.id}-${i}-${scenarioKey}`} format={x=>fmt(x,{paren:true})}/></div>);})}
 <div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
-<div/>
 </div>);
 }
 
@@ -701,10 +699,10 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 {mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit rates →</button>}
 </div>
 </div>
+{row.deletable&&<button onClick={onDelete} title="Delete row" className="p-1 rounded opacity-30 hover:opacity-100 flex-shrink-0" style={{color:C.rust}}><Trash2 size={13}/></button>}
 </div>
 {cells}
 <div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
-<div className="flex items-center justify-end pr-3">{row.deletable&&<button onClick={onDelete} className="p-1 rounded opacity-25 hover:opacity-100" style={{color:C.rust}}><Trash2 size={13}/></button>}</div>
 </div>);
 }
 
@@ -719,10 +717,10 @@ return(<div className="rounded-lg overflow-hidden" style={{background:C.surface,
 <div className="flex items-center gap-2 ff-body text-[10.5px]" style={{color:C.muted}}><span className="label-eyebrow">Tree view</span><span>·</span><span>{eP} of {tP} expanded</span></div>
 <div className="flex items-center gap-1"><button onClick={onExpandAll} className="px-2 py-0.5 rounded ff-body text-[10.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}>Expand all</button><button onClick={onCollapseAll} className="px-2 py-0.5 rounded ff-body text-[10.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}>Collapse all</button></div>
 </div>
-<div className="grid items-center" style={{gridTemplateColumns:`300px repeat(${periods.length},minmax(78px,1fr)) 84px 56px`,background:C.surfaceAlt,borderBottom:`1px solid ${C.border}`}}>
+<div className="grid items-center" style={{gridTemplateColumns:`300px repeat(${periods.length},minmax(78px,1fr)) 84px`,background:C.surfaceAlt,borderBottom:`1px solid ${C.border}`}}>
 <div className="px-4 py-2.5 label-eyebrow ff-body flex items-center gap-1.5" style={{color:C.muted}}>Line Item{inM&&<span className="ff-num" style={{color:C.gold,fontSize:9,fontWeight:700,letterSpacing:'0.12em'}}>$M</span>}</div>
 {periods.map((p,i)=>(<div key={i} className="px-3 py-2.5 ff-body text-right" style={{color:C.ink2}}><span className="ff-num text-[11px]">{p}</span></div>))}
-<div className="px-3 py-2.5 label-eyebrow ff-body text-center" style={{color:C.muted}}>Trend</div><div/>
+<div className="px-3 py-2.5 label-eyebrow ff-body text-center" style={{color:C.muted}}>Trend</div>
 </div>
 {visible.map(({row,depth,hasChildren})=>(<HRow key={row.id} row={row} depth={depth} hasChildren={hasChildren} isExpanded={expandedIds.has(row.id)} onToggle={()=>onToggleExpand(row.id)} entry={rowData[row.id]} computedValues={computedValues[row.id]} revenueValues={computedValues.revenue} periods={periods} onUpdateData={p=>onUpdateRowData(row.id,p)} onDelete={()=>onDeleteRow(row.id)} onOpenCustom={()=>onOpenCustom(row)} scenarioKey={scenarioKey}/>))}
 <div className="px-4 py-3" style={{background:C.surfaceAlt,borderTop:`1px solid ${C.border}`}}><button onClick={onAddRow} className="ff-body text-[12px] flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{color:C.ink2,background:C.surface,border:`1px solid ${C.border}`}}><Plus size={13}/>Add line item</button></div>
