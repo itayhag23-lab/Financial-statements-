@@ -1,41 +1,58 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Rate limiting via Upstash Redis REST API (zero extra packages).
-// Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel to activate.
-// Without those vars the function still works — rate limiting is simply skipped.
-const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-const RATE_LIMIT  = 15;   // AI requests per hour per signed-in user
-const WINDOW_S    = 3600;
+// AI usage limits, enforced in Supabase (no external service needed).
+// Two fixed-window caps are checked per signed-in user on every request:
+//   • an hourly limit to blunt bursts/abuse, and
+//   • a monthly limit to cap overall cost.
+// Both are overridable via env vars. Counting happens atomically inside the
+// `check_ai_rate_limit` Postgres function (see supabase-setup.sql).
+const HOURLY_LIMIT   = parseInt(process.env.AI_HOURLY_LIMIT  || '15',  10);
+const HOURLY_WINDOW  = 3600;            // 1 hour
+const MONTHLY_LIMIT  = parseInt(process.env.AI_MONTHLY_LIMIT || '300', 10);
+const MONTHLY_WINDOW = 30 * 24 * 3600;  // 30 days
 
-async function checkRateLimit(key) {
-  if (!REDIS_URL || !REDIS_TOKEN) return { ok: true };
-  try {
-    const r = await fetch(`${REDIS_URL}/pipeline`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify([['INCR', key], ['EXPIRE', key, WINDOW_S, 'NX']]),
-    });
-    const [[, count]] = await r.json();
-    return { ok: count <= RATE_LIMIT, count, limit: RATE_LIMIT };
-  } catch {
-    return { ok: true }; // fail open — never block legitimate users due to Redis errors
-  }
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Pull the Supabase access token off the request, if present.
+function getBearerToken(req) {
+  const authHeader = req.headers['authorization'] || '';
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 }
 
 // AI features require a signed-in Supabase user — verifies the bearer token
 // server-side rather than trusting anything the client claims.
-async function getAuthedUser(req) {
-  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-  const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey) return null;
-  const authHeader = req.headers['authorization'] || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-  if (!token) return null;
-  const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false, autoRefreshToken: false } });
+async function getAuthedUser(token) {
+  if (!SUPABASE_URL || !SUPABASE_KEY || !token) return null;
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data?.user) return null;
   return data.user;
+}
+
+// Count one request against a named fixed-window bucket via the Supabase RPC.
+// The call is made AS the signed-in user (their token in the Authorization
+// header) so the function's auth.uid() resolves correctly. Fails open: a
+// Supabase hiccup should never block a legitimate user.
+async function checkLimit(token, bucket, limit, windowSeconds) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return { ok: true };
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase.rpc('check_ai_rate_limit', {
+      p_bucket: bucket,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    });
+    if (error) return { ok: true };
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return { ok: true };
+    return { ok: row.allowed, used: row.used, limit: row.max_allowed };
+  } catch {
+    return { ok: true };
+  }
 }
 
 // Preference order for which Gemini model to use. The first one that both
@@ -69,16 +86,23 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const user = await getAuthedUser(req);
+  const token = getBearerToken(req);
+  const user = await getAuthedUser(token);
   if (!user) {
     return res.status(401).json({ error: 'Sign in required to use AI features.' });
   }
 
-  // Rate limiting (per signed-in user, now that every caller is authenticated)
-  const rl = await checkRateLimit(`rl:chat:${user.id}`);
-  if (!rl.ok) {
-    res.setHeader('Retry-After', WINDOW_S);
-    return res.status(429).json({ error: `Rate limit exceeded. You can make ${RATE_LIMIT} AI requests per hour.` });
+  // Usage limits (per signed-in user), counted in Supabase. Check the hourly
+  // anti-burst cap first, then the monthly cost cap.
+  const hourly = await checkLimit(token, 'hour', HOURLY_LIMIT, HOURLY_WINDOW);
+  if (!hourly.ok) {
+    res.setHeader('Retry-After', HOURLY_WINDOW);
+    return res.status(429).json({ error: `Hourly AI limit reached. You can make ${HOURLY_LIMIT} AI requests per hour.` });
+  }
+  const monthly = await checkLimit(token, 'month', MONTHLY_LIMIT, MONTHLY_WINDOW);
+  if (!monthly.ok) {
+    res.setHeader('Retry-After', MONTHLY_WINDOW);
+    return res.status(429).json({ error: `Monthly AI limit reached. You can make ${MONTHLY_LIMIT} AI requests per month.` });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
