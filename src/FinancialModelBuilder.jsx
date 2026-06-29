@@ -934,7 +934,7 @@ return 'You are a sharp financial analyst embedded in a 3-statement financial mo
 const QUICK_QUESTIONS=['Is my gross margin realistic?','What should I stress-test first?','Why am I not reaching break-even?','How do I compare to peers?','What is a healthy burn rate here?','Are my growth assumptions realistic?'];
 
 // ── AI Generate from description ──────────────────────────────────────────
-function AIGenerateModal({open,onClose,onApplyDraft}){
+function AIGenerateModal({open,onClose,onApplyDraft,onUseWizard}){
 const[desc,setDesc]=useState('');
 const[status,setStatus]=useState('idle'); // idle|generating|success|error
 const[result,setResult]=useState(null);
@@ -945,7 +945,10 @@ const generate=async()=>{
 const t=desc.trim();if(!t||status==='generating')return;
 setStatus('generating');setErr('');setResult(null);
 try{
-const res=await fetch('/api/chat',{method:'POST',headers:await authedJSONHeaders(),body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
+// /api/chat is backed by the Gemini API (api/chat.js); the server picks the
+// Gemini model (GEMINI_MODEL env or its preference list), so no model id is
+// sent from here.
+const res=await fetch('/api/chat',{method:'POST',headers:await authedJSONHeaders(),body:JSON.stringify({max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
 const data=await res.json();
 if(data.error){setErr('AI error: '+(data.error.message||data.error));setStatus('error');return;}
 const text=data?.content?.[0]?.text;
@@ -994,7 +997,7 @@ ov.mode==='percentOfRevenue'?`${ov.pctOfRev}% of revenue`:'custom values'
 ),
 // Footer
 React.createElement('div',{style:{padding:'14px 22px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}},
-React.createElement('button',{onClick:onClose,className:'ff-body',style:{fontSize:12.5,color:C.muted,background:'transparent',border:'none',cursor:'pointer',padding:'6px 10px'}},status==='success'?'Cancel':'Use wizard instead'),
+React.createElement('button',{onClick:status==='success'?onClose:(onUseWizard||onClose),className:'ff-body',style:{fontSize:12.5,color:C.muted,background:'transparent',border:'none',cursor:'pointer',padding:'6px 10px'}},status==='success'?'Cancel':'Use wizard instead'),
 status==='success'
 ?React.createElement('button',{onClick:apply,className:'ff-body',style:{fontSize:13,fontWeight:600,color:C.surface,background:C.green,border:'none',cursor:'pointer',padding:'9px 20px',borderRadius:8}},'✓ Apply this model')
 :React.createElement('button',{onClick:generate,disabled:!desc.trim()||status==='generating',className:'ff-body',style:{fontSize:13,fontWeight:600,color:C.surface,background:desc.trim()&&status!=='generating'?C.ink:C.surfaceAlt,border:'none',cursor:desc.trim()&&status!=='generating'?'pointer':'not-allowed',padding:'9px 20px',borderRadius:8}},status==='generating'?'Generating…':'Generate model →')
@@ -1023,7 +1026,7 @@ try{
 const res=await fetch('/api/chat',{
 method:'POST',
 headers:await authedJSONHeaders(),
-body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
+body:JSON.stringify({max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
 });
 const data=await res.json();
 if(data.error){setError('API: '+(data.error.message||data.error));setLoading(false);return;}
@@ -1317,10 +1320,11 @@ const pidRef=useRef(projectId||(newModeRef.current?genId():(getLastActive()||gen
 const didLoadRef=useRef(false);
 useEffect(()=>{if(didLoadRef.current)return;didLoadRef.current=true;
 if(newModeRef.current){
-// Fresh start requested. Keep the blank, all-zero baseline already in state.
-// Manual → drop straight into the empty editable model (no wizard, no numbers).
-// AI → the deep-link effect below opens the AI Generate modal.
-if(newModeRef.current==='manual'){setShowWizard(false);setHasModel(true);}
+// Fresh start requested — keep the blank, all-zero baseline (never resume the
+// last-active project). 'ai' opens the AI Generate modal (deep-link effect
+// below), so hide the wizard. Otherwise show the wizard on top of the blank
+// model; completing it seeds numbers, skipping it leaves the zeros.
+if(newModeRef.current==='ai')setShowWizard(false);
 return;
 }
 (async()=>{const doc=await loadProject(pidRef.current);if(doc&&doc.model){loadState(doc.model);if(doc.meta){if(doc.meta.name)setProjectName(doc.meta.name);if(doc.meta.currencyKey)setCurrencyKey(doc.meta.currencyKey);if(doc.meta.enabledStatements)setEnabledStatements(doc.meta.enabledStatements);}if(doc.wizardAnswers)setWizardAnswers(doc.wizardAnswers);setHasModel(true);setShowWizard(false);}
@@ -1440,7 +1444,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true}/>}
-{showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete}/>}
+{showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
