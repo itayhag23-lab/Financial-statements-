@@ -213,33 +213,45 @@ export default function Dashboard() {
   return (
     <div className="koala-page" style={{ minHeight: '100vh', background: '#F8FAFC', ...body }}>
 
-      {/* Top nav */}
+      {/* Top nav — the brand can shrink/truncate and the action buttons collapse
+          to icon-only on phones, so the row can never overflow and overlap the
+          avatar (the bug this layout previously had on narrow viewports). */}
       <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 40 }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <Link to="/" style={{ textDecoration: 'none' }}><Logo size={26} /></Link>
+        <div
+          className="mx-auto flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6"
+          style={{ maxWidth: 1200 }}
+        >
+          <Link to="/" className="min-w-0 shrink overflow-hidden" style={{ textDecoration: 'none' }}>
+            <span className="hidden sm:inline-flex"><Logo size={26} /></span>
+            <span className="inline-flex sm:hidden"><Logo size={22} /></span>
+          </Link>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {/* User badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            {/* User badge — email only appears once there's room for it */}
+            <div className="flex items-center gap-2">
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <span style={{ ...body, fontSize: 13, fontWeight: 700, color: '#059669' }}>{userInitial}</span>
               </div>
-              <span style={{ ...body, fontSize: 13, color: '#334155', display: window.innerWidth > 480 ? 'block' : 'none' }}>{userEmail}</span>
+              <span className="hidden min-w-0 truncate md:block" style={{ ...body, fontSize: 13, color: '#334155', maxWidth: 200 }}>{userEmail}</span>
             </div>
             <button
               onClick={() => {
                 const el = document.getElementById('feedback');
                 if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}
-              style={{ ...body, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
+              aria-label="Feedback"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
+              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
             >
-              <MessageSquare size={13} /> Feedback
+              <MessageSquare size={14} /> <span className="hidden sm:inline">Feedback</span>
             </button>
             <button
               onClick={async () => { await signOut(); navigate('/auth', { replace: true }); }}
-              style={{ ...body, display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
+              aria-label="Sign out"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
+              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
             >
-              <LogOut size={13} /> Sign out
+              <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
             </button>
           </div>
         </div>
