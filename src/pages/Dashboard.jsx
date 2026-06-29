@@ -63,8 +63,9 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
             </div>
           </div>
         </div>
-        {/* Action buttons (appear on hover) */}
-        <div style={{ display: 'flex', gap: 6, opacity: hover ? 1 : 0, transition: 'opacity 150ms', flexShrink: 0 }}>
+        {/* Action buttons — dimmed at rest, full on hover. Kept visible (not
+            opacity:0) so they're tappable on touch devices, which have no hover. */}
+        <div style={{ display: 'flex', gap: 6, opacity: hover ? 1 : 0.55, transition: 'opacity 150ms', flexShrink: 0 }}>
           <button
             onClick={e => { e.preventDefault(); onDuplicate(project.id); }}
             title="Duplicate"
