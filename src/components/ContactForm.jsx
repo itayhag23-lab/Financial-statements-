@@ -11,9 +11,12 @@ import { FONTS } from '../brand/theme';
 //   REACT_APP_EMAILJS_PUBLIC_KEY
 // The Public Key is safe to ship to the browser; still allowlist your domain in
 // the EmailJS dashboard so the template can't be abused from elsewhere.
-const SERVICE_ID  = process.env.REACT_APP_EMAILJS_SERVICE_ID;
-const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-const PUBLIC_KEY  = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+// EmailJS Service ID, Template ID and Public Key are all designed to be exposed
+// in the browser, so we ship working defaults and let env vars override them.
+// Lock the template to your domain in EmailJS → Account → Security to stop abuse.
+const SERVICE_ID  = process.env.REACT_APP_EMAILJS_SERVICE_ID  || 'service_mfxkd6';
+const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_pqv6lzi';
+const PUBLIC_KEY  = process.env.REACT_APP_EMAILJS_PUBLIC_KEY  || 'VxXwvX-5iEi1zNmTJ';
 
 // Two palettes so the same component drops cleanly onto the dark landing page
 // and the light dashboard.
