@@ -77,7 +77,7 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
 
     if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
       setStatus('error');
-      setServerError('Messaging isn’t configured yet. Email us at hello@koalastatements.com.');
+      setServerError('Messaging isn’t configured yet. Please try again later.');
       return;
     }
 

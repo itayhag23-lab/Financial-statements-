@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         <p style={S.p}>Your account and model data is retained for as long as your account is active. If you delete your account, your data is removed from our systems within 30 days. Share links expire after 90 days by default.</p>
 
         <h2 style={S.h2}>5. Your rights</h2>
-        <p style={S.p}>You have the right to access, correct, export, or delete your personal data at any time. To exercise these rights, email <strong>hello@koalastatements.com</strong>. We will respond within 30 days.</p>
+        <p style={S.p}>You have the right to access, correct, export, or delete your personal data at any time. To exercise these rights, reach us through the contact form on our website. We will respond within 30 days.</p>
         <p style={S.p}>If you are in the EU, you may also lodge a complaint with your local data protection authority.</p>
 
         <h2 style={S.h2}>6. Cookies</h2>
@@ -74,7 +74,7 @@ export default function PrivacyPage() {
         <p style={S.p}>We may update this policy from time to time. We will notify you by email or in-app notice when material changes occur.</p>
 
         <hr style={S.hr} />
-        <p style={{ ...S.p, color: '#64748B' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#047857' }}>hello@koalastatements.com</a></p>
+        <p style={{ ...S.p, color: '#64748B' }}>Questions? Reach us anytime through the <Link to="/#contact" style={{ color: '#047857' }}>contact form</Link> on our website.</p>
       </main>
     </div>
   );

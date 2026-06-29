@@ -148,6 +148,7 @@ export default function Dashboard() {
   const [loading, setLoading]     = useState(true);
   const [localCount, setLocalCount] = useState(0);
   const [importing, setImporting] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -236,8 +237,11 @@ export default function Dashboard() {
             </div>
             <button
               onClick={() => {
-                const el = document.getElementById('feedback');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setFeedbackOpen(true);
+                requestAnimationFrame(() => {
+                  const el = document.getElementById('feedback');
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
               }}
               aria-label="Feedback"
               className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
@@ -318,20 +322,38 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Feedback / contact */}
-        <div id="feedback" style={{ marginTop: 48, scrollMarginTop: 80 }}>
-          <div style={{ maxWidth: 560, margin: '0 auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: '28px 26px', boxShadow: '0 8px 24px -16px rgba(15,23,42,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MessageSquare size={17} color="#059669" />
+        {/* Feedback / contact — collapsed to a slim bar by default so it doesn't
+            dominate the dashboard; expands to the full form on click. */}
+        <div id="feedback" style={{ marginTop: 40, scrollMarginTop: 80, maxWidth: 560, margin: '40px auto 0' }}>
+          {!feedbackOpen ? (
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              style={{ ...body, width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, padding: '12px 16px', cursor: 'pointer', textAlign: 'left' }}
+            >
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MessageSquare size={15} color="#059669" />
               </div>
-              <h2 style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Contact &amp; feedback</h2>
+              <span style={{ fontSize: 13.5, fontWeight: 600, color: '#0F172A' }}>Contact &amp; feedback</span>
+              <span style={{ fontSize: 12.5, color: '#64748B', marginLeft: 'auto' }}>Found a bug or have an idea? →</span>
+            </button>
+          ) : (
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 16, padding: '22px 22px', boxShadow: '0 8px 24px -16px rgba(15,23,42,0.15)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <MessageSquare size={16} color="#059669" />
+                </div>
+                <h2 style={{ ...disp, fontSize: 17, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Contact &amp; feedback</h2>
+                <button
+                  onClick={() => setFeedbackOpen(false)}
+                  aria-label="Close feedback"
+                  style={{ ...body, marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#94A3B8' }}
+                >
+                  Close
+                </button>
+              </div>
+              <ContactForm theme="light" source="dashboard" defaultEmail={userEmail} onSent={() => setFeedbackOpen(true)} />
             </div>
-            <p style={{ ...body, fontSize: 13.5, color: '#64748B', margin: '4px 0 18px' }}>
-              Found a bug or have an idea? We’d love to hear from you — we usually reply within a day.
-            </p>
-            <ContactForm theme="light" source="dashboard" defaultEmail={userEmail} />
-          </div>
+          )}
         </div>
       </div>
 

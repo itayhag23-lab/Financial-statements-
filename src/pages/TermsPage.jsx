@@ -82,7 +82,7 @@ export default function TermsPage() {
         <p style={S.p}>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance. We will notify you of material changes via email or in-app notice at least 14 days in advance.</p>
 
         <hr style={S.hr} />
-        <p style={{ ...S.p, color: '#64748B' }}>Questions? Contact us at <a href="mailto:hello@koalastatements.com" style={{ color: '#047857' }}>hello@koalastatements.com</a></p>
+        <p style={{ ...S.p, color: '#64748B' }}>Questions? Reach us anytime through the <Link to="/#contact" style={{ color: '#047857' }}>contact form</Link> on our website.</p>
       </main>
     </div>
   );

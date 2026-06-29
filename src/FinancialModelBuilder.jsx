@@ -377,6 +377,41 @@ if(lift>0){for(const sc of SCENARIOS){const e=nd[sc]?.['rev-ops'];if(e)nd[sc]={.
 return nd;
 }
 
+// Derive the Best and Worst income-statement scenarios from the finalized Base so
+// that net income is always ordered Worst ≤ Base ≤ Best. Revenue is flexed up for
+// Best and down for Worst; costs (COGS + opex) move in the profit-reducing
+// direction for Worst and the opposite for Best. Tax (modeled as % of revenue) is
+// kept equal to the Base rate — it then scales naturally with each scenario's
+// revenue instead of being inconsistently lower in the downside (the old behaviour
+// that could push Worst's net income above Base). Balance-sheet / cash-flow lines
+// keep whatever scenario spread the seed produced.
+function deriveSideScenarios(rows,finalRowData,numPeriods){
+const FACTORS={best:{rev:1.18,revGrowth:8,cost:0.93},worst:{rev:0.80,revGrowth:-8,cost:1.10}};
+const incomeRows=rows.income||[];
+const out={base:finalRowData.base};
+for(const sc of['best','worst']){
+const f=FACTORS[sc];
+const nd={...(finalRowData[sc]||{})};
+for(const r of incomeRows){
+if(r.type!=='leaf')continue;
+const be=finalRowData.base[r.id];if(!be)continue;
+const ne={...be,customRates:[...(be.customRates||[])],manualValues:[...(be.manualValues||[])]};
+if(r.parentId==='rev'){
+ne.baseValue=Math.round((be.baseValue||0)*f.rev);
+ne.manualValues=ne.manualValues.map(v=>Math.round(v*f.rev));
+ne.flatRate=(be.flatRate||0)+f.revGrowth;
+}else if(r.parentId==='cogs'||r.parentId==='opex'){
+if(be.mode==='percentOfRevenue')ne.pctOfRev=Math.max(0,+((be.pctOfRev||0)*f.cost).toFixed(2));
+else{ne.baseValue=Math.round((be.baseValue||0)*f.cost);ne.manualValues=ne.manualValues.map(v=>Math.round(v*f.cost));}
+}
+// tax + non-operating lines stay equal to Base (consistent across scenarios)
+nd[r.id]=ne;
+}
+out[sc]=nd;
+}
+return out;
+}
+
 function computeFeasibilityScore(computedAll,periods,sectorKey,granularity,enabledStatements){
 const sector=BB[sectorKey]||BB.other;const stmts=enabledStatements||{income:true,balance:false,cashFlow:false};
 const bV=computedAll.base?.values||{};const wV=computedAll.worst?.values||{};
@@ -1239,7 +1274,7 @@ const computedAll=useMemo(()=>{const m={};for(const sc of SCENARIOS)m[sc]=comput
 const updateRowData=useCallback((rowId,patch)=>{setRowData(prev=>({...prev,[activeScenario]:{...prev[activeScenario],[rowId]:{...prev[activeScenario][rowId],...patch}}}));},[activeScenario]);
 const deleteRow=useCallback((rowId)=>{setRows(prev=>{const nx={...prev};for(const s of['income','balance','cashFlow'])nx[s]=nx[s].filter(r=>r.id!==rowId&&r.parentId!==rowId);return nx;});setRowData(prev=>{const nx={};for(const sc of SCENARIOS){nx[sc]={...prev[sc]};delete nx[sc][rowId];}return nx;});},[]);
 const addRow=useCallback((statementId,{label,parentId,defaultMode})=>{const id=newRowId(statementId);const nr={id,label,type:'leaf',parentId,defaultMode:defaultMode||'manual',deletable:true};setRows(prev=>{const list=prev[statementId];let lastIdx=-1;for(let i=0;i<list.length;i++)if(list[i].parentId===parentId)lastIdx=i;const nl=list.slice();nl.splice(lastIdx>=0?lastIdx+1:nl.length,0,nr);return{...prev,[statementId]:nl};});setRowData(prev=>{const nx={};for(const sc of SCENARIOS)nx[sc]={...prev[sc],[id]:makeRowDataEntry(defaultMode,numPeriods)};return nx;});},[numPeriods]);
-const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});setRows(s.rows);setRowData(ensureBaseProfit(s.rows,s.rowData,numPeriods));setEnabledStatements(s.enabledStatements);setHasModel(true);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
+const handleWizardComplete=useCallback((answers)=>{setWizardAnswers(answers);setProjectName(answers.name||'Untitled Project');setCurrencyKey(answers.currencyKey||'usd');const s=seedProjectForWizard({sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements,numPeriods});const wd=deriveSideScenarios(s.rows,ensureBaseProfit(s.rows,s.rowData,numPeriods),numPeriods);setRows(s.rows);setRowData(wd);setEnabledStatements(s.enabledStatements);setHasModel(true);if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');setShowWizard(false);capture('model_wizard_completed',{sectorKey:answers.sectorKey,regionKey:answers.regionKey,statements:answers.statements});},[numPeriods,buildTab]);
 // Reset the in-memory model to a blank, all-zero baseline.
 const blankModel=useCallback(()=>{setRows({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});const all={};for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,numPeriods);}setRowData(all);setWizardAnswers(null);setEnabledStatements({income:true,balance:false,cashFlow:false});setBuildTab('income');},[numPeriods]);
 // "New project": fresh id (so we never overwrite or resume the old model) + a
@@ -1253,10 +1288,14 @@ const handleAIGenComplete=useCallback((draft)=>{
 const answers={name:draft.name||'AI-Generated Model',sectorKey:draft.sectorKey,regionKey:draft.regionKey,currencyKey:'usd',incomeType:'main',stage:'early',statements:draft.statements};
 setWizardAnswers(answers);setProjectName(answers.name);setCurrencyKey('usd');
 const s=seedProjectForWizard({sectorKey:draft.sectorKey,regionKey:draft.regionKey,statements:draft.statements,numPeriods});
-// Apply overrides to all scenarios
-if(draft.overrides&&draft.overrides.length>0){const rd={...s.rowData};for(const sc of SCENARIOS){rd[sc]={...rd[sc]};for(const ov of draft.overrides){if(rd[sc][ov.rowId]){rd[sc][ov.rowId]={...rd[sc][ov.rowId]};if(ov.mode)rd[sc][ov.rowId].mode=ov.mode;if(ov.baseValue!==undefined)rd[sc][ov.rowId].baseValue=ov.baseValue;if(ov.flatRate!==undefined)rd[sc][ov.rowId].flatRate=ov.flatRate;if(ov.pctOfRev!==undefined)rd[sc][ov.rowId].pctOfRev=ov.pctOfRev;}}}s.rowData=rd;}
+// Apply the AI overrides to the BASE scenario only. Best/Worst are derived from
+// the finalized Base below, which keeps the three scenarios consistently ordered
+// (Worst ≤ Base ≤ Best) instead of clobbering the spread with identical values.
+if(draft.overrides&&draft.overrides.length>0){const base={...s.rowData.base};for(const ov of draft.overrides){if(base[ov.rowId]){base[ov.rowId]={...base[ov.rowId]};if(ov.mode)base[ov.rowId].mode=ov.mode;if(ov.baseValue!==undefined)base[ov.rowId].baseValue=ov.baseValue;if(ov.flatRate!==undefined)base[ov.rowId].flatRate=ov.flatRate;if(ov.pctOfRev!==undefined)base[ov.rowId].pctOfRev=ov.pctOfRev;}}s.rowData={...s.rowData,base};}
 // Guardrail: keep the Base scenario profitable in year 1 even if the AI overshot opex.
 s.rowData=ensureBaseProfit(s.rows,s.rowData,numPeriods);
+// Rebuild Best/Worst from the finalized Base so the scenario numbers stay coherent.
+s.rowData=deriveSideScenarios(s.rows,s.rowData,numPeriods);
 setRows(s.rows);setRowData(s.rowData);setEnabledStatements(s.enabledStatements);setHasModel(true);
 if(!s.enabledStatements.balance&&buildTab==='balance')setBuildTab('income');
 if(!s.enabledStatements.cashFlow&&buildTab==='cashFlow')setBuildTab('income');

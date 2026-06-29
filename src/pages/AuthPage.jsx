@@ -260,7 +260,7 @@ export default function AuthPage() {
 
         {/* Continue without signing in */}
         <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <Link to="/app" style={{ ...body, fontSize: 13, color: P.muted, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 1 }}>
+          <Link to="/app?new=manual" style={{ ...body, fontSize: 13, color: P.muted, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 1 }}>
             Continue without signing in →
           </Link>
           <div style={{ ...body, fontSize: 11, color: 'rgba(248,250,252,0.2)', marginTop: 6 }}>
