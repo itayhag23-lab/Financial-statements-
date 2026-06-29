@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Sparkles, Share2,
   ArrowRight, Check, Zap, Link2,
+  FileSpreadsheet, Upload,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
@@ -127,92 +128,6 @@ function HeroCTA({ onClick, mob }) {
     }}>
       Build your model free <ArrowRight size={16} />
     </Link>
-  );
-}
-
-// Illustrative example output per segment — clearly framed as a preview,
-// not a live calculation (same convention as DashboardMock's "Acme Corp").
-const AI_TEASER_SEGMENTS = {
-  'B2B SaaS':   [{ label: 'ARR target',           value: '$1.2M' },   { label: 'Monthly burn rate',    value: '$84K' },    { label: 'Runway',     value: '14 months' }],
-  'E-commerce': [{ label: 'Revenue run-rate',      value: '$3.4M' },   { label: 'Gross margin',         value: '42%' },     { label: 'Inventory turns', value: '6.1x/yr' }],
-  'Consulting': [{ label: 'Utilization rate',      value: '71%' },     { label: 'Revenue / consultant', value: '$186K' },   { label: 'Net margin', value: '18%' }],
-  'Other':      [{ label: 'Revenue growth',        value: '+24% YoY' },{ label: 'Burn rate',            value: '$52K/mo' }, { label: 'Runway',     value: '11 months' }],
-};
-
-// Click-driven "AI thinking" demo in the hero — gives every visitor (mobile
-// included, unlike DashboardMock) a real, hands-on AI moment before signup.
-function AITeaser({ mob }) {
-  const [segment, setSegment] = React.useState(null);
-  const [phase, setPhase] = React.useState('idle'); // idle | analyzing | result
-
-  React.useEffect(() => {
-    if (phase !== 'analyzing') return;
-    const t = setTimeout(() => setPhase('result'), 1100);
-    return () => clearTimeout(t);
-  }, [phase]);
-
-  function pick(seg) {
-    capture('cta_click', { location: 'ai_teaser_start', segment: seg });
-    setSegment(seg);
-    setPhase('analyzing');
-  }
-  function reset() {
-    setPhase('idle');
-    setSegment(null);
-  }
-
-  return (
-    <div style={{ marginTop: mob ? 18 : 22, background: 'rgba(255,255,255,0.04)', border: `1px solid ${P.borderDark}`, borderRadius: 14, padding: mob ? 16 : 20, maxWidth: mob ? '100%' : 460 }}>
-      {phase === 'idle' && (
-        <>
-          <div style={{ ...body, fontSize: 13, fontWeight: 600, color: '#F8FAFC', marginBottom: 10 }}>
-            Try it — 10 second preview
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {Object.keys(AI_TEASER_SEGMENTS).map((seg) => (
-              <button key={seg} onClick={() => pick(seg)} style={{
-                ...body, fontSize: 12.5, fontWeight: 500, color: P.accent, background: P.accentSoft,
-                border: '1px solid rgba(16,185,129,0.25)', borderRadius: 8, padding: '7px 13px', cursor: 'pointer',
-              }}>
-                {seg}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {phase === 'analyzing' && (
-        <div style={{ ...body, fontSize: 13.5, color: 'rgba(248,250,252,0.75)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Zap size={14} color={P.accent} />
-          AI is analyzing your {segment} numbers…
-        </div>
-      )}
-      {phase === 'result' && (
-        <>
-          <div style={{ ...body, fontSize: 11, fontWeight: 600, color: P.accent, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
-            Example {segment} model
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
-            {AI_TEASER_SEGMENTS[segment].map((row) => (
-              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, ...body, color: 'rgba(248,250,252,0.85)' }}>
-                <span style={{ color: 'rgba(248,250,252,0.55)' }}>{row.label}</span>
-                <span style={{ ...mono, fontWeight: 600 }}>{row.value}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <Link to="/auth" onClick={() => capture('cta_click', { location: 'ai_teaser_result', segment })} style={{
-              ...body, fontSize: 13, fontWeight: 600, color: P.bgDark, background: P.accent,
-              padding: '9px 16px', borderRadius: 8, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}>
-              Build your real model free <ArrowRight size={14} />
-            </Link>
-            <button onClick={reset} style={{ ...body, fontSize: 12.5, color: 'rgba(248,250,252,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-              Try another →
-            </button>
-          </div>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -412,23 +327,27 @@ function DashboardMock() {
   );
 }
 
-// ── Integration badges ──────────────────────────────────────────────────────
-const INTEGRATIONS = [
-  { name: 'QuickBooks', abbr: 'QB', color: '#2CA01C' },
-  { name: 'Xero',       abbr: 'Xe', color: '#13B5EA' },
-  { name: 'NetSuite',   abbr: 'NS', color: '#FF6C2C' },
-  { name: 'Salesforce', abbr: 'SF', color: '#00A1E0' },
-  { name: 'Stripe',     abbr: 'St', color: '#6772E5' },
-  { name: 'Excel',      abbr: 'Ex', color: '#217346' },
+// ── Interop — only capabilities the app actually ships: Excel export, CSV
+// import, and a live shareable report link. No fabricated SaaS integrations. ──
+const INTEROP = [
+  { icon: FileSpreadsheet, title: 'Export to Excel',
+    body: 'Download any model as a fully formatted spreadsheet — every statement and period, in one click.' },
+  { icon: Upload, title: 'Import your numbers',
+    body: 'Export a CSV from Excel, Google Sheets, or your accounting tool and Koala builds an editable model around it.' },
+  { icon: Share2, title: 'Share a live link',
+    body: 'Send investors an interactive report they can explore themselves — not a dead PDF or email attachment.' },
 ];
 
-function IntegrationBadge({ name, abbr, color }) {
+function InteropCard({ icon: Icon, title, body: text, mob }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '6px 12px', borderRadius: 8, border: `1px solid ${P.border}`, background: P.bg }}>
-      <div style={{ width: 22, height: 22, borderRadius: 5, background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <span style={{ ...body, fontSize: 8.5, fontWeight: 800, color: '#fff' }}>{abbr}</span>
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 13, background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, padding: mob ? '16px 18px' : '18px 20px' }}>
+      <div style={{ width: 38, height: 38, borderRadius: 9, background: P.accentSoft, border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon size={18} color={P.accentText} />
       </div>
-      <span style={{ ...body, fontSize: 12.5, fontWeight: 500, color: P.ink2 }}>{name}</span>
+      <div>
+        <div style={{ ...disp, fontSize: 14.5, fontWeight: 700, color: P.ink, letterSpacing: '-0.01em', marginBottom: 3 }}>{title}</div>
+        <div style={{ ...body, fontSize: 12.5, lineHeight: 1.5, color: P.ink2 }}>{text}</div>
+      </div>
     </div>
   );
 }
@@ -608,10 +527,6 @@ export default function LandingPage() {
           0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.55); }
           60%      { box-shadow: 0 0 0 9px rgba(16,185,129,0); }
         }
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to   { transform: translateX(-50%); }
-        }
         @keyframes caretBlink {
           0%, 50% { opacity: 1; }
           51%, 100% { opacity: 0; }
@@ -675,7 +590,6 @@ export default function LandingPage() {
             <p style={{ ...body, fontSize: mob ? 12 : 13, color: 'rgba(248,250,252,0.4)', margin: `${mob ? 14 : 18}px 0 0` }}>
               No spreadsheets. No finance degree. Free.
             </p>
-            <AITeaser mob={mob} />
           </div>
           {!tab && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -685,18 +599,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* INTEGRATION STRIP — scrolling marquee */}
-      <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}`, padding: `14px 0` }}>
-        <div style={{ ...body, fontSize: 11, color: P.muted, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>
-          Works with your stack
-        </div>
-        <div style={{ overflow: 'hidden', position: 'relative' }}>
-          {/* fade masks at edges */}
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 40, background: `linear-gradient(to right, ${P.bgAlt}, transparent)`, zIndex: 1, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40, background: `linear-gradient(to left, ${P.bgAlt}, transparent)`, zIndex: 1, pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', gap: 10, animation: 'marquee 18s linear infinite', width: 'max-content' }}>
-            {[...INTEGRATIONS, ...INTEGRATIONS].map((ig, i) => (
-              <IntegrationBadge key={i} {...ig} />
+      {/* INTEROP — truthful export / import / share capabilities */}
+      <div style={{ background: P.bgAlt, borderBottom: `1px solid ${P.border}`, padding: `${mob ? '32px' : '44px'} 0` }}>
+        <div style={{ ...maxW, padding: `0 ${sp}` }}>
+          <div style={{ ...body, fontSize: 11, color: P.muted, fontWeight: 500, letterSpacing: '0.09em', textTransform: 'uppercase', textAlign: 'center', marginBottom: mob ? 20 : 28 }}>
+            Works with how you already work
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 12 : 18, maxWidth: 920, margin: '0 auto' }}>
+            {INTEROP.map((it) => (
+              <InteropCard key={it.title} {...it} mob={mob} />
             ))}
           </div>
         </div>
