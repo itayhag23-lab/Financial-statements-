@@ -125,12 +125,16 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Hidden field so the template can show which page the message came from */}
+      {/* These name="" attributes are the EmailJS template variables. They match
+          the default "Contact Us" template: {{name}}, {{email}}, {{title}}, {{message}}.
+          `title` becomes the email subject ("Contact Us: {{title}}"); `source`
+          is an extra harmless field noting which page the message came from. */}
+      <input type="hidden" name="title" value={`${source === 'dashboard' ? 'Dashboard' : 'Landing'} feedback — Koala Statements`} readOnly />
       <input type="hidden" name="source" value={source} readOnly />
 
       <div>
         <label style={labelStyle} htmlFor="cf-name">Name</label>
-        <input id="cf-name" name="from_name" type="text" value={values.name} onChange={set('name')}
+        <input id="cf-name" name="name" type="text" value={values.name} onChange={set('name')}
           placeholder="Jane Doe" style={inputStyle('name')}
           onFocus={(e) => { e.target.style.borderColor = T.inputFocus; }}
           onBlur={(e) => { e.target.style.borderColor = errors.name ? T.error : T.inputBorder; }} />
@@ -139,7 +143,7 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
 
       <div>
         <label style={labelStyle} htmlFor="cf-email">Email</label>
-        <input id="cf-email" name="reply_to" type="email" value={values.email} onChange={set('email')}
+        <input id="cf-email" name="email" type="email" value={values.email} onChange={set('email')}
           placeholder="you@company.com" style={inputStyle('email')}
           onFocus={(e) => { e.target.style.borderColor = T.inputFocus; }}
           onBlur={(e) => { e.target.style.borderColor = errors.email ? T.error : T.inputBorder; }} />
