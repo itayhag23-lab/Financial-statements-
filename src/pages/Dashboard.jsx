@@ -377,7 +377,7 @@ export default function Dashboard() {
           <div style={{ maxWidth: 560, margin: '20px auto 0', textAlign: 'center' }}>
             <button
               onClick={() => { setShowDeleteAccount(true); setDeleteConfirm(''); setDeleteError(''); }}
-              style={{ ...body, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#94A3B8' }}
+              style={{ ...body, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#DC2626', fontWeight: 600 }}
             >
               Delete my account
             </button>
