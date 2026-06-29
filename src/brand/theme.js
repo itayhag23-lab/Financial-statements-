@@ -2,6 +2,8 @@
 // Single source of truth for the clean, professional light UI used across the
 // app (inline styles) and the marketing site / nav. Dark surfaces are reserved
 // for the Home page sections only; everything else is light.
+// NOTE: the `koala.*` color scale in tailwind.config.js mirrors these values so
+// utility classes (e.g. bg-koala-gold) match. Change a brand color in both.
 export const C = {
   bg: '#F8FAFC',          // slate-50 — page background
   bgWarm: '#F1F5F9',      // slate-100 — subtle alternate
