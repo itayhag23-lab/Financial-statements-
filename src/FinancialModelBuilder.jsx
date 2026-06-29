@@ -1136,12 +1136,18 @@ React.createElement('style',null,'@keyframes dot{0%,80%,100%{opacity:0.25;transf
 }
 
 
-function Masthead({todayLabel,projectName,sectorLabel,regionLabel,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport}){
+function SaveBadge({status}){
+const saving=status==='saving';
+return(<span className="ff-body text-[11px] px-2.5 py-1 rounded-full inline-flex items-center gap-1.5" style={{background:saving?C.surfaceAlt:C.greenSoft,border:`1px solid ${saving?C.border:C.green+'55'}`,color:saving?C.muted:C.green,fontWeight:600}} title={saving?'Saving your changes…':'All changes saved'}>
+{saving?<><span style={{width:7,height:7,borderRadius:'50%',background:C.gold,display:'inline-block',animation:'koala-pulse 1s ease-in-out infinite'}}/> Saving…</>:<><Check size={11}/> Saved</>}
+</span>);
+}
+function Masthead({todayLabel,projectName,sectorLabel,regionLabel,saveStatus,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport}){
 const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(projectName||'');
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
 const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t);setEditing(false);};
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-4"><div className="flex-1 min-w-0">
-<div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}</div>
+<div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}<SaveBadge status={saveStatus}/></div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-tight outline-none w-full" style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-tight cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em'}}>{projectName||'Untitled Project'}</h1>)}
 <div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onImport} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Upload size={12}/> Import file</button></div>
 </div><div className="text-right flex-none hidden md:block"><div className="ff-body text-[10px]" style={{color:C.faint,letterSpacing:'0.1em',textTransform:'uppercase'}}>Last updated</div><div className="ff-body text-[14px] mt-1" style={{color:C.ink2,fontWeight:500}}>{todayLabel}</div></div></div>
@@ -1203,6 +1209,8 @@ const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=
 // Tracks whether a real model exists yet (loaded / wizard / AI). When false,
 // dismissing the wizard means "start in Manual Mode" → a blank, all-zero model.
 const[hasModel,setHasModel]=useState(false);
+// Autosave status badge: 'saved' (idle/persisted) | 'saving' (debounced write pending).
+const[saveStatus,setSaveStatus]=useState('saved');
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
 const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
@@ -1341,7 +1349,7 @@ useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(
 // when authenticated, otherwise the cleanup would cancel the /auth redirect.
 if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
 else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAuthForAI,navigate]);
-useEffect(()=>{if(showWizard)return;const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
+useEffect(()=>{if(showWizard)return;setSaveStatus('saving');const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});setSaveStatus('saved');},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 // Keep the latest save payload in a ref so we can flush it the instant the user
 // leaves the builder (navigates back to the dashboard, closes the tab, etc.).
 // The 800ms debounce above can otherwise drop the final edits if they leave fast.
@@ -1388,7 +1396,7 @@ if(isPortraitMob)return(
 </div>
 );
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} saveStatus={saveStatus} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)}/></div>
 
 <button onClick={()=>{if(requireAuthForAI())setShowAI(true);}} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
