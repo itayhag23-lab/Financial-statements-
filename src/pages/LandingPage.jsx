@@ -331,11 +331,11 @@ function DashboardMock() {
 // import, and a live shareable report link. No fabricated SaaS integrations. ──
 const INTEROP = [
   { icon: FileSpreadsheet, title: 'Export to Excel',
-    body: 'Download any model as a fully formatted spreadsheet — every statement and period, in one click.' },
+    body: 'Download any model as a fully formatted spreadsheet: every statement and period, in one click.' },
   { icon: Upload, title: 'Import your numbers',
     body: 'Export a CSV from Excel, Google Sheets, or your accounting tool and Koala builds an editable model around it.' },
   { icon: Share2, title: 'Share a live link',
-    body: 'Send investors an interactive report they can explore themselves — not a dead PDF or email attachment.' },
+    body: 'Send investors an interactive report they can explore themselves, not a dead PDF or email attachment.' },
 ];
 
 function InteropCard({ icon: Icon, title, body: text, mob }) {
@@ -570,7 +570,7 @@ export default function LandingPage() {
               <span style={{ color: P.accent }}>financial statements.</span>
             </h1>
             <p style={{ ...body, fontSize: mob ? 15 : 17, lineHeight: 1.65, color: 'rgba(248,250,252,0.55)', marginTop: mob ? 14 : 20, maxWidth: mob ? '100%' : 490 }}>
-              Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds — then explains every line in plain English, so you walk into any room knowing exactly what your numbers mean.
+              Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English, so you walk into any room knowing exactly what your numbers mean.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: mob ? 20 : 28, flexWrap: 'wrap' }}>
               <HeroCTA mob={mob} onClick={() => capture('cta_click', { location: 'hero_primary' })} />
