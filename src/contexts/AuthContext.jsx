@@ -93,3 +93,42 @@ export async function signOut() {
   capture('auth_signed_out');
   await supabase.auth.signOut();
 }
+
+// Removes all locally cached Koala data (project index, individual projects,
+// shares, last-active pointer). Used after an account deletion so nothing about
+// the old account lingers in this browser.
+function clearLocalKoalaData() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('koala:')) keys.push(k);
+    }
+    keys.forEach(k => localStorage.removeItem(k));
+  } catch {}
+}
+
+// Permanently deletes the signed-in user's account. The actual deletion happens
+// server-side (/api/delete-account) with the Supabase service-role key; here we
+// just authenticate the request, then sign out and wipe local data so the
+// browser is left in a clean signed-out state.
+export async function deleteAccount() {
+  if (!supabase) throw new Error('Auth not configured');
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error('You need to be signed in to delete your account.');
+
+  const res = await withTimeout(fetch('/api/delete-account', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+  }));
+
+  let body = {};
+  try { body = await res.json(); } catch {}
+  if (!res.ok) throw new Error(body.error || 'Could not delete your account. Please try again.');
+
+  capture('account_deleted');
+  try { await supabase.auth.signOut(); } catch {}
+  clearLocalKoalaData();
+  analyticsReset();
+}

@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
-  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare,
+  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
 import { listProjects, deleteProject, duplicateProject, genId, saveProject } from '../lib/persistence';
-import { useAuth, signOut } from '../contexts/AuthContext';
+import { useAuth, signOut, deleteAccount } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
 
@@ -149,6 +149,10 @@ export default function Dashboard() {
   const [localCount, setLocalCount] = useState(0);
   const [importing, setImporting] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -207,6 +211,18 @@ export default function Dashboard() {
       setImporting(false);
     }
   }, [loadProjects]);
+
+  const handleDeleteAccount = useCallback(async () => {
+    setDeleteError('');
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      navigate('/', { replace: true });
+    } catch (e) {
+      setDeleteError(e.message || 'Could not delete your account. Please try again.');
+      setDeletingAccount(false);
+    }
+  }, [navigate]);
 
   const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   const userEmail   = user?.email || '';
@@ -355,7 +371,72 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* Danger zone — permanent account deletion */}
+        {supabase && user && (
+          <div style={{ maxWidth: 560, margin: '20px auto 0', textAlign: 'center' }}>
+            <button
+              onClick={() => { setShowDeleteAccount(true); setDeleteConfirm(''); setDeleteError(''); }}
+              style={{ ...body, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#94A3B8' }}
+            >
+              Delete my account
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Delete-account confirmation modal */}
+      {showDeleteAccount && (
+        <div
+          onClick={() => { if (!deletingAccount) setShowDeleteAccount(false); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#FFFFFF', borderRadius: 16, width: 'min(440px, 100%)', padding: '26px 24px', boxShadow: '0 32px 64px -16px rgba(15,23,42,0.4)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertTriangle size={18} color="#EF4444" />
+              </div>
+              <h2 style={{ ...disp, fontSize: 19, fontWeight: 700, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>Delete your account?</h2>
+            </div>
+            <p style={{ ...body, fontSize: 13.5, color: '#475569', lineHeight: 1.6, margin: '0 0 16px' }}>
+              This permanently deletes your account and <strong>all of your saved models</strong>. This can’t be undone.
+              Type <strong>DELETE</strong> below to confirm.
+            </p>
+            <input
+              value={deleteConfirm}
+              onChange={e => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoFocus
+              disabled={deletingAccount}
+              style={{ ...body, width: '100%', boxSizing: 'border-box', borderRadius: 10, background: '#FFFFFF', color: '#0F172A', fontSize: 14, padding: '11px 13px', border: '1px solid #E2E8F0', outline: 'none' }}
+            />
+            {deleteError && (
+              <div style={{ ...body, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#DC2626', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.33)', borderRadius: 9, padding: '9px 12px', marginTop: 12 }}>
+                <AlertTriangle size={15} /> {deleteError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+              <button
+                onClick={() => setShowDeleteAccount(false)}
+                disabled={deletingAccount}
+                style={{ ...body, flex: 1, background: '#F1F5F9', color: '#334155', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: deletingAccount ? 'default' : 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount || deleteConfirm.trim().toUpperCase() !== 'DELETE'}
+                style={{ ...body, flex: 1, background: (deletingAccount || deleteConfirm.trim().toUpperCase() !== 'DELETE') ? '#FCA5A5' : '#EF4444', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 700, cursor: (deletingAccount || deleteConfirm.trim().toUpperCase() !== 'DELETE') ? 'default' : 'pointer' }}
+              >
+                {deletingAccount ? 'Deleting…' : 'Delete account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
