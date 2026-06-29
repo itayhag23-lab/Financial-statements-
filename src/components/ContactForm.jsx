@@ -15,7 +15,7 @@ import { FONTS } from '../brand/theme';
 // in the browser, so we ship working defaults and let env vars override them.
 // Lock the template to your domain in EmailJS → Account → Security to stop abuse.
 const SERVICE_ID  = process.env.REACT_APP_EMAILJS_SERVICE_ID  || 'service_mfxkd6';
-const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_pqv6lzi';
+const TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_sps6i1m';
 const PUBLIC_KEY  = process.env.REACT_APP_EMAILJS_PUBLIC_KEY  || 'VxXwvX-5iEi1zNmTJ';
 
 // Two palettes so the same component drops cleanly onto the dark landing page
