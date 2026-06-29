@@ -981,7 +981,7 @@ try{
 // /api/chat is backed by the Gemini API (api/chat.js); the server picks the
 // Gemini model (GEMINI_MODEL env or its preference list), so no model id is
 // sent from here.
-const res=await fetch('/api/chat',{method:'POST',headers:await authedJSONHeaders(),body:JSON.stringify({max_tokens:600,system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
+const res=await fetch('/api/chat',{method:'POST',headers:await authedJSONHeaders(),body:JSON.stringify({max_tokens:1500,response_format:'json',system:MODEL_GEN_SYSTEM_PROMPT,messages:[{role:'user',content:t}]})});
 const data=await res.json();
 if(data.error){setErr('AI error: '+(data.error.message||data.error));setStatus('error');return;}
 const text=data?.content?.[0]?.text;

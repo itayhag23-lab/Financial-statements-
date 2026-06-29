@@ -87,7 +87,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const { messages = [], system, max_tokens } = req.body;
+    const { messages = [], system, max_tokens, response_format } = req.body;
 
     // Translate Anthropic-format messages → Gemini contents
     const contents = messages.map(m => ({
@@ -106,10 +106,10 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const geminiReq = {
-      contents,
-      generationConfig: { maxOutputTokens: max_tokens || 2048 }
-    };
+    const generationConfig = { maxOutputTokens: max_tokens || 2048 };
+    // When the caller needs structured output (the "build from description"
+    // feature), force Gemini to emit a raw JSON object — no prose, no fences.
+    if (response_format === 'json') generationConfig.responseMimeType = 'application/json';
 
     // Build the candidate list: env override first, then preferences, then
     // whatever the key actually exposes (so we adapt to any account).
@@ -130,21 +130,47 @@ module.exports = async function handler(req, res) {
     let lastStatus = 500;
 
     for (const model of candidates) {
+      const cfg = { ...generationConfig };
+      // Gemini 2.5 flash models "think" by default, and that internal
+      // reasoning is billed against maxOutputTokens — on a tight budget it can
+      // consume the whole allowance and leave the actual JSON truncated or
+      // empty. Disable thinking for the structured-JSON path so the full token
+      // budget goes to the answer. (thinkingBudget:0 is valid for 2.5 flash
+      // variants; left on for the free-form advisor chat, which benefits.)
+      if (response_format === 'json' && /2\.5-flash|flash-latest/.test(model)) {
+        cfg.thinkingConfig = { thinkingBudget: 0 };
+      }
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(geminiReq)
+          body: JSON.stringify({ contents, generationConfig: cfg })
         }
       );
 
       const data = await response.json();
 
       if (response.ok) {
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        // Anthropic-shaped response so the frontend needs no changes.
-        return res.status(200).json({ content: [{ type: 'text', text }] });
+        const candidate = data.candidates?.[0];
+        // Concatenate every text part (a thinking model can split its output
+        // across multiple parts), not just the first.
+        const text = (candidate?.content?.parts || []).map(p => p.text || '').join('');
+        if (text) {
+          // Anthropic-shaped response so the frontend needs no changes.
+          return res.status(200).json({ content: [{ type: 'text', text }] });
+        }
+        // OK status but no text: usually a truncated/blocked generation.
+        // Record a clear reason and fall through to the next candidate.
+        const reason = candidate?.finishReason || data.promptFeedback?.blockReason;
+        lastError = reason === 'MAX_TOKENS'
+          ? 'The AI response was cut off before it finished. Please try again.'
+          : reason
+            ? `The AI returned no usable text (${reason}). Please try again.`
+            : 'The AI returned an empty response. Please try again.';
+        lastStatus = 502;
+        continue;
       }
 
       lastError = data.error?.message || 'Gemini API error';
