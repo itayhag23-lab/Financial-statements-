@@ -135,7 +135,7 @@ function HeroCTA({ onClick, mob }) {
 function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#10B981' }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <img src="/koala-mascot.png" alt="" width={size * 1.6} height={size * 1.6} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
+      <img src="/koala-mascot.png" alt="" width={size * 1.85} height={size * 1.85} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
       <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
         <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
         <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: size * 0.29, color: accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
