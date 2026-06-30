@@ -1,6 +1,6 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator}from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
@@ -211,10 +211,10 @@ other:['Without a known business type, sanity-checking is harder — verify assu
 };
 
 // HELPERS
-function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,declineAmount:0,manualValues:Array(numPeriods).fill(0)};}
-function resizeRowData(entry,numPeriods){return{...entry,manualValues:Array(numPeriods).fill(0).map((_,i)=>entry.manualValues[i]??0),customRates:Array(Math.max(0,numPeriods-1)).fill(0).map((_,i)=>entry.customRates[i]??0)};}
+function makeRowDataEntry(defaultMode,numPeriods){return{mode:defaultMode||'manual',baseValue:0,flatRate:0,customRates:Array(Math.max(0,numPeriods-1)).fill(0),pctOfRev:0,declineAmount:0,tiers:[],manualValues:Array(numPeriods).fill(0)};}
+function resizeRowData(entry,numPeriods){return{...entry,manualValues:Array(numPeriods).fill(0).map((_,i)=>entry.manualValues[i]??0),customRates:Array(Math.max(0,numPeriods-1)).fill(0).map((_,i)=>entry.customRates[i]??0),tiers:Array.isArray(entry.tiers)?entry.tiers.map(t=>({...t,units:Array(numPeriods).fill(0).map((_,i)=>t.units?.[i]??0)})):[]};}
 function fmt(n,{paren=false,abbreviate=false}={}){if(n===null||n===undefined||Number.isNaN(n))return'—';const r=Math.round(n);if(r===0)return'0';if(abbreviate){const abs=Math.abs(r);if(abs>=1e6)return(r>=0?'':'−')+(abs/1e6).toFixed(1)+'M';if(abs>=1000)return(r>=0?'':'−')+(abs/1000).toFixed(1)+'K';}if(paren&&r<0)return`(${Math.abs(r).toLocaleString('en-US')})`;return r.toLocaleString('en-US');}
-function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,declineAmount,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}else if(mode==='decline'){const d=+(declineAmount||0);out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=Math.max(0,out[i-1]-d);}return out.map(v=>Math.round(v));}
+function computeLeafValues(rd,numPeriods,revVals){const out=Array(numPeriods).fill(0);if(!rd)return out;const{mode,baseValue,flatRate,customRates,pctOfRev,declineAmount,tiers,manualValues}=rd;if(mode==='manual')for(let i=0;i<numPeriods;i++)out[i]=+(manualValues[i]||0);else if(mode==='flatGrowth'){const r=(flatRate||0)/100;out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+r);}else if(mode==='customGrowth'){out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=out[i-1]*(1+((customRates[i-1]||0)/100));}else if(mode==='percentOfRevenue'){const p=(pctOfRev||0)/100;for(let i=0;i<numPeriods;i++)out[i]=(revVals?.[i]||0)*p;}else if(mode==='decline'){const d=+(declineAmount||0);out[0]=+(baseValue||0);for(let i=1;i<numPeriods;i++)out[i]=Math.max(0,out[i-1]-d);}else if(mode==='volumePricing'){for(let i=0;i<numPeriods;i++){let s=0;if(Array.isArray(tiers))for(const t of tiers)s+=(+t.price||0)*(+(t.units?.[i])||0);out[i]=s;}}return out.map(v=>Math.round(v));}
 
 function computeTree(rows,rowData,numPeriods,totalRevenue){
 const byId=Object.fromEntries(rows.map(r=>[r.id,r]));
@@ -252,7 +252,7 @@ const niArr=isVals['net-inc']||Array(numPeriods).fill(0);
 const arArr=userBS['ar']||Array(numPeriods).fill(0);
 const invArr=userBS['inv']||Array(numPeriods).fill(0);
 const apArr=userBS['ap']||Array(numPeriods).fill(0);
-const blank=(vals)=>({mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,declineAmount:0,manualValues:vals});
+const blank=(vals)=>({mode:'manual',baseValue:0,flatRate:0,customRates:[],pctOfRev:0,declineAmount:0,tiers:[],manualValues:vals});
 const delta=(arr,sign)=>arr.map((v,i)=>sign*(v-(i===0?0:arr[i-1])));
 const cfOverride={...rowData,'cf-ni':blank(niArr.slice()),'cf-ar':blank(delta(arArr,-1)),'cf-inv':blank(delta(invArr,-1)),'cf-ap':blank(delta(apArr,+1))};
 const cfVals=cfRows.length?computeTree(cfRows,cfOverride,numPeriods,totalRevenue):{};
@@ -499,7 +499,7 @@ const lp=pts[pts.length-1];
 return(<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{overflow:'visible',display:'block'}}><path d={areaD} fill={color} fillOpacity={fillOpacity}/>{showZero&&zeroY!==null&&<line x1="0" y1={zeroY} x2={width} y2={zeroY} stroke={C.faint} strokeWidth="0.5" strokeDasharray="2 2"/>}<path d={pathD} fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>{showLastDot&&lp&&<circle cx={lp[0]} cy={lp[1]} r="2" fill={color}/>}</svg>);
 };
 
-const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'},decline:{label:'Fixed paydown',short:'Paydown',icon:TrendingDown,blurb:'Start at a base, subtract a fixed amount each period (e.g. debt repayment). Floors at 0.'}};
+const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'},decline:{label:'Fixed paydown',short:'Paydown',icon:TrendingDown,blurb:'Start at a base, subtract a fixed amount each period (e.g. debt repayment). Floors at 0.'},volumePricing:{label:'Price × quantity',short:'Price × Qty',icon:Calculator,blurb:'Build revenue from services — set each price and the quantity sold per period.'}};
 
 function ModeMenu({currentMode,onChange,allowed}){
 const[open,setOpen]=useState(false);
@@ -534,6 +534,37 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 </div></div>);
 }
 
+// Revenue-only "Price × quantity" editor. Each service carries its own price and
+// a per-period quantity; revenue = Σ (price × quantity) for every period.
+function PricingModal({row,entry,periods,onClose,onChange}){
+const init=(entry.tiers&&entry.tiers.length)
+  ?entry.tiers.map((t,i)=>({name:t.name||`Service ${i+1}`,price:+t.price||0,units:periods.map((_,j)=>+(t.units?.[j])||0)}))
+  :[{name:'Service 1',price:0,units:periods.map(()=>0)}];
+const[tiers,setTiers]=useState(init);
+const setTier=(ti,patch)=>setTiers(ts=>ts.map((t,i)=>i===ti?{...t,...patch}:t));
+const setUnit=(ti,pi,val)=>setTiers(ts=>ts.map((t,i)=>i===ti?{...t,units:t.units.map((u,j)=>j===pi?(+val||0):u)}:t));
+const addTier=()=>setTiers(ts=>[...ts,{name:`Service ${ts.length+1}`,price:0,units:periods.map(()=>0)}]);
+const removeTier=ti=>setTiers(ts=>ts.length>1?ts.filter((_,i)=>i!==ti):ts);
+const totals=useMemo(()=>periods.map((_,i)=>Math.round(tiers.reduce((s,t)=>s+(+t.price||0)*(+(t.units?.[i])||0),0))),[tiers,periods]);
+return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}>
+<div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'88vh'}}>
+<div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Price × quantity · per period</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>{row.label}</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
+<div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(88vh - 200px)'}}>
+{tiers.map((t,ti)=>(<div key={ti} className="rounded-md p-4" style={{background:C.bg,border:`1px solid ${C.border}`}}>
+<div className="flex items-center gap-2 mb-3">
+<input type="text" value={t.name} onChange={e=>setTier(ti,{name:e.target.value})} placeholder="Service name" className="flex-1 px-2.5 py-1.5 rounded-md ff-body text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/>
+<div className="flex items-center gap-1"><span className="ff-num text-[12px]" style={{color:C.muted}}>$</span><input type="number" value={t.price} onChange={e=>setTier(ti,{price:+e.target.value||0})} placeholder="Price" className="w-24 px-2 py-1.5 rounded-md ff-num text-right text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+{tiers.length>1&&<button onClick={()=>removeTier(ti)} title="Remove service" className="p-1.5 rounded" style={{color:C.rust}}><Trash2 size={14}/></button>}
+</div>
+<div><div className="text-[10px] ff-body mb-1" style={{color:C.muted}}>Quantity sold per period</div><div className="grid gap-2" style={{gridTemplateColumns:`repeat(${Math.min(periods.length,6)},minmax(0,1fr))`}}>{periods.map((p,pi)=>(<div key={pi}><div className="text-[10px] ff-num mb-1" style={{color:C.muted}}>{p}</div><input type="number" value={t.units[pi]??0} onChange={e=>setUnit(ti,pi,e.target.value)} className="w-full px-2 py-1.5 rounded-md ff-num text-right text-[12px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>))}</div></div>
+</div>))}
+<button onClick={addTier} className="flex items-center gap-1.5 px-3 py-2 rounded-md ff-body text-[12px]" style={{background:C.bg,border:`1px dashed ${C.border}`,color:C.ink2}}><Plus size={13}/>Add service</button>
+<div className="pt-1"><Eyebrow className="mb-2">Total revenue per period</Eyebrow><div className="rounded-md p-4" style={{background:C.bg,border:`1px solid ${C.border}`}}><div className="flex items-end justify-between mb-3"><Sparkline values={totals} width={Math.min(420,totals.length*38)} height={48} color={C.green} smooth/><div className="ff-num text-[11px] flex flex-col items-end" style={{color:C.muted}}><span>start</span><span style={{color:C.ink}}>{fmt(totals[0]||0)}</span><span className="mt-1">end</span><span style={{color:C.ink}}>{fmt(totals[totals.length-1]||0)}</span></div></div><div className="grid gap-2 pt-3" style={{gridTemplateColumns:`repeat(${Math.min(totals.length,6)},minmax(0,1fr))`,borderTop:`1px solid ${C.border}`}}>{totals.map((v,i)=>(<div key={i}><div className="text-[10px] ff-body mb-0.5" style={{color:C.muted}}>{periods[i]}</div><div className="ff-num text-[14px]" style={{color:C.ink}}>{fmt(v)}</div></div>))}</div></div></div>
+</div>
+<div className="flex items-center justify-end gap-2 px-6 py-3" style={{borderTop:`1px solid ${C.border}`,background:C.surfaceAlt}}><button onClick={onClose} className="px-3 py-1.5 rounded-md ff-body text-[12px]" style={{color:C.ink2}}>Cancel</button><button onClick={()=>{onChange({tiers:tiers.map(t=>({name:t.name||'',price:+t.price||0,units:t.units.map(u=>+u||0)}))});onClose();}} className="px-4 py-1.5 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Save pricing</button></div>
+</div></div>);
+}
+
 function AddRowMenu({statement,rows,existingLabels,onAdd,onClose}){
 const parents=useMemo(()=>rows.filter(r=>r.type==='parent'),[rows]);
 const[selParent,setSelParent]=useState(parents[0]?.id||null);const[custom,setCustom]=useState('');const[mode,setMode]=useState('manual');
@@ -544,7 +575,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(85vh - 180px)'}}>
 <div><Eyebrow className="mb-2">Add under</Eyebrow><div className="flex gap-1.5 flex-wrap">{parents.map(p=>(<button key={p.id} onClick={()=>setSelParent(p.id)} className="px-3 py-1.5 rounded-md ff-body text-[12px]" style={{background:selParent===p.id?C.ink:C.bg,border:`1px solid ${selParent===p.id?C.ink:C.border}`,color:selParent===p.id?C.surface:C.ink2,fontWeight:selParent===p.id?500:400}}>{p.label}</button>))}</div></div>
 {items.length>0&&<div><Eyebrow className="mb-2">Suggested</Eyebrow><div className="grid grid-cols-2 gap-1.5">{items.filter(it=>!existingLabels.includes(it.label.toLowerCase())).map((it,i)=>(<button key={i} onClick={()=>onAdd({label:it.label,parentId:selParent,defaultMode:it.defaultMode})} className="text-left px-3 py-2 rounded-md ff-body text-[12.5px] flex items-center justify-between row-hover" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><span>{it.label}</span><Plus size={13} style={{color:C.muted}}/></button>))}</div></div>}
-<div className="pt-3" style={{borderTop:`1px solid ${C.border}`}}><Eyebrow className="mb-2 mt-2">Custom item</Eyebrow><div className="flex gap-2"><input type="text" placeholder="Line item name" value={custom} onChange={e=>setCustom(e.target.value)} className="flex-1 px-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><select value={mode} onChange={e=>setMode(e.target.value)} className="px-2 py-2 rounded-md ff-body text-[12px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><option value="manual">Manual</option><option value="flatGrowth">Flat %</option><option value="customGrowth">Custom %</option>{statement==='income'&&selParent!=='rev'&&<option value="percentOfRevenue">% of Rev</option>}</select><button onClick={()=>{if(!custom.trim()||!selParent)return;onAdd({label:custom.trim(),parentId:selParent,defaultMode:mode});setCustom('');}} className="px-3 py-2 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Add</button></div></div>
+<div className="pt-3" style={{borderTop:`1px solid ${C.border}`}}><Eyebrow className="mb-2 mt-2">Custom item</Eyebrow><div className="flex gap-2"><input type="text" placeholder="Line item name" value={custom} onChange={e=>setCustom(e.target.value)} className="flex-1 px-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><select value={mode} onChange={e=>setMode(e.target.value)} className="px-2 py-2 rounded-md ff-body text-[12px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}><option value="manual">Manual</option><option value="flatGrowth">Flat %</option><option value="customGrowth">Custom %</option>{statement==='income'&&selParent!=='rev'&&<option value="percentOfRevenue">% of Rev</option>}{statement==='income'&&selParent==='rev'&&<option value="volumePricing">Price × Qty</option>}</select><button onClick={()=>{if(!custom.trim()||!selParent)return;onAdd({label:custom.trim(),parentId:selParent,defaultMode:mode});setCustom('');}} className="px-3 py-2 rounded-md ff-body text-[12px]" style={{background:C.ink,color:C.surface}}>Add</button></div></div>
 </div></div></div>);
 }
 
@@ -628,7 +659,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 // Hierarchical TableRow
-function HRow({row,depth,isExpanded,hasChildren,onToggle,entry,computedValues,revenueValues,periods,onUpdateData,onDelete,onOpenCustom,scenarioKey}){
+function HRow({row,depth,isExpanded,hasChildren,onToggle,entry,computedValues,revenueValues,periods,onUpdateData,onDelete,onOpenCustom,onOpenPricing,scenarioKey}){
 const indent=8+depth*20;
 const isParent=row.type==='parent',isComp=row.type==='computed',isLeaf=row.type==='leaf';
 const sColor=(()=>{if(!computedValues||computedValues.length<2)return C.ink2;if(isComp)return C.green;if(isParent)return C.ink;const l=computedValues[computedValues.length-1],f=computedValues[0];if(l<0)return C.rust;if(l<f)return C.gold;return C.green;})();
@@ -668,7 +699,7 @@ return(<div className="grid items-center" style={{...grid,borderTop:`1px solid $
 
 const mode=entry?.mode||'manual';
 const isRevRow=row.parentId==='rev';
-const allowed=['manual','flatGrowth','customGrowth','decline',...(isRevRow?[]:['percentOfRevenue'])];
+const allowed=isRevRow?['manual','flatGrowth','customGrowth','volumePricing']:['manual','flatGrowth','customGrowth','decline','percentOfRevenue'];
 // Switching mode carries the current computed series into the new mode's
 // inputs so the numbers never reset to zero.
 const changeMode=(m)=>{
@@ -679,12 +710,13 @@ const changeMode=(m)=>{
   else if(m==='decline'){patch.baseValue=cur[0]??0;if(!entry.declineAmount&&cur.length>1){patch.declineAmount=Math.max(0,Math.round((cur[0]-cur[cur.length-1])/Math.max(1,cur.length-1)));}}
   else if(m==='customGrowth'){patch.baseValue=cur[0]??0;patch.customRates=periods.slice(1).map((_,i)=>{const a=cur[i],b=cur[i+1];return(a&&a!==0)?Math.round(((b-a)/Math.abs(a))*1000)/10:0;});}
   else if(m==='percentOfRevenue'){const r0=revenueValues?.[0]||0;patch.pctOfRev=r0>0?Math.round((cur[0]/r0)*1000)/10:(entry.pctOfRev||0);}
+  else if(m==='volumePricing'){if(!entry.tiers||!entry.tiers.length){patch.tiers=[{name:'Service 1',price:0,units:periods.map((_,i)=>cur[i]??0)}];}}
   onUpdateData(patch);
 };
 const cells=[];
 if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
 else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
-else if(mode==='percentOfRevenue'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
+else if(mode==='percentOfRevenue'||mode==='volumePricing'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 
 return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1px solid ${C.borderSoft}`}}>
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
@@ -697,6 +729,7 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 {mode==='decline'&&<div className="flex items-center gap-1"><span className="ff-num text-[10.5px]" style={{color:C.muted}}>−</span><input type="number" value={entry.declineAmount||0} onChange={e=>onUpdateData({declineAmount:+e.target.value||0})} className="w-16 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>/per</span></div>}
 {mode==='percentOfRevenue'&&<div className="flex items-center gap-1"><input type="number" value={entry.pctOfRev||0} onChange={e=>onUpdateData({pctOfRev:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>% of rev</span></div>}
 {mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit rates →</button>}
+{mode==='volumePricing'&&<button onClick={onOpenPricing} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit pricing →</button>}
 </div>
 </div>
 {row.deletable&&<button onClick={onDelete} title="Delete row" className="p-1 rounded opacity-30 hover:opacity-100 flex-shrink-0" style={{color:C.rust}}><Trash2 size={13}/></button>}
@@ -706,7 +739,7 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 </div>);
 }
 
-function StatementTable({statementId,rows,rowData,computedValues,periods,expandedIds,onToggleExpand,onExpandAll,onCollapseAll,onUpdateRowData,onDeleteRow,onOpenCustom,onAddRow,scenarioKey}){
+function StatementTable({statementId,rows,rowData,computedValues,periods,expandedIds,onToggleExpand,onExpandAll,onCollapseAll,onUpdateRowData,onDeleteRow,onOpenCustom,onOpenPricing,onAddRow,scenarioKey}){
 const inM=React.useContext(MillionsCtx);
 const rowMap=useMemo(()=>Object.fromEntries(rows.map(r=>[r.id,r])),[rows]);
 const visible=useMemo(()=>{const res=[];for(const r of rows){let cur=r.parentId,vis=true;while(cur){if(!expandedIds.has(cur)){vis=false;break;}cur=rowMap[cur]?.parentId??null;}if(!vis)continue;let depth=0;cur=r.parentId;while(cur){depth++;cur=rowMap[cur]?.parentId??null;}const hc=rows.some(x=>x.parentId===r.id);res.push({row:r,depth,hasChildren:hc});}return res;},[rows,expandedIds,rowMap]);
@@ -722,7 +755,7 @@ return(<div className="rounded-lg overflow-hidden" style={{background:C.surface,
 {periods.map((p,i)=>(<div key={i} className="px-3 py-2.5 ff-body text-right" style={{color:C.ink2}}><span className="ff-num text-[11px]">{p}</span></div>))}
 <div className="px-3 py-2.5 label-eyebrow ff-body text-center" style={{color:C.muted}}>Trend</div>
 </div>
-{visible.map(({row,depth,hasChildren})=>(<HRow key={row.id} row={row} depth={depth} hasChildren={hasChildren} isExpanded={expandedIds.has(row.id)} onToggle={()=>onToggleExpand(row.id)} entry={rowData[row.id]} computedValues={computedValues[row.id]} revenueValues={computedValues.revenue} periods={periods} onUpdateData={p=>onUpdateRowData(row.id,p)} onDelete={()=>onDeleteRow(row.id)} onOpenCustom={()=>onOpenCustom(row)} scenarioKey={scenarioKey}/>))}
+{visible.map(({row,depth,hasChildren})=>(<HRow key={row.id} row={row} depth={depth} hasChildren={hasChildren} isExpanded={expandedIds.has(row.id)} onToggle={()=>onToggleExpand(row.id)} entry={rowData[row.id]} computedValues={computedValues[row.id]} revenueValues={computedValues.revenue} periods={periods} onUpdateData={p=>onUpdateRowData(row.id,p)} onDelete={()=>onDeleteRow(row.id)} onOpenCustom={()=>onOpenCustom(row)} onOpenPricing={()=>onOpenPricing(row)} scenarioKey={scenarioKey}/>))}
 <div className="px-4 py-3" style={{background:C.surfaceAlt,borderTop:`1px solid ${C.border}`}}><button onClick={onAddRow} className="ff-body text-[12px] flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{color:C.ink2,background:C.surface,border:`1px solid ${C.border}`}}><Plus size={13}/>Add line item</button></div>
 </div>);
 }
@@ -1258,7 +1291,7 @@ const all={};
 for(const sc of SCENARIOS){all[sc]={};for(const stmt of['income','balance','cashFlow'])for(const r of TEMPLATES[stmt])if(r.type==='leaf')all[sc][r.id]=makeRowDataEntry(r.defaultMode,5);}
 return all;
 });
-const[customGrowthRow,setCustomGrowthRow]=useState(null);const[addRowFor,setAddRowFor]=useState(null);const[showSaveLoad,setShowSaveLoad]=useState(false);
+const[customGrowthRow,setCustomGrowthRow]=useState(null);const[pricingRow,setPricingRow]=useState(null);const[addRowFor,setAddRowFor]=useState(null);const[showSaveLoad,setShowSaveLoad]=useState(false);
 const[history,setHistory]=useState([]);const[histIdx,setHistIdx]=useState(-1);const isRestoring=useRef(false);
 useEffect(()=>{if(isRestoring.current){isRestoring.current=false;return;}const snap={rows,rowData,enabledStatements};setHistory(prev=>{const tr=prev.slice(0,histIdx+1);const nx=[...tr,snap];const cp=nx.length>30?nx.slice(nx.length-30):nx;setHistIdx(cp.length-1);return cp;});},[rows,rowData,enabledStatements]); // eslint-disable-line
 const canUndo=histIdx>0;const canRedo=histIdx<history.length-1;
@@ -1477,15 +1510,16 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 :(<button onClick={()=>{setEnabledStatements(s=>({...s,cashFlow:true}));setBuildTab('cashFlow');}} className="px-3.5 py-1.5 rounded-full ff-body text-[12px] flex items-center gap-1.5" style={{background:'transparent',color:C.gold,border:`1px dashed ${C.gold}77`,transition:'all .15s'}}><Plus size={11}/>Cash Flow</button>)}
 </div>
 <div className="mt-5 overflow-x-auto pb-2" style={{WebkitOverflowScrolling:'touch'}}>
-{buildTab==='income'&&<StatementTable statementId="income" rows={rows.income} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.income} onToggleExpand={id=>toggleExpand('income',id)} onExpandAll={()=>expandAll('income')} onCollapseAll={()=>collapseAll('income')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onAddRow={()=>setAddRowFor('income')} scenarioKey={activeScenario}/>}
-{buildTab==='balance'&&enabledStatements.balance&&<StatementTable statementId="balance" rows={rows.balance} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.balance} onToggleExpand={id=>toggleExpand('balance',id)} onExpandAll={()=>expandAll('balance')} onCollapseAll={()=>collapseAll('balance')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onAddRow={()=>setAddRowFor('balance')} scenarioKey={activeScenario}/>}
-{buildTab==='cashFlow'&&enabledStatements.cashFlow&&<StatementTable statementId="cashFlow" rows={rows.cashFlow} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.cashFlow} onToggleExpand={id=>toggleExpand('cashFlow',id)} onExpandAll={()=>expandAll('cashFlow')} onCollapseAll={()=>collapseAll('cashFlow')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onAddRow={()=>setAddRowFor('cashFlow')} scenarioKey={activeScenario}/>}
+{buildTab==='income'&&<StatementTable statementId="income" rows={rows.income} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.income} onToggleExpand={id=>toggleExpand('income',id)} onExpandAll={()=>expandAll('income')} onCollapseAll={()=>collapseAll('income')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('income')} scenarioKey={activeScenario}/>}
+{buildTab==='balance'&&enabledStatements.balance&&<StatementTable statementId="balance" rows={rows.balance} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.balance} onToggleExpand={id=>toggleExpand('balance',id)} onExpandAll={()=>expandAll('balance')} onCollapseAll={()=>collapseAll('balance')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('balance')} scenarioKey={activeScenario}/>}
+{buildTab==='cashFlow'&&enabledStatements.cashFlow&&<StatementTable statementId="cashFlow" rows={rows.cashFlow} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.cashFlow} onToggleExpand={id=>toggleExpand('cashFlow',id)} onExpandAll={()=>expandAll('cashFlow')} onCollapseAll={()=>collapseAll('cashFlow')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('cashFlow')} scenarioKey={activeScenario}/>}
 </div>
 </div></div>
 
 <footer className="px-6 md:px-10 pb-10 pt-12 mt-6"><div className="max-w-[1400px] mx-auto"><Ornament style={{marginBottom:24}}/><div className="flex items-center justify-between flex-wrap gap-3 ff-body text-[11px]" style={{color:C.muted}}><div>Projection tool — not for accounting compliance. Cross-statement linkages (NI → RE → CF) in this build.</div><div className="flex items-center gap-3 flex-wrap"><span>{inMillions?'Figures in $M':'Whole numbers'}</span><span style={{width:1,height:10,background:C.border}}/><span>3 scenarios</span><span style={{width:1,height:10,background:C.border}}/><span>Hierarchical rows · v0.4</span></div></div></div></footer>
 
 {customGrowthRow&&<CustomGrowthModal row={customGrowthRow} entry={rowData[activeScenario][customGrowthRow.id]} periods={periods} onClose={()=>setCustomGrowthRow(null)} onChange={p=>updateRowData(customGrowthRow.id,p)}/>}
+{pricingRow&&<PricingModal row={pricingRow} entry={rowData[activeScenario][pricingRow.id]} periods={periods} onClose={()=>setPricingRow(null)} onChange={p=>updateRowData(pricingRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true}/>}
