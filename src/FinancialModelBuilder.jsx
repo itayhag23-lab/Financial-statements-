@@ -551,10 +551,10 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 <div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Price × quantity · per period</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>{row.label}</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(88vh - 200px)'}}>
 {tiers.map((t,ti)=>(<div key={ti} className="rounded-md p-4" style={{background:C.bg,border:`1px solid ${C.border}`}}>
-<div className="flex items-center gap-2 mb-3">
-<input type="text" value={t.name} onChange={e=>setTier(ti,{name:e.target.value})} placeholder="Service name" className="flex-1 px-2.5 py-1.5 rounded-md ff-body text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/>
-<div className="flex items-center gap-1"><span className="ff-num text-[12px]" style={{color:C.muted}}>$</span><input type="number" value={t.price} onChange={e=>setTier(ti,{price:+e.target.value||0})} placeholder="Price" className="w-24 px-2 py-1.5 rounded-md ff-num text-right text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>
-{tiers.length>1&&<button onClick={()=>removeTier(ti)} title="Remove service" className="p-1.5 rounded" style={{color:C.rust}}><Trash2 size={14}/></button>}
+<div className="flex items-end gap-3 mb-3">
+<div className="flex-1"><div className="text-[10px] ff-body mb-1" style={{color:C.muted}}>Service</div><input type="text" value={t.name} onChange={e=>setTier(ti,{name:e.target.value})} placeholder="e.g. Standard membership" className="w-full px-2.5 py-1.5 rounded-md ff-body text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+<div style={{width:120}}><div className="text-[10px] ff-body mb-1" style={{color:C.muted}}>Price per unit</div><div className="relative"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 ff-num text-[12px]" style={{color:C.muted}}>$</span><input type="number" value={t.price} onChange={e=>setTier(ti,{price:+e.target.value||0})} placeholder="0" className="w-full pl-6 pr-2 py-1.5 rounded-md ff-num text-right text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div></div>
+{tiers.length>1&&<button onClick={()=>removeTier(ti)} title="Remove service" className="p-1.5 rounded mb-0.5" style={{color:C.rust}}><Trash2 size={14}/></button>}
 </div>
 <div><div className="text-[10px] ff-body mb-1" style={{color:C.muted}}>Quantity sold per period</div><div className="grid gap-2" style={{gridTemplateColumns:`repeat(${Math.min(periods.length,6)},minmax(0,1fr))`}}>{periods.map((p,pi)=>(<div key={pi}><div className="text-[10px] ff-num mb-1" style={{color:C.muted}}>{p}</div><input type="number" value={t.units[pi]??0} onChange={e=>setUnit(ti,pi,e.target.value)} className="w-full px-2 py-1.5 rounded-md ff-num text-right text-[12px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>))}</div></div>
 </div>))}
@@ -699,7 +699,11 @@ return(<div className="grid items-center" style={{...grid,borderTop:`1px solid $
 
 const mode=entry?.mode||'manual';
 const isRevRow=row.parentId==='rev';
-const allowed=isRevRow?['manual','flatGrowth','customGrowth','volumePricing']:['manual','flatGrowth','customGrowth','decline','percentOfRevenue'];
+// Fixed paydown only makes sense for actual expense/cost lines: Cost of
+// Revenue, Operating Expenses and Non-Operating items. It is excluded from
+// revenue, tax, and every balance-sheet / cash-flow line.
+const isExpenseRow=row.parentId==='cogs'||row.parentId==='opex'||row.parentId==='non-op';
+const allowed=isRevRow?['manual','flatGrowth','customGrowth','volumePricing']:['manual','flatGrowth','customGrowth',...(isExpenseRow?['decline']:[]),'percentOfRevenue'];
 // Switching mode carries the current computed series into the new mode's
 // inputs so the numbers never reset to zero.
 const changeMode=(m)=>{
