@@ -129,7 +129,7 @@ function EmptyState() {
       </div>
       <div style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>No models yet</div>
       <div style={{ ...body, fontSize: 14, color: '#64748B', maxWidth: 320, margin: '0 auto 24px' }}>
-        Create your first financial model — describe your business and AI builds it in under 60 seconds.
+        Create your first financial model: describe your business and AI builds it in under 60 seconds.
       </div>
       <Link
         to="/app?new=ai"

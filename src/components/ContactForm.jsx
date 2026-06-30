@@ -100,7 +100,7 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
     return (
       <div style={{ ...body, textAlign: 'center', padding: '28px 20px', borderRadius: 14, background: T.input, border: `1px solid ${T.inputBorder}` }}>
         <CheckCircle2 size={34} color={T.accent} style={{ margin: '0 auto 12px', display: 'block' }} />
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6 }}>Thanks — message sent!</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6 }}>Thanks, message sent!</div>
         <div style={{ fontSize: 13.5, color: T.label }}>We read every note and usually reply within a day.</div>
         <button
           onClick={() => setStatus('idle')}
@@ -129,7 +129,7 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
           the default "Contact Us" template: {{name}}, {{email}}, {{title}}, {{message}}.
           `title` becomes the email subject ("Contact Us: {{title}}"); `source`
           is an extra harmless field noting which page the message came from. */}
-      <input type="hidden" name="title" value={`${source === 'dashboard' ? 'Dashboard' : 'Landing'} feedback — Koala Statements`} readOnly />
+      <input type="hidden" name="title" value={`${source === 'dashboard' ? 'Dashboard' : 'Landing'} feedback: Koala Statements`} readOnly />
       <input type="hidden" name="source" value={source} readOnly />
 
       <div>

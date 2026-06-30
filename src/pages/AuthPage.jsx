@@ -74,7 +74,7 @@ function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onTogg
 function friendlyError(msg = '') {
   const m = msg.toLowerCase();
   if (m.includes('email rate limit') || m.includes('over_email_send_rate_limit'))
-    return 'Too many attempts. Please wait a few minutes, then try again — or check your inbox for a confirmation link.';
+    return 'Too many attempts. Please wait a few minutes, then try again, or check your inbox for a confirmation link.';
   if (m.includes('unsupported provider') || m.includes('provider is not enabled'))
     return 'Google sign-in isn\'t enabled yet. Please use email and password below.';
   if (m.includes('invalid login credentials') || m.includes('invalid_credentials'))

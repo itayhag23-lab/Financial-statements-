@@ -50,11 +50,11 @@ export default function PrivacyPage() {
 
         <h2 style={S.h2}>3. Third-party services</h2>
         <ul style={S.ul}>
-          <li><strong>Supabase</strong> — authentication and database storage (servers in EU and US)</li>
-          <li><strong>Google Gemini API</strong> — AI advisor inference (inputs processed by Google)</li>
-          <li><strong>PostHog</strong> — product analytics (anonymized)</li>
-          <li><strong>Resend</strong> — transactional email delivery</li>
-          <li><strong>Vercel</strong> — application hosting and edge infrastructure</li>
+          <li><strong>Supabase</strong>: authentication and database storage (servers in EU and US)</li>
+          <li><strong>Google Gemini API</strong>: AI advisor inference (inputs processed by Google)</li>
+          <li><strong>PostHog</strong>: product analytics (anonymized)</li>
+          <li><strong>Resend</strong>: transactional email delivery</li>
+          <li><strong>Vercel</strong>: application hosting and edge infrastructure</li>
         </ul>
 
         <h2 style={S.h2}>4. Data retention</h2>

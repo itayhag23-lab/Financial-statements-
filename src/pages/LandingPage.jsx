@@ -233,7 +233,7 @@ function DashboardMock() {
           <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
         </div>
         <div style={{ ...body, fontSize: 11, color: '#94A3B8', marginLeft: 6, flex: 1 }}>
-          Acme Corp — Financial Model · FY 2025–2026
+          Acme Corp · Financial Model · FY 2025-2026
         </div>
         <div style={{ display: 'flex', gap: 5 }}>
           {['Base', 'Optimistic', 'Stress'].map((s, i) => (
@@ -268,7 +268,7 @@ function DashboardMock() {
       {/* Chart */}
       <div style={{ padding: '10px 14px 6px', borderBottom: `1px solid ${P.borderDark}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <div style={{ ...body, fontSize: 9.5, color: '#94A3B8' }}>Revenue & Net Income — H1 2025</div>
+          <div style={{ ...body, fontSize: 9.5, color: '#94A3B8' }}>Revenue & Net Income · H1 2025</div>
           <div style={{ display: 'flex', gap: 10 }}>
             {[[P.accent, 'Revenue'], [P.blue, 'Net Income']].map(([c, l]) => (
               <span key={l} style={{ ...body, fontSize: 8.5, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -485,15 +485,15 @@ function LiveReportVisual() {
 // capabilities, span-1 cards fill the gaps. No two cards share a visual idiom. ─
 const FEATURES = [
   { title: 'AI-Driven Assumption Engine', tag: 'Exclusive', span: 2, visual: <AssumptionVisual />,
-    body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions — no spreadsheet, no accounting data required.' },
+    body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions. No spreadsheet, no accounting data required.' },
   { title: 'Dynamic Multi-Scenario Architecture', tag: null, span: 1, visual: <ScenarioFanVisual />,
-    body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding — toggle and compare in real time.' },
+    body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding: toggle and compare in real time.' },
   { title: 'Conversational What-If Analysis', tag: 'Exclusive', span: 2, visual: <WhatIfDiffVisual />,
-    body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard — full undo history included.' },
+    body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard, with full undo history included.' },
   { title: 'Automated 3-Statement Integration', tag: null, span: 1, visual: <LinkageFlowVisual />,
     body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
   { title: 'Investor-Ready Live Reports', tag: 'Exclusive', span: 2, visual: <LiveReportVisual />,
-    body: 'Share a live, interactive report — not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
+    body: 'Share a live, interactive report, not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
   { title: 'Institutional Benchmarking', tag: null, span: 1, visual: <BenchmarkVisual />,
     body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
 ];
@@ -644,8 +644,8 @@ export default function LandingPage() {
         <div style={{ ...maxW, padding: `${vp} ${sp}` }}>
           <Reveal style={{ textAlign: 'center', maxWidth: 640, margin: `0 auto ${mob ? '32px' : '52px'}` }}>
             <div style={{ ...body, fontSize: 11, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', color: P.accentText, marginBottom: 14 }}>Capabilities</div>
-            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do — plus the things they can't.</h2>
-            <p style={{ ...body, fontSize: mob ? 14 : 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one — then uses AI to do the heavy lifting.</p>
+            <h2 style={{ ...disp, fontSize: 'clamp(22px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 14px', letterSpacing: '-0.02em' }}>Everything the big tools do, plus the things they can't.</h2>
+            <p style={{ ...body, fontSize: mob ? 14 : 16, lineHeight: 1.65, color: P.ink2 }}>Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one, then uses AI to do the heavy lifting.</p>
           </Reveal>
           <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 12 : 16, alignItems: 'start' }}>
             {FEATURES.map((f) => <FeatureCard key={f.title} {...f} mob={mob} />)}
@@ -663,7 +663,7 @@ export default function LandingPage() {
           <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: mob ? 12 : 20 }}>
             {[
               { n: '01', title: 'Describe your business', icon: Sparkles, body: 'Type one sentence: "B2B SaaS, $30K MRR, targeting $5M ARR, 18-month runway." Koala reads your sector, stage, and scale automatically.' },
-              { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet — seeded with sector-calibrated assumptions and three live scenarios — in under 60 seconds.' },
+              { n: '02', title: 'Model builds itself',    icon: Zap,      body: 'A fully-linked Income Statement, Cash Flow, and Balance Sheet, seeded with sector-calibrated assumptions and three live scenarios, in under 60 seconds.' },
               { n: '03', title: 'Refine, share, raise',   icon: Share2,   body: 'Adjust any assumption, run what-if scenarios with the AI advisor, then share a live interactive report directly with your investors or board.' },
             ].map(({ n, title, icon: Icon, body: text }) => (
               <div key={n} style={{ padding: mob ? '20px 16px' : '28px 24px', background: P.bgDarkAlt, borderRadius: 12, border: `1px solid ${P.borderDark}` }}>
@@ -689,13 +689,13 @@ export default function LandingPage() {
             </div>
             <h2 style={{ ...disp, fontSize: 'clamp(27px, 3.8vw, 42px)', fontWeight: 700, color: P.ink, margin: '0 0 12px', letterSpacing: '-0.02em' }}>Free for everyone.</h2>
             <p style={{ ...body, fontSize: mob ? 14 : 16, color: P.ink2, lineHeight: 1.65 }}>
-              No plans, no paywalls, no credit card. Every feature is unlocked from the start — build, model, and share as much as you want, completely free.
+              No plans, no paywalls, no credit card. Every feature is unlocked from the start. Build, model, and share as much as you want, completely free.
             </p>
           </Reveal>
 
           <Reveal delay={120} style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 12, display: 'flex', flexDirection: mob ? 'column' : 'row', marginTop: mob ? 28 : 44, maxWidth: 880, marginLeft: 'auto', marginRight: 'auto', overflow: 'hidden' }}>
             {[
-              { n: '01', title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports — all included.' },
+              { n: '01', title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports, all included.' },
               { n: '02', title: 'Unlimited models',       body: 'Create, edit, and save as many financial models as you need. No project caps, no limits.' },
               { n: '03', title: 'No credit card',          body: 'Sign up with email or Google and start building in seconds. Nothing to pay, now or ever.' },
             ].map(({ n, title, body: text }, i) => (
