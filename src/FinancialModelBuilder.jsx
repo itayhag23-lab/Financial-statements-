@@ -503,17 +503,23 @@ const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'
 
 function ModeMenu({currentMode,onChange,allowed}){
 const[open,setOpen]=useState(false);
-const[menuPos,setMenuPos]=useState({top:0,left:0});
+const[menuPos,setMenuPos]=useState({top:0,left:0,width:252,maxHeight:300});
 const ref=useRef(null);const btnRef=useRef(null);const portalRef=useRef(null);
 // portalRef must also be checked — the portal is in document.body, outside ref,
 // so without it every mousedown on a menu item fires the "outside" handler first,
 // closing the menu before the item's onClick can register.
 useEffect(()=>{const h=(e)=>{if(ref.current&&!ref.current.contains(e.target)&&!(portalRef.current&&portalRef.current.contains(e.target)))setOpen(false);};if(open)document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);},[open]);
+// Reposition is anchored at open time; a viewport resize (e.g. phone rotation)
+// would leave the menu detached, so just close it.
+useEffect(()=>{if(!open)return;const close=()=>setOpen(false);window.addEventListener('resize',close);return()=>window.removeEventListener('resize',close);},[open]);
 const Icon=MODE_META[currentMode].icon;
-const handleOpen=()=>{if(btnRef.current){const r=btnRef.current.getBoundingClientRect();setMenuPos({top:r.bottom+4,left:r.left});}setOpen(o=>!o);};
+// Anchor the fixed portal to the button, but keep it inside the viewport:
+// clamp horizontally, and flip above the button when there isn't room below.
+// Either way cap the height so every option stays reachable (menu scrolls).
+const handleOpen=()=>{if(btnRef.current){const r=btnRef.current.getBoundingClientRect();const vw=window.innerWidth,vh=window.innerHeight;const width=Math.min(252,vw-16);const left=Math.max(8,Math.min(r.left,vw-width-8));const spaceBelow=vh-r.bottom-8;const spaceAbove=r.top-8;if(spaceBelow<220&&spaceAbove>spaceBelow)setMenuPos({bottom:vh-r.top+4,left,width,maxHeight:Math.max(140,spaceAbove)});else setMenuPos({top:r.bottom+4,left,width,maxHeight:Math.max(140,spaceBelow)});}setOpen(o=>!o);};
 return(<div className="relative" ref={ref}>
 <button ref={btnRef} onClick={handleOpen} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] ff-body" style={{background:open?C.surfaceAlt:'transparent',color:C.ink2,border:`1px solid ${open?C.border:'transparent'}`}}><Icon size={12}/><span>{MODE_META[currentMode].short}</span><ChevronDown size={11} style={{opacity:0.6}}/></button>
-{open&&ReactDOM.createPortal(<div ref={portalRef} className="anim-fade-in" style={{position:'fixed',top:menuPos.top,left:menuPos.left,width:252,background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,boxShadow:'0 10px 28px -8px rgba(15,23,42,0.18)',zIndex:9999}}>
+{open&&ReactDOM.createPortal(<div ref={portalRef} className="anim-fade-in" style={{position:'fixed',...(menuPos.top!=null?{top:menuPos.top}:{}),...(menuPos.bottom!=null?{bottom:menuPos.bottom}:{}),left:menuPos.left,width:menuPos.width||252,maxHeight:menuPos.maxHeight,overflowY:'auto',WebkitOverflowScrolling:'touch',background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,boxShadow:'0 10px 28px -8px rgba(15,23,42,0.18)',zIndex:9999}}>
 {allowed.map(m=>{const M=MODE_META[m];const I=M.icon;const active=m===currentMode;return(<button key={m} onClick={()=>{onChange(m);setOpen(false);}} className="w-full text-left px-3 py-2.5 ff-body text-[12px] flex items-start gap-2.5" style={{background:active?C.greenSoft:'transparent',borderBottom:`1px solid ${C.border}55`}}><I size={13} style={{marginTop:2,color:active?C.green:C.ink2}}/><div className="flex-1"><div style={{color:C.ink,fontWeight:500}}>{M.label}</div><div style={{color:C.muted,fontSize:10.5,marginTop:1}}>{M.blurb}</div></div>{active&&<Check size={12} style={{color:C.green,marginTop:3}}/>}</button>);})}
 </div>,document.body)}
 </div>);
@@ -1034,9 +1040,9 @@ if(!open)return null;
 const BB_LABELS={coffeeshop:'Coffee Shop',restaurant:'Restaurant',foodtruck:'Food Truck',ecommerce:'E-commerce',retail:'Retail Shop',carwash:'Car Wash',vending:'Vending Machines',gym:'Gym / Fitness Studio',consulting:'Consulting',saas:'SaaS Product',mobileapp:'Mobile App',contentcreator:'Content Creator',agency:'Creative Agency',manufacturing:'Small Manufacturing',other:'Other'};
 return(
 React.createElement('div',{style:{position:'fixed',inset:0,zIndex:51,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(15,23,42,0.55)'},onClick:onClose},
-React.createElement('div',{style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:'0 32px 64px -16px rgba(15,23,42,0.4)',width:'min(560px,calc(100vw - 32px))',overflow:'hidden'},onClick:e=>e.stopPropagation()},
+React.createElement('div',{style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:'0 32px 64px -16px rgba(15,23,42,0.4)',width:'min(560px,calc(100vw - 32px))',maxHeight:'calc(100dvh - 24px)',display:'flex',flexDirection:'column',overflow:'hidden'},onClick:e=>e.stopPropagation()},
 // Header
-React.createElement('div',{style:{padding:'18px 22px',borderBottom:`1px solid ${C.border}`,background:C.bgWarm,display:'flex',alignItems:'center',justifyContent:'space-between'}},
+React.createElement('div',{style:{flexShrink:0,padding:'18px 22px',borderBottom:`1px solid ${C.border}`,background:C.bgWarm,display:'flex',alignItems:'center',justifyContent:'space-between'}},
 React.createElement('div',null,
 React.createElement('div',{className:'label-eyebrow ff-body',style:{color:C.gold}},'AI Model Builder'),
 React.createElement('h3',{className:'ff-display',style:{fontSize:20,fontWeight:500,color:C.ink,marginTop:2}},'Build from description')
@@ -1044,7 +1050,7 @@ React.createElement('h3',{className:'ff-display',style:{fontSize:20,fontWeight:5
 React.createElement('button',{onClick:onClose,style:{background:'transparent',border:'none',cursor:'pointer',color:C.ink2,padding:4}},React.createElement(X,{size:18}))
 ),
 // Body
-React.createElement('div',{style:{padding:'20px 22px'}},
+React.createElement('div',{style:{padding:'20px 22px',flex:'1 1 auto',minHeight:0,overflowY:'auto',WebkitOverflowScrolling:'touch'}},
 status!=='success'&&React.createElement('div',null,
 React.createElement('div',{className:'ff-body',style:{fontSize:13,color:C.ink2,marginBottom:10,lineHeight:1.55}},'Describe your business in plain English. The AI will select a sector, set realistic assumptions, and seed a complete model.'),
 React.createElement('textarea',{ref:taRef,value:desc,onChange:e=>setDesc(e.target.value),placeholder:'e.g. "A SaaS startup in Israel with ~$30K MRR targeting B2B clients, 3 employees, pre-Series A"',rows:4,className:'ff-body w-full',style:{width:'100%',padding:'10px 12px',borderRadius:10,border:`1px solid ${C.border}`,background:C.bg,color:C.ink,fontSize:13.5,lineHeight:1.55,resize:'vertical',outline:'none',boxSizing:'border-box'}}),
@@ -1066,7 +1072,7 @@ ov.mode==='percentOfRevenue'?`${ov.pctOfRev}% of revenue`:'custom values'
 )
 ),
 // Footer
-React.createElement('div',{style:{padding:'14px 22px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}},
+React.createElement('div',{style:{flexShrink:0,padding:'14px 22px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}},
 React.createElement('button',{onClick:status==='success'?onClose:(onUseWizard||onClose),className:'ff-body',style:{fontSize:12.5,color:C.muted,background:'transparent',border:'none',cursor:'pointer',padding:'6px 10px'}},status==='success'?'Cancel':'Use wizard instead'),
 status==='success'
 ?React.createElement('button',{onClick:apply,className:'ff-body',style:{fontSize:13,fontWeight:600,color:C.surface,background:C.green,border:'none',cursor:'pointer',padding:'9px 20px',borderRadius:8}},'✓ Apply this model')
