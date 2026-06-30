@@ -6,6 +6,7 @@ import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
 import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
+import { buildXlsx, STYLE } from './lib/xlsx';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
 import HelpTooltip from './components/ui/HelpTooltip';
 import { supabase } from './lib/supabase';
@@ -1350,43 +1351,39 @@ navigator.clipboard.writeText(url).then(()=>{setShareCopied(true);setTimeout(()=
 },[computed,rows,periods,fullState,wizardAnswers,projectName,currencyKey,enabledStatements]);
 const handleRemoveStatement=useCallback((stmt)=>{if(stmt==='income')return;setEnabledStatements(s=>({...s,[stmt]:false}));setBuildTab('income');},[]);
 const exportExcel=useCallback(()=>{
+// Writes a genuine .xlsx (OOXML) — see src/lib/xlsx.js. The previous version
+// saved an HTML table as ".xls", which made Excel warn that the format and
+// extension don't match. A real workbook opens cleanly, stores live numbers
+// (not pre-formatted strings), and gives us wide columns + larger fonts.
 const stmtNames={income:'Income Statement',balance:'Balance Sheet',cashFlow:'Cash Flow Statement'};
+const tabNames={income:'Income Statement',balance:'Balance Sheet',cashFlow:'Cash Flow'};
 const sym=CURRENCIES[currencyKey]?.symbol||'$';
 const activeStmts=['income',...(enabledStatements.balance?['balance']:[]),...(enabledStatements.cashFlow?['cashFlow']:[])];
-let html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>';
-html+='body{font-family:Calibri,Arial,sans-serif;font-size:11pt;}';
-html+='table{border-collapse:collapse;margin-bottom:20pt;min-width:400pt;}';
-html+='td,th{border:1px solid #CBD5E1;padding:4pt 8pt;white-space:nowrap;}';
-html+='.hdr{background:#0F172A;color:#FFFFFF;font-weight:bold;font-size:12pt;padding:8pt 10pt;}';
-html+='.period-hdr{background:#F1F5F9;text-align:center;font-weight:bold;color:#334155;}';
-html+='.parent-row{background:#F8FAFC;font-weight:600;color:#0F172A;}';
-html+='.comp-row{background:#ECFDF5;font-weight:700;color:#059669;}';
-html+='.leaf-row{color:#334155;}';
-html+='.num{text-align:right;font-family:Calibri,monospace;}';
-html+='.neg{color:#DC2626;}';
-html+='h3{font-family:Calibri;font-size:10pt;color:#64748B;margin:0 0 6pt;font-weight:400;}';
-html+='</style></head><body>';
-html+='<h3>'+projectName+' &mdash; '+SCENARIO_META[activeScenario].label+' scenario &mdash; '+(granularity==='annual'?'Annual':'Quarterly')+', '+startYear+' &mdash; '+sym+' (whole numbers)</h3>';
-for(const stmt of activeStmts){
-html+='<table><tr><th class="hdr" colspan="'+(periods.length+1)+'">'+stmtNames[stmt]+'</th></tr>';
-html+='<tr><th style="background:#F1F5F9;color:#64748B;text-align:left;">Line Item</th>';
-for(const p of periods)html+='<th class="period-hdr">'+p+'</th>';
-html+='</tr>';
+const ncols=periods.length+1;
+const caption=' — '+projectName+' · '+SCENARIO_META[activeScenario].label+' · '+(granularity==='annual'?'Annual':'Quarterly')+' · '+sym+' (whole numbers)';
+const sheets=activeStmts.map(stmt=>{
+const out=[];
+const title=[{t:'s',v:stmtNames[stmt]+caption,s:STYLE.stmtHeader}];
+for(let i=1;i<ncols;i++)title.push({t:'s',v:'',s:STYLE.stmtHeader});
+out.push({h:24,cells:title});
+out.push({cells:[{t:'s',v:'Line Item',s:STYLE.lineItemHeader},...periods.map(p=>({t:'s',v:String(p),s:STYLE.periodHeader}))]});
 for(const r of rows[stmt]){
 const v=computed.values[r.id]||[];
-const cls=r.type==='computed'?'comp-row':r.type==='parent'?'parent-row':'leaf-row';
-const indent=r.type==='leaf'?'padding-left:18pt;':'';
-html+='<tr class="'+cls+'"><td style="'+indent+'">'+r.label+'</td>';
-for(let i=0;i<periods.length;i++){const n=Math.round(v[i]||0);const neg=n<0;const disp=neg?'('+Math.abs(n).toLocaleString('en-US')+')':n===0?'—':n.toLocaleString('en-US');html+='<td class="num'+(neg?' neg':'')+'">'+disp+'</td>';}
-html+='</tr>';
+const kind=r.type==='computed'?'computed':r.type==='parent'?'parent':'leaf';
+const lblS=kind==='computed'?STYLE.computedLabel:kind==='parent'?STYLE.parentLabel:STYLE.leafLabel;
+const numS=kind==='computed'?STYLE.numComputed:kind==='parent'?STYLE.numParent:STYLE.numLeaf;
+const cells=[{t:'s',v:r.label,s:lblS}];
+for(let i=0;i<periods.length;i++)cells.push({t:'n',v:Math.round(v[i]||0),s:numS});
+out.push({cells});
 }
-html+='</table>';}
-html+='</body></html>';
-const b=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+return{name:tabNames[stmt],ncols,rows:out,col0Width:42,colWidth:18};
+});
+const bytes=buildXlsx({sheets});
+const b=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
 const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;
-a.download=(projectName.replace(/[^a-z0-9]/gi,'-')||'model')+'-'+activeScenario+'-'+Date.now()+'.xls';
+a.download=(projectName.replace(/[^a-z0-9]/gi,'-')||'model')+'-'+activeScenario+'-'+Date.now()+'.xlsx';
 a.click();URL.revokeObjectURL(url);
-},[rows,computed,periods,activeScenario,granularity,numPeriods,startYear,enabledStatements,currencyKey,projectName]);
+},[rows,computed,periods,activeScenario,granularity,enabledStatements,currencyKey,projectName]);
 // --- Persistence: load saved project on mount, then debounced autosave ---
 // "New" deep-links (?new=manual / ?new=ai) must start a FRESH project, never
 // resume the last-active one — otherwise a returning user always sees their old
