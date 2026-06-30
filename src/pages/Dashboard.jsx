@@ -14,10 +14,17 @@ import ContactForm from '../components/ContactForm';
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
 
+// Keys must match the sector-bank keys saved on each project (see BB in
+// FinancialModelBuilder.jsx / sector_key in persistence). Anything unknown
+// falls back to the generic 📊 in the lookup below.
 const SECTOR_EMOJI = {
-  saas:'💻', ecommerce:'🛒', restaurant:'🍽️', retail:'🏪', coffee:'☕',
-  healthcare:'🏥', fintech:'💳', realEstate:'🏠', manufacturing:'🏭',
-  consulting:'💼', education:'📚', media:'🎬', logistics:'🚛', other:'📊',
+  coffeeshop:'☕', restaurant:'🍽️', foodtruck:'🚚', ecommerce:'🛒', retail:'🏬',
+  carwash:'🚗', vending:'🥤', gym:'🏋️', consulting:'💼', saas:'💻',
+  mobileapp:'📱', contentcreator:'🎥', agency:'🎨', manufacturing:'🏭',
+  bakery:'🥐', bar:'🍺', subscriptionbox:'📦', wholesale:'🏷️', salon:'💇',
+  autorepair:'🔧', cleaning:'🧼', realestate:'🏠', dental:'🦷', events:'🎉',
+  hotel:'🏨', logistics:'🚛', marketplace:'🔁', elearning:'🎓', construction:'🏗️',
+  other:'📊',
 };
 
 function timeAgo(ts) {

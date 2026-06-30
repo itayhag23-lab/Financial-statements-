@@ -1222,12 +1222,12 @@ React.createElement('div',{className:'anim-fade-in',style:{position:'fixed',zInd
         })
       ),
       React.createElement('div',{style:{display:'flex',gap:8}},
-        React.createElement('button',{onClick:()=>{onApplyPatch(pendingPatch);setPatchApplied(true);setPendingPatch(null);},className:'ff-body',style:{fontSize:12,fontWeight:600,padding:'6px 14px',borderRadius:7,background:C.green,color:'#fff',border:'none',cursor:'pointer'}},'✓ Apply to base'),
+        React.createElement('button',{onClick:()=>{onApplyPatch(pendingPatch);setPatchApplied(true);setPendingPatch(null);},className:'ff-body',style:{fontSize:12,fontWeight:600,padding:'6px 14px',borderRadius:7,background:C.green,color:'#fff',border:'none',cursor:'pointer'}},'✓ Apply to model'),
         React.createElement('button',{onClick:()=>setPendingPatch(null),className:'ff-body',style:{fontSize:12,padding:'6px 14px',borderRadius:7,background:C.bg,color:C.muted,border:`1px solid ${C.border}`,cursor:'pointer'}},'Discard')
       )
     ),
     patchApplied&&React.createElement('div',{style:{padding:'8px 12px',borderRadius:8,background:C.greenSoft,fontSize:11.5,color:C.green,fontFamily:'Inter,system-ui,sans-serif'}},
-      '✓ Changes applied to base scenario. Use Undo (Cmd+Z) to revert.'
+      '✓ Changes applied to the current scenario. Use Undo (Cmd+Z) to revert.'
     ),
     React.createElement('div',{ref:bottomRef})
   ),

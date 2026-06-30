@@ -124,9 +124,6 @@ export default function SharedReport() {
   const finalGM = finalRev > 0 ? ((grossProfit[li] || 0) / finalRev * 100).toFixed(1) : '—';
   const symbol = meta?.currencyKey === 'eur' ? '€' : meta?.currencyKey === 'gbp' ? '£' : meta?.currencyKey === 'ils' ? '₪' : '$';
 
-  // Income table rows to display (parents + computed)
-  const displayRows = incomeRows.filter(r => r.type === 'parent' || r.type === 'computed');
-
   return (
     <div style={{ background: P.bgAlt, minHeight: '100vh', ...body, color: P.ink }}>
 
@@ -210,7 +207,7 @@ export default function SharedReport() {
                 <div key={p} style={{ width: 80, textAlign: 'right', ...body, fontSize: 10, color: P.muted, letterSpacing: '0.06em' }}>{p}</div>
               ))}
             </div>
-            {/* Data rows — parents + computed rows only */}
+            {/* Data rows — full income statement (leaves indented under parents) */}
             {incomeRows.map((row, i) => {
               const vals = incomeValues[row.id] || [];
               const isBold = row.type === 'computed' || row.type === 'parent';
