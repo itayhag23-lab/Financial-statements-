@@ -520,6 +520,15 @@ export default function LandingPage() {
   const sp = mob ? '16px' : '24px';          // side padding
   const vp = mob ? '44px' : '84px';          // vertical section padding
 
+  // Scrolls to the section named by the URL hash on landing (e.g. arriving
+  // from /privacy via "/#contact") — React Router doesn't do this natively.
+  React.useEffect(() => {
+    if (window.location.hash) {
+      const el = document.querySelector(window.location.hash);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   return (
     <div className="koala-page" style={{ background: P.bg, minHeight: '100vh', ...body, color: P.ink, overflowX: 'hidden' }}>
       <style>{`
@@ -767,7 +776,6 @@ export default function LandingPage() {
           <div style={{ display: 'flex', gap: 20 }}>
             <Link to="/privacy" style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Privacy</Link>
             <Link to="/terms"   style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Terms</Link>
-            <a href="#contact" style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8', textDecoration: 'none' }}>Contact</a>
           </div>
         </div>
       </footer>
