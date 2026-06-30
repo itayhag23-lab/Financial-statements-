@@ -719,7 +719,6 @@ export default function LandingPage() {
       <section style={{ background: P.bgDark, position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 350, borderRadius: '50%', background: `radial-gradient(ellipse, ${P.accentGlow} 0%, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ ...maxW, padding: `${mob ? '60px' : '100px'} ${sp}`, textAlign: 'center', position: 'relative' }}>
-          <img src="/koala-full.png" alt="" width={mob ? 113 : 158} height={mob ? 140 : 195} style={{ display: 'block', objectFit: 'contain', margin: `0 auto ${mob ? 18 : 26}px` }} />
           <h2 style={{ ...disp, fontSize: 'clamp(26px, 4vw, 48px)', fontWeight: 700, color: '#F8FAFC', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
             Your investors expect<br />institutional quality.
           </h2>
