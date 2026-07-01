@@ -540,7 +540,7 @@ export default function LandingPage() {
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `12px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 28 }}>
-          <BrandLockup size={mob ? 24 : 30} />
+          <BrandLockup size={mob ? 28 : 36} />
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 22, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
@@ -758,7 +758,7 @@ export default function LandingPage() {
       <footer style={{ background: '#070D1A', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ ...maxW, padding: `28px ${sp}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/koala-mascot.png" alt="" width={40} height={40} style={{ display: 'block', objectFit: 'contain' }} />
+            <img src="/koala-mascot.png" alt="" width={48} height={48} style={{ display: 'block', objectFit: 'contain' }} />
             <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
           </div>
           <div style={{ ...body, fontSize: 12.5, color: mob ? '#CBD5E1' : '#94A3B8' }}>
