@@ -549,7 +549,7 @@ export default function LandingPage() {
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${P.border}` }}>
         <div style={{ ...maxW, padding: `12px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 28 }}>
-          <BrandLockup size={mob ? 28 : 36} />
+          <BrandLockup size={mob ? 24 : 30} />
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 22, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 14, color: P.ink2, textDecoration: 'none' }}>How it works</a>
