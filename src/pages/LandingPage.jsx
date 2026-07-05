@@ -233,7 +233,8 @@ function DashboardMock() {
       overflow: 'hidden',
       border: '1px solid rgba(15,23,42,0.1)',
       boxShadow: '0 40px 90px -28px rgba(15,23,42,0.35), 0 12px 32px -16px rgba(15,23,42,0.18)',
-      width: 'min(920px, 92%)',
+      width: '100%',
+      maxWidth: 720,
       textAlign: 'left',
     }}>
       {/* macOS title bar */}
@@ -532,6 +533,7 @@ function FeatureCard({ title, body: text, tag, visual, mob }) {
 export default function LandingPage() {
   const mob = useIsMobile(640);   // phone
   const tab = useIsMobile(860);   // tablet/collapse-2col
+  const heroStack = useIsMobile(1040); // collapse the 2-col hero before the mock ever gets cramped
 
   const sp = mob ? '20px' : '40px';          // side padding
   const vp = mob ? '72px' : '140px';         // vertical rhythm between sections
@@ -577,65 +579,63 @@ export default function LandingPage() {
 
       <main id="main-content">
 
-      {/* HERO — light, centered, product screenshot below. */}
-      <section style={{ background: 'linear-gradient(180deg, #F0FBF6 0%, #FFFFFF 42%)', position: 'relative' }}>
-        <div style={{ ...maxW, padding: `${mob ? '72px' : '132px'} ${sp} 0`, textAlign: 'center' }}>
-          <h1 style={{ ...disp, fontSize: mob ? 'clamp(34px, 9.5vw, 44px)' : 'clamp(42px, 4.9vw, 70px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.035em', color: P.ink, margin: '0 auto', maxWidth: 1000 }}>
-            Finally understand your<br />
-            <span style={{ color: P.accentDeep }}>financial statements.</span>
-          </h1>
-          <p style={{ ...body, fontSize: mob ? 16 : 19, lineHeight: 1.65, color: P.muted, margin: `${mob ? 18 : 26}px auto 0`, maxWidth: 620 }}>
-            Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English.
-          </p>
-          <div style={{ display: 'flex', gap: 14, marginTop: mob ? 26 : 36, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <PillLink to="/auth" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'hero_primary' })}>
-              Build your model free <ArrowRight size={17} />
-            </PillLink>
-            {!mob && (
-              <PillLink href="#how" tone="ghost" size="lg" onClick={() => capture('cta_click', { location: 'hero_secondary' })}>
+      {/* HERO — two columns: the pitch + key numbers on the left, the live
+          product on the right, so the mock always reads in context instead of
+          floating alone. Collapses to one centered column on tablet/phone. */}
+      <section style={{ background: 'linear-gradient(180deg, #F0FBF6 0%, #FFFFFF 62%)', position: 'relative' }}>
+        <div style={{
+          ...maxW, padding: `${mob ? '60px' : '104px'} ${sp} 0`,
+          display: 'grid', gridTemplateColumns: heroStack ? '1fr' : '0.92fr 1.15fr',
+          gap: heroStack ? (mob ? 44 : 56) : 56, alignItems: 'center',
+        }}>
+          {/* LEFT — copy, CTAs, and the four key numbers */}
+          <div style={{ minWidth: 0, textAlign: heroStack ? 'center' : 'left', maxWidth: heroStack ? 660 : 'none', marginLeft: heroStack ? 'auto' : 0, marginRight: heroStack ? 'auto' : 0 }}>
+            <h1 style={{ ...disp, fontSize: mob ? 'clamp(34px, 9.5vw, 44px)' : 'clamp(38px, 3.9vw, 58px)', fontWeight: 800, lineHeight: 1.07, letterSpacing: '-0.035em', color: P.ink, margin: 0 }}>
+              Finally understand your <span style={{ color: P.accentDeep }}>financial statements.</span>
+            </h1>
+            <p style={{ ...body, fontSize: mob ? 16 : 18.5, lineHeight: 1.65, color: P.muted, margin: `${mob ? 18 : 24}px 0 0`, maxWidth: 540, marginLeft: heroStack ? 'auto' : 0, marginRight: heroStack ? 'auto' : 0 }}>
+              Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English.
+            </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: mob ? 26 : 34, justifyContent: heroStack ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
+              <PillLink to="/auth" size="md" onClick={() => capture('cta_click', { location: 'hero_primary' })}>
+                Build your model free <ArrowRight size={17} />
+              </PillLink>
+              <PillLink href="#how" tone="ghost" size="md" onClick={() => capture('cta_click', { location: 'hero_secondary' })}>
                 See how it works
               </PillLink>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: mob ? 14 : 26, marginTop: mob ? 20 : 26, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {['Under 60 seconds to first model', 'Every line explained', 'No credit card'].map((t) => (
-              <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, ...body, fontSize: mob ? 12.5 : 14, color: P.muted }}>
-                <Check size={14} color={P.accentDeep} />{t}
-              </div>
-            ))}
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: mob ? '1fr 1fr' : 'repeat(4, auto)',
+              gap: mob ? '22px 14px' : 34,
+              justifyContent: heroStack ? 'center' : 'start',
+              marginTop: mob ? 34 : 44, paddingTop: mob ? 30 : 36,
+              borderTop: `1px solid ${P.border}`,
+            }}>
+              {[
+                { end: 60,  prefix: '< ', suffix: 's', label: 'To first model' },
+                { end: 3,   prefix: '',   suffix: '',  label: 'Live scenarios' },
+                { end: 17,  prefix: '',   suffix: '+', label: 'Sector benchmarks' },
+                { end: 100, prefix: '',   suffix: '%', label: 'Auto-linked' },
+              ].map(({ end, prefix, suffix, label }) => (
+                <div key={label}>
+                  <div style={{ ...disp, fontSize: mob ? 26 : 32, fontWeight: 800, color: P.ink, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
+                    <CountUp end={end} prefix={prefix} suffix={suffix} />
+                  </div>
+                  <div style={{ ...body, fontSize: 12.5, color: P.muted, marginTop: 4 }}>{label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
+          {/* RIGHT — live product mock */}
           {!mob && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: tab ? 48 : 72, paddingBottom: 8 }}>
+            <div style={{ minWidth: 0, display: 'flex', justifyContent: heroStack ? 'center' : 'flex-end' }}>
               <DashboardMock />
             </div>
           )}
         </div>
       </section>
-
-      {/* STATS — quiet numeric strip, dividers only. */}
-      <div style={{ ...maxW, padding: `${mob ? '56px' : '96px'} ${sp} 0` }}>
-        <div style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', flexWrap: 'wrap', maxWidth: 1000, margin: '0 auto' }}>
-          {[
-            { label: 'From description to first model', end: 60, prefix: '< ', suffix: 's' },
-            { label: 'Live scenarios per model',        end: 3,  prefix: '',   suffix: '' },
-            { label: 'Industry benchmarks built in',   end: 17, prefix: '',   suffix: '+' },
-            { label: 'Statements auto-linked',         end: 100,prefix: '',   suffix: '%' },
-          ].map(({ label, end, prefix, suffix }, i) => (
-            <div key={label} style={{
-              padding: mob ? '14px 16px' : '0 44px',
-              borderLeft: (!mob && i > 0) ? `1px solid ${P.border}` : 'none',
-              flex: mob ? '0 0 50%' : '1 1 0',
-              boxSizing: 'border-box',
-            }}>
-              <div style={{ ...disp, fontSize: mob ? 30 : 44, fontWeight: 800, color: P.ink, letterSpacing: '-0.03em' }}>
-                <CountUp end={end} prefix={prefix} suffix={suffix} />
-              </div>
-              <div style={{ ...body, fontSize: mob ? 12.5 : 14, color: P.muted, marginTop: 6 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* INTEROP — open three-column row, no boxes. */}
       <div style={{ ...maxW, padding: `${vp} ${sp} 0` }}>
