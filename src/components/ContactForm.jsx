@@ -22,9 +22,9 @@ const PUBLIC_KEY  = process.env.REACT_APP_EMAILJS_PUBLIC_KEY  || 'VxXwvX-5iEi1zN
 // and the light dashboard.
 const THEMES = {
   dark: {
-    label: 'rgba(248,250,252,0.7)', input: 'rgba(255,255,255,0.04)',
+    label: 'rgba(16,185,129,0.8)', input: 'rgba(255,255,255,0.04)',
     inputBorder: 'rgba(255,255,255,0.12)', inputFocus: 'rgba(16,185,129,0.5)',
-    text: '#F8FAFC', placeholder: 'rgba(248,250,252,0.35)',
+    text: '#F8FAFC', placeholder: 'rgba(16,185,129,0.4)',
     accent: '#10B981', accentText: '#0F172A', error: '#F87171',
   },
   light: {
@@ -100,7 +100,7 @@ export default function ContactForm({ theme = 'light', defaultEmail = '', source
     return (
       <div style={{ ...body, textAlign: 'center', padding: '28px 20px', borderRadius: 14, background: T.input, border: `1px solid ${T.inputBorder}` }}>
         <CheckCircle2 size={34} color={T.accent} style={{ margin: '0 auto 12px', display: 'block' }} />
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6 }}>Thanks, message sent!</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.accent, marginBottom: 6 }}>Thanks, message sent!</div>
         <div style={{ fontSize: 13.5, color: T.label }}>We read every note and usually reply within a day.</div>
         <button
           onClick={() => setStatus('idle')}

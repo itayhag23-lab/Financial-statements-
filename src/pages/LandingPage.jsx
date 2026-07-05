@@ -731,16 +731,16 @@ export default function LandingPage() {
           on a single surface with large rounded shoulders. */}
       <section style={{ background: P.dark, borderRadius: mob ? '28px 28px 0 0' : '48px 48px 0 0' }}>
         <div style={{ ...maxW, padding: `${mob ? '72px' : '132px'} ${sp} 0`, textAlign: 'center' }}>
-          <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 8vw, 36px)' : 'clamp(36px, 4.2vw, 56px)', fontWeight: 800, color: '#F8FAFC', margin: '0 0 18px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+          <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 8vw, 36px)' : 'clamp(36px, 4.2vw, 56px)', fontWeight: 800, color: P.accent, margin: '0 0 18px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             Your investors expect<br />institutional quality.
           </h2>
-          <p style={{ ...body, fontSize: mob ? 15 : 18, color: 'rgba(248,250,252,0.55)', maxWidth: 480, margin: '0 auto 36px', lineHeight: 1.65 }}>
+          <p style={{ ...body, fontSize: mob ? 15 : 18, color: 'rgba(16,185,129,0.75)', maxWidth: 480, margin: '0 auto 36px', lineHeight: 1.65 }}>
             Build your first 3-statement model in under 60 seconds. No spreadsheet, no finance degree, no credit card.
           </p>
           <PillLink to="/auth" tone="inverse" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'final_cta' })}>
             Build your model free <ArrowRight size={17} />
           </PillLink>
-          <div style={{ marginTop: 22, ...body, fontSize: 13.5, color: 'rgba(248,250,252,0.4)' }}>
+          <div style={{ marginTop: 22, ...body, fontSize: 13.5, color: 'rgba(16,185,129,0.55)' }}>
             No credit card · Free forever · Encrypted &amp; private
           </div>
         </div>
@@ -749,10 +749,10 @@ export default function LandingPage() {
         <div id="contact" style={{ ...maxW, padding: `${mob ? '80px' : '140px'} ${sp} ${mob ? '56px' : '88px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 36 : 72, alignItems: 'start' }}>
           <div>
             <div style={{ ...body, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: P.accent, marginBottom: 16 }}>Get in touch</div>
-            <h2 style={{ ...disp, fontSize: mob ? 'clamp(24px, 7vw, 30px)' : 'clamp(28px, 3vw, 40px)', fontWeight: 800, color: '#F8FAFC', margin: '0 0 14px', letterSpacing: '-0.025em' }}>
+            <h2 style={{ ...disp, fontSize: mob ? 'clamp(24px, 7vw, 30px)' : 'clamp(28px, 3vw, 40px)', fontWeight: 800, color: P.accent, margin: '0 0 14px', letterSpacing: '-0.025em' }}>
               Questions or feedback?
             </h2>
-            <p style={{ ...body, fontSize: mob ? 15 : 16.5, color: 'rgba(248,250,252,0.55)', lineHeight: 1.65, maxWidth: 420 }}>
+            <p style={{ ...body, fontSize: mob ? 15 : 16.5, color: 'rgba(16,185,129,0.75)', lineHeight: 1.65, maxWidth: 420 }}>
               Tell us what you’re building, report a bug, or suggest a feature. We read every message and usually reply within a day.
             </p>
           </div>
@@ -766,14 +766,14 @@ export default function LandingPage() {
           <div style={{ ...maxW, padding: `28px ${sp} 36px`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <img src="/koala-mascot.png" alt="" width={44} height={44} style={{ display: 'block', objectFit: 'contain' }} />
-              <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
+              <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: P.accent, letterSpacing: '-0.015em' }}>Koala Statements</span>
             </div>
-            <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.4)' }}>
+            <div style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.55)' }}>
               © {new Date().getFullYear()} Koala Statements · Not financial advice.
             </div>
             <div style={{ display: 'flex', gap: 24 }}>
-              <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Privacy</Link>
-              <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Terms</Link>
+              <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.75)', textDecoration: 'none' }}>Privacy</Link>
+              <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.75)', textDecoration: 'none' }}>Terms</Link>
             </div>
           </div>
         </footer>
