@@ -492,33 +492,32 @@ function LiveReportVisual() {
   );
 }
 
-// ── Feature card — bento layout: span-2 cards carry the three exclusive
-// capabilities, span-1 cards fill the gaps. No two cards share a visual idiom. ─
+// ── Feature card — uniform grid, one card per capability. No two cards
+// share a visual idiom. ──────────────────────────────────────────────────
 const FEATURES = [
-  { title: 'AI-Driven Assumption Engine', tag: 'Exclusive', span: 2, visual: <AssumptionVisual />,
+  { title: 'AI-Driven Assumption Engine', tag: 'Exclusive', visual: <AssumptionVisual />,
     body: 'Describe your business in plain English. Our AI generates a validated, sector-calibrated 3-statement model with realistic assumptions. No spreadsheet, no accounting data required.' },
-  { title: 'Dynamic Multi-Scenario Architecture', tag: null, span: 1, visual: <ScenarioFanVisual />,
+  { title: 'Dynamic Multi-Scenario Architecture', tag: null, visual: <ScenarioFanVisual />,
     body: 'Base, Optimistic, and Stress scenarios run simultaneously and stay fully linked. Pressure-test your downside without rebuilding: toggle and compare in real time.' },
-  { title: 'Conversational What-If Analysis', tag: 'Exclusive', span: 2, visual: <WhatIfDiffVisual />,
+  { title: 'Conversational What-If Analysis', tag: 'Exclusive', visual: <WhatIfDiffVisual />,
     body: '"What if we expand headcount 30% in Q3?" The AI proposes exact line-item changes with a diff preview. Apply or discard, with full undo history included.' },
-  { title: 'Automated 3-Statement Integration', tag: null, span: 1, visual: <LinkageFlowVisual />,
+  { title: 'Automated 3-Statement Integration', tag: null, visual: <LinkageFlowVisual />,
     body: 'Every assumption flows automatically through Income Statement → Cash Flow → Balance Sheet. No manual reconciliation, no broken links, no version chaos.' },
-  { title: 'Investor-Ready Live Reports', tag: 'Exclusive', span: 2, visual: <LiveReportVisual />,
+  { title: 'Investor-Ready Live Reports', tag: 'Exclusive', visual: <LiveReportVisual />,
     body: 'Share a live, interactive report, not a dead PDF. Your investors and board explore the numbers themselves, drilldown and all. One-click pitch one-pager included.' },
-  { title: 'Institutional Benchmarking', tag: null, span: 1, visual: <BenchmarkVisual />,
+  { title: 'Institutional Benchmarking', tag: null, visual: <BenchmarkVisual />,
     body: 'Compare your margins, growth rates, and unit economics against sector data across 17+ industries. Anchor your plan in reality before walking into the boardroom.' },
 ];
 
-function FeatureCard({ title, body: text, tag, span, visual, mob }) {
+function FeatureCard({ title, body: text, tag, visual, mob }) {
   const [hov, hp] = useHover();
   return (
     <div {...hp} style={{
-      gridColumn: mob ? 'auto' : `span ${span}`,
+      display: 'flex', flexDirection: 'column',
       background: P.bg, borderRadius: 16, padding: '26px 26px 28px', position: 'relative',
-      border: `1px solid ${P.borderFaint}`,
-      transform: hov ? 'translateY(-4px)' : 'translateY(0)',
-      boxShadow: hov ? '0 24px 48px -20px rgba(15,23,42,0.16)' : '0 1px 2px rgba(15,23,42,0.04)',
-      transition: 'transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms',
+      border: `1px solid ${hov ? P.border : P.borderFaint}`,
+      boxShadow: hov ? '0 16px 36px -20px rgba(15,23,42,0.18)' : '0 1px 2px rgba(15,23,42,0.04)',
+      transition: 'box-shadow 200ms, border-color 200ms',
     }}>
       {tag && (
         <span style={{ position: 'absolute', top: 20, right: 20, ...body, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.accentDeep, background: P.accentSoft, padding: '4px 10px', borderRadius: 20, zIndex: 1 }}>{tag}</span>
@@ -563,7 +562,7 @@ export default function LandingPage() {
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${P.borderFaint}` }}>
         <div style={{ ...maxW, padding: `${mob ? 10 : 14}px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 36 }}>
-          <BrandLockup size={mob ? 24 : 28} />
+          <BrandLockup size={mob ? 28 : 36} />
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>How it works</a>
@@ -581,17 +580,13 @@ export default function LandingPage() {
 
       {/* HERO — light, centered, product screenshot below. */}
       <section style={{ background: 'linear-gradient(180deg, #F0FBF6 0%, #FFFFFF 42%)', position: 'relative' }}>
-        <div style={{ ...maxW, padding: `${mob ? '64px' : '112px'} ${sp} 0`, textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#FFFFFF', border: `1px solid ${P.border}`, borderRadius: 999, padding: '7px 16px', marginBottom: mob ? 22 : 30, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
-            <Zap size={13} color={P.accentDeep} />
-            <span style={{ ...body, fontSize: 13, fontWeight: 600, color: P.ink2, whiteSpace: 'nowrap' }}>{mob ? 'AI-native financial modeling' : 'AI-native financial modeling — free for everyone'}</span>
-          </div>
+        <div style={{ ...maxW, padding: `${mob ? '72px' : '132px'} ${sp} 0`, textAlign: 'center' }}>
           <h1 style={{ ...disp, fontSize: mob ? 'clamp(34px, 9.5vw, 44px)' : 'clamp(42px, 4.9vw, 70px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.035em', color: P.ink, margin: '0 auto', maxWidth: 1000 }}>
             Finally understand your<br />
             <span style={{ color: P.accentDeep }}>financial statements.</span>
           </h1>
           <p style={{ ...body, fontSize: mob ? 16 : 19, lineHeight: 1.65, color: P.muted, margin: `${mob ? 18 : 26}px auto 0`, maxWidth: 620 }}>
-            Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds — then explains every line in plain English.
+            Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English.
           </p>
           <div style={{ display: 'flex', gap: 14, marginTop: mob ? 26 : 36, justifyContent: 'center', flexWrap: 'wrap' }}>
             <PillLink to="/auth" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'hero_primary' })}>

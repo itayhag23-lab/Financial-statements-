@@ -14,12 +14,6 @@ import ContactForm from '../components/ContactForm';
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
 
-const SECTOR_EMOJI = {
-  saas:'💻', ecommerce:'🛒', restaurant:'🍽️', retail:'🏪', coffee:'☕',
-  healthcare:'🏥', fintech:'💳', realEstate:'🏠', manufacturing:'🏭',
-  consulting:'💼', education:'📚', media:'🎬', logistics:'🚛', other:'📊',
-};
-
 function timeAgo(ts) {
   if (!ts) return '';
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -50,8 +44,8 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <span style={{ fontSize: 26, lineHeight: 1, flexShrink: 0 }}>
-            {SECTOR_EMOJI[project.sectorKey] || '📊'}
+          <span style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <FileText size={17} color="#059669" />
           </span>
           <div style={{ minWidth: 0 }}>
             <div style={{ ...disp, fontSize: 15.5, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>
