@@ -233,8 +233,7 @@ function DashboardMock() {
       overflow: 'hidden',
       border: '1px solid rgba(15,23,42,0.1)',
       boxShadow: '0 40px 90px -28px rgba(15,23,42,0.35), 0 12px 32px -16px rgba(15,23,42,0.18)',
-      maxWidth: 920,
-      width: '100%',
+      width: 'min(920px, 92%)',
       textAlign: 'left',
     }}>
       {/* macOS title bar */}
