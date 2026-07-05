@@ -234,7 +234,6 @@ function DashboardMock() {
       border: '1px solid rgba(15,23,42,0.1)',
       boxShadow: '0 40px 90px -28px rgba(15,23,42,0.35), 0 12px 32px -16px rgba(15,23,42,0.18)',
       width: '100%',
-      maxWidth: 720,
       textAlign: 'left',
     }}>
       {/* macOS title bar */}
@@ -533,7 +532,6 @@ function FeatureCard({ title, body: text, tag, visual, mob }) {
 export default function LandingPage() {
   const mob = useIsMobile(640);   // phone
   const tab = useIsMobile(860);   // tablet/collapse-2col
-  const heroStack = useIsMobile(1040); // collapse the 2-col hero before the mock ever gets cramped
 
   const sp = mob ? '20px' : '40px';          // side padding
   const vp = mob ? '72px' : '140px';         // vertical rhythm between sections
@@ -579,61 +577,64 @@ export default function LandingPage() {
 
       <main id="main-content">
 
-      {/* HERO — two columns: the pitch + key numbers on the left, the live
-          product on the right, so the mock always reads in context instead of
-          floating alone. Collapses to one centered column on tablet/phone. */}
-      <section style={{ background: 'linear-gradient(180deg, #F0FBF6 0%, #FFFFFF 62%)', position: 'relative' }}>
-        <div style={{
-          ...maxW, padding: `${mob ? '60px' : '104px'} ${sp} 0`,
-          display: 'grid', gridTemplateColumns: heroStack ? '1fr' : '0.92fr 1.15fr',
-          gap: heroStack ? (mob ? 44 : 56) : 56, alignItems: 'center',
-        }}>
-          {/* LEFT — copy, CTAs, and the four key numbers */}
-          <div style={{ minWidth: 0, textAlign: heroStack ? 'center' : 'left', maxWidth: heroStack ? 660 : 'none', marginLeft: heroStack ? 'auto' : 0, marginRight: heroStack ? 'auto' : 0 }}>
-            <h1 style={{ ...disp, fontSize: mob ? 'clamp(34px, 9.5vw, 44px)' : 'clamp(38px, 3.9vw, 58px)', fontWeight: 800, lineHeight: 1.07, letterSpacing: '-0.035em', color: P.ink, margin: 0 }}>
-              Finally understand your <span style={{ color: P.accentDeep }}>financial statements.</span>
-            </h1>
-            <p style={{ ...body, fontSize: mob ? 16 : 18.5, lineHeight: 1.65, color: P.muted, margin: `${mob ? 18 : 24}px 0 0`, maxWidth: 540, marginLeft: heroStack ? 'auto' : 0, marginRight: heroStack ? 'auto' : 0 }}>
-              Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English.
-            </p>
-            <div style={{ display: 'flex', gap: 12, marginTop: mob ? 26 : 34, justifyContent: heroStack ? 'center' : 'flex-start', flexWrap: 'wrap' }}>
-              <PillLink to="/auth" size="md" onClick={() => capture('cta_click', { location: 'hero_primary' })}>
-                Build your model free <ArrowRight size={17} />
-              </PillLink>
-              <PillLink href="#how" tone="ghost" size="md" onClick={() => capture('cta_click', { location: 'hero_secondary' })}>
+      {/* HERO — centered pitch, spanning the page. The product mock and the
+          four key numbers sit together right below it as one connected unit,
+          so the mock never reads as a context-less rectangle. */}
+      <section style={{ background: 'linear-gradient(180deg, #F0FBF6 0%, #FFFFFF 46%)', position: 'relative' }}>
+        <div style={{ ...maxW, padding: `${mob ? '72px' : '128px'} ${sp} 0`, textAlign: 'center' }}>
+          <h1 style={{ ...disp, fontSize: mob ? 'clamp(34px, 9.5vw, 44px)' : 'clamp(42px, 4.9vw, 70px)', fontWeight: 800, lineHeight: 1.06, letterSpacing: '-0.035em', color: P.ink, margin: '0 auto', maxWidth: 1000 }}>
+            Finally understand your<br />
+            <span style={{ color: P.accentDeep }}>financial statements.</span>
+          </h1>
+          <p style={{ ...body, fontSize: mob ? 16 : 19, lineHeight: 1.65, color: P.muted, margin: `${mob ? 18 : 26}px auto 0`, maxWidth: 620 }}>
+            Koala builds a fully-linked income statement, balance sheet, and cash flow in under 60 seconds. Then it explains every line in plain English.
+          </p>
+          <div style={{ display: 'flex', gap: 14, marginTop: mob ? 26 : 36, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <PillLink to="/auth" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'hero_primary' })}>
+              Build your model free <ArrowRight size={17} />
+            </PillLink>
+            {!mob && (
+              <PillLink href="#how" tone="ghost" size="lg" onClick={() => capture('cta_click', { location: 'hero_secondary' })}>
                 See how it works
               </PillLink>
-            </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: mob ? 14 : 26, marginTop: mob ? 20 : 26, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['Under 60 seconds to first model', 'Every line explained', 'No credit card'].map((t) => (
+              <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, ...body, fontSize: mob ? 12.5 : 14, color: P.muted }}>
+                <Check size={14} color={P.accentDeep} />{t}
+              </div>
+            ))}
+          </div>
+
+          {/* Product mock + the four key numbers, grouped as one unit. */}
+          <div style={{ maxWidth: 880, margin: `${mob ? 40 : 68}px auto 0` }}>
+            {!mob && <DashboardMock />}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: mob ? '1fr 1fr' : 'repeat(4, auto)',
-              gap: mob ? '22px 14px' : 34,
-              justifyContent: heroStack ? 'center' : 'start',
-              marginTop: mob ? 34 : 44, paddingTop: mob ? 30 : 36,
-              borderTop: `1px solid ${P.border}`,
+              marginTop: mob ? 0 : 20,
+              background: P.bg, border: `1px solid ${P.border}`, borderRadius: 16, overflow: 'hidden',
+              boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 24px 48px -30px rgba(15,23,42,0.18)',
+              display: 'grid', gridTemplateColumns: mob ? '1fr 1fr' : 'repeat(4, 1fr)',
             }}>
               {[
-                { end: 60,  prefix: '< ', suffix: 's', label: 'To first model' },
-                { end: 3,   prefix: '',   suffix: '',  label: 'Live scenarios' },
-                { end: 17,  prefix: '',   suffix: '+', label: 'Sector benchmarks' },
-                { end: 100, prefix: '',   suffix: '%', label: 'Auto-linked' },
-              ].map(({ end, prefix, suffix, label }) => (
-                <div key={label}>
-                  <div style={{ ...disp, fontSize: mob ? 26 : 32, fontWeight: 800, color: P.ink, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
+                { end: 60,  prefix: '< ', suffix: 's', label: 'From description to first model' },
+                { end: 3,   prefix: '',   suffix: '',  label: 'Live scenarios per model' },
+                { end: 17,  prefix: '',   suffix: '+', label: 'Industry benchmarks built in' },
+                { end: 100, prefix: '',   suffix: '%', label: 'Statements auto-linked' },
+              ].map(({ end, prefix, suffix, label }, i) => (
+                <div key={label} style={{
+                  padding: mob ? '20px 14px' : '24px 18px',
+                  borderLeft: (!mob && i > 0) || (mob && i % 2 === 1) ? `1px solid ${P.border}` : 'none',
+                  borderTop: (mob && i >= 2) ? `1px solid ${P.border}` : 'none',
+                }}>
+                  <div style={{ ...disp, fontSize: mob ? 26 : 34, fontWeight: 800, color: P.ink, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>
                     <CountUp end={end} prefix={prefix} suffix={suffix} />
                   </div>
-                  <div style={{ ...body, fontSize: 12.5, color: P.muted, marginTop: 4 }}>{label}</div>
+                  <div style={{ ...body, fontSize: mob ? 12 : 13, color: P.muted, marginTop: 5, lineHeight: 1.4 }}>{label}</div>
                 </div>
               ))}
             </div>
           </div>
-
-          {/* RIGHT — live product mock */}
-          {!mob && (
-            <div style={{ minWidth: 0, display: 'flex', justifyContent: heroStack ? 'center' : 'flex-end' }}>
-              <DashboardMock />
-            </div>
-          )}
         </div>
       </section>
 
@@ -731,16 +732,16 @@ export default function LandingPage() {
           on a single surface with large rounded shoulders. */}
       <section style={{ background: P.dark, borderRadius: mob ? '28px 28px 0 0' : '48px 48px 0 0' }}>
         <div style={{ ...maxW, padding: `${mob ? '72px' : '132px'} ${sp} 0`, textAlign: 'center' }}>
-          <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 8vw, 36px)' : 'clamp(36px, 4.2vw, 56px)', fontWeight: 800, color: P.accent, margin: '0 0 18px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+          <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 8vw, 36px)' : 'clamp(36px, 4.2vw, 56px)', fontWeight: 800, color: '#F8FAFC', margin: '0 0 18px', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             Your investors expect<br />institutional quality.
           </h2>
-          <p style={{ ...body, fontSize: mob ? 15 : 18, color: 'rgba(16,185,129,0.75)', maxWidth: 480, margin: '0 auto 36px', lineHeight: 1.65 }}>
+          <p style={{ ...body, fontSize: mob ? 15 : 18, color: 'rgba(248,250,252,0.55)', maxWidth: 480, margin: '0 auto 36px', lineHeight: 1.65 }}>
             Build your first 3-statement model in under 60 seconds. No spreadsheet, no finance degree, no credit card.
           </p>
-          <PillLink to="/auth" tone="inverse" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'final_cta' })}>
+          <PillLink to="/auth" tone="primary" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'final_cta' })}>
             Build your model free <ArrowRight size={17} />
           </PillLink>
-          <div style={{ marginTop: 22, ...body, fontSize: 13.5, color: 'rgba(16,185,129,0.55)' }}>
+          <div style={{ marginTop: 22, ...body, fontSize: 13.5, color: 'rgba(248,250,252,0.4)' }}>
             No credit card · Free forever · Encrypted &amp; private
           </div>
         </div>
@@ -749,10 +750,10 @@ export default function LandingPage() {
         <div id="contact" style={{ ...maxW, padding: `${mob ? '80px' : '140px'} ${sp} ${mob ? '56px' : '88px'}`, display: 'grid', gridTemplateColumns: tab ? '1fr' : '1fr 1fr', gap: tab ? 36 : 72, alignItems: 'start' }}>
           <div>
             <div style={{ ...body, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: P.accent, marginBottom: 16 }}>Get in touch</div>
-            <h2 style={{ ...disp, fontSize: mob ? 'clamp(24px, 7vw, 30px)' : 'clamp(28px, 3vw, 40px)', fontWeight: 800, color: P.accent, margin: '0 0 14px', letterSpacing: '-0.025em' }}>
+            <h2 style={{ ...disp, fontSize: mob ? 'clamp(24px, 7vw, 30px)' : 'clamp(28px, 3vw, 40px)', fontWeight: 800, color: '#F8FAFC', margin: '0 0 14px', letterSpacing: '-0.025em' }}>
               Questions or feedback?
             </h2>
-            <p style={{ ...body, fontSize: mob ? 15 : 16.5, color: 'rgba(16,185,129,0.75)', lineHeight: 1.65, maxWidth: 420 }}>
+            <p style={{ ...body, fontSize: mob ? 15 : 16.5, color: 'rgba(248,250,252,0.55)', lineHeight: 1.65, maxWidth: 420 }}>
               Tell us what you’re building, report a bug, or suggest a feature. We read every message and usually reply within a day.
             </p>
           </div>
@@ -766,14 +767,14 @@ export default function LandingPage() {
           <div style={{ ...maxW, padding: `28px ${sp} 36px`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <img src="/koala-mascot.png" alt="" width={44} height={44} style={{ display: 'block', objectFit: 'contain' }} />
-              <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: P.accent, letterSpacing: '-0.015em' }}>Koala Statements</span>
+              <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
             </div>
-            <div style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.55)' }}>
+            <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.4)' }}>
               © {new Date().getFullYear()} Koala Statements · Not financial advice.
             </div>
             <div style={{ display: 'flex', gap: 24 }}>
-              <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.75)', textDecoration: 'none' }}>Privacy</Link>
-              <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(16,185,129,0.75)', textDecoration: 'none' }}>Terms</Link>
+              <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Privacy</Link>
+              <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Terms</Link>
             </div>
           </div>
         </footer>
