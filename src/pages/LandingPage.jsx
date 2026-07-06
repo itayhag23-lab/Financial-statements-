@@ -364,9 +364,12 @@ function InteropItem({ icon: Icon, title, body: text, mob }) {
 
 // ── Feature visuals — each one illustrates its specific capability with real
 // numbers/UI moments instead of a generic icon-in-a-square. ───────────────
+// Transparent, vertically-centered wrapper. The FeatureCard provides the
+// fixed-height tinted "preview" zone these sit inside, so every card's visual
+// occupies the same vertical space and all the titles line up.
 function VisualFrame({ children }) {
   return (
-    <div style={{ borderRadius: 12, background: P.bgSoft, padding: '16px 18px', marginBottom: 20, minHeight: 120, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       {children}
     </div>
   );
@@ -512,18 +515,32 @@ function FeatureCard({ title, body: text, tag, visual, mob }) {
   const [hov, hp] = useHover();
   return (
     <div {...hp} style={{
-      display: 'flex', flexDirection: 'column',
-      background: P.bg, borderRadius: 16, padding: '26px 26px 28px', position: 'relative',
-      border: `1px solid ${hov ? P.border : P.borderFaint}`,
-      boxShadow: hov ? '0 16px 36px -20px rgba(15,23,42,0.18)' : '0 1px 2px rgba(15,23,42,0.04)',
-      transition: 'box-shadow 200ms, border-color 200ms',
+      display: 'flex', flexDirection: 'column', height: '100%',
+      background: P.bg, borderRadius: 16, overflow: 'hidden', position: 'relative',
+      border: `1px solid ${hov ? '#D7DCE3' : P.borderFaint}`,
+      boxShadow: hov ? '0 18px 40px -22px rgba(15,23,42,0.22)' : '0 1px 2px rgba(15,23,42,0.04)',
+      transition: 'box-shadow 220ms, border-color 220ms',
     }}>
-      {tag && (
-        <span style={{ position: 'absolute', top: 20, right: 20, ...body, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.accentDeep, background: P.accentSoft, padding: '4px 10px', borderRadius: 20, zIndex: 1 }}>{tag}</span>
-      )}
-      {visual}
-      <h3 style={{ ...disp, fontSize: 18, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.015em' }}>{title}</h3>
-      <p style={{ ...body, fontSize: 15, lineHeight: 1.65, color: P.muted, margin: 0 }}>{text}</p>
+      {/* fixed-height preview zone — same across every card, tints on hover */}
+      <div style={{
+        height: mob ? 150 : 168, padding: '16px 22px',
+        background: hov ? P.accentSoft : P.bgSoft,
+        borderBottom: `1px solid ${P.borderFaint}`,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden',
+        transition: 'background 220ms',
+      }}>
+        {visual}
+      </div>
+      {/* copy — flexes to fill, so all cards end at the same height */}
+      <div style={{ padding: mob ? '20px 22px 22px' : '24px 26px 28px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <h3 style={{ ...disp, fontSize: 18, fontWeight: 700, color: P.ink, letterSpacing: '-0.015em', margin: 0 }}>{title}</h3>
+          {tag && (
+            <span style={{ ...body, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: P.accentDeep, background: P.accentSoft, padding: '3px 8px', borderRadius: 20, flexShrink: 0, whiteSpace: 'nowrap' }}>{tag}</span>
+          )}
+        </div>
+        <p style={{ ...body, fontSize: 15, lineHeight: 1.65, color: P.muted, margin: 0 }}>{text}</p>
+      </div>
     </div>
   );
 }
@@ -659,7 +676,7 @@ export default function LandingPage() {
               Legacy reporting platforms work only after you have historical data. Koala lets you build, project, and stress-test from day one.
             </p>
           </Reveal>
-          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 16 : 24, alignItems: 'start' }}>
+          <Reveal delay={120} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 16 : 24 }}>
             {FEATURES.map((f) => <FeatureCard key={f.title} {...f} mob={mob} />)}
           </Reveal>
         </div>
