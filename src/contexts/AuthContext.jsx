@@ -72,18 +72,26 @@ export async function signUpWithEmail(email, password) {
 export async function signInWithGoogle() {
   if (!supabase) throw new Error('Auth not configured');
   capture('auth_initiated', { method: 'google' });
-  // Flag the pending OAuth so we can route the user once the session resolves —
-  // even if Supabase's Site URL config lands us on the homepage. Preserve any
-  // destination already stashed (e.g. an in-progress model the user came from);
-  // only fall back to the dashboard when nothing was set.
+  // Flag the pending OAuth so PostAuthRedirect (see App.jsx) can route the
+  // user once the session resolves. Preserve any destination already stashed
+  // (e.g. an in-progress model the user came from); only fall back to the
+  // dashboard when nothing was set.
   let dest = '/dashboard';
   try {
     const existing = sessionStorage.getItem('koala:postAuthRedirect');
     if (existing) dest = existing; else sessionStorage.setItem('koala:postAuthRedirect', dest);
   } catch {}
+  // Always ask Supabase to send the browser back to the bare origin, not the
+  // deep path — a deep path (e.g. /dashboard) has to be individually allowed
+  // in the Supabase project's Auth > URL Configuration > Redirect URLs list,
+  // and if it isn't, Supabase silently drops it and falls back to the Site
+  // URL, which is what made this look like "Google sign-in dumps you on the
+  // homepage." The bare origin is virtually always the allowed Site URL
+  // itself, so this always lands cleanly, and PostAuthRedirect then reads
+  // the stashed destination from sessionStorage and finishes the trip.
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + dest },
+    options: { redirectTo: window.location.origin },
   });
   if (error) throw error;
 }

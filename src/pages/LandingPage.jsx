@@ -555,10 +555,16 @@ export default function LandingPage() {
 
   // Scrolls to the section named by the URL hash on landing (e.g. arriving
   // from /privacy via "/#contact") — React Router doesn't do this natively.
+  // Guarded: an OAuth redirect (or any stray fragment) can leave a hash that
+  // isn't a valid CSS selector, e.g. "#access_token=...", which would throw
+  // out of querySelector and — with no error boundary above this page — take
+  // hydration down with it.
   React.useEffect(() => {
     if (window.location.hash) {
-      const el = document.querySelector(window.location.hash);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        const el = document.querySelector(window.location.hash);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {}
     }
   }, []);
 
