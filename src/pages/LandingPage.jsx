@@ -804,6 +804,21 @@ export default function LandingPage() {
         @media (max-width: 640px) {
           header a, header button { min-height: 44px; display: inline-flex; align-items: center; }
         }
+        /* Marketing copy isn't editable content — disable the tap/click text
+           caret and selection highlight so nothing on this page looks like an
+           editable field. Form fields are exempt by spec, so the contact form
+           still works normally. */
+        .koala-page {
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-touch-callout: none;
+        }
+        .koala-page input,
+        .koala-page textarea {
+          -webkit-user-select: text;
+          user-select: text;
+          -webkit-touch-callout: default;
+        }
       `}</style>
     </div>
   );
