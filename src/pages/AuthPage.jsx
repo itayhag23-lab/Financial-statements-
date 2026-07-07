@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Check } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { supabase } from '../lib/supabase';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '../contexts/AuthContext';
@@ -8,11 +8,14 @@ import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '../
 const P = {
   bgDark:    '#070D1A',
   bgCard:    '#0F172A',
+  bgPanel:   '#0B101B',   // brand panel surface (landing's dark "statement" block)
   border:    'rgba(255,255,255,0.08)',
   ink:       '#F8FAFC',
   ink2:      'rgba(248,250,252,0.55)',
   muted:     'rgba(248,250,252,0.35)',
   accent:    '#10B981',
+  accentDeep:'#047857',
+  accentMid: '#059669',
   accentSoft:'rgba(16,185,129,0.12)',
   accentBorder:'rgba(16,185,129,0.3)',
   error:     '#F87171',
@@ -24,14 +27,84 @@ const P = {
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
 
-function BrandLockup() {
+// Hydration-safe responsive hook — first render assumes desktop (false).
+function useIsMobile(bp = 900) {
+  const [mob, setMob] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp}px)`);
+    setMob(mq.matches);
+    const fn = e => setMob(e.matches);
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, [bp]);
+  return mob;
+}
+
+// Stacked lockup matching the landing's BrandLockup.
+function BrandLockup({ size = 34 }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <img src="/koala-mascot.png" alt="" width={58} height={58} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
-      <span style={{ ...disp, fontSize: 24, fontWeight: 700, color: P.ink, letterSpacing: '-0.03em' }}>
-        Koala <span style={{ color: P.accent, fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', verticalAlign: 'middle', marginLeft: 2 }}>Statements</span>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+      <img src="/koala-mascot.png" alt="" width={size * 1.85} height={size * 1.85} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
+      <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
+        <span style={{ ...disp, fontWeight: 700, fontSize: size * 0.62, color: P.ink, letterSpacing: '-0.03em' }}>Koala</span>
+        <span style={{ ...body, fontWeight: 600, fontSize: size * 0.29, color: P.accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
       </span>
     </span>
+  );
+}
+
+const VALUE_BULLETS = [
+  'Full 3-statement model in under 60 seconds',
+  'Every line item explained in plain English',
+  'Investor-ready exports that hold up to scrutiny',
+  'Free forever · No credit card required',
+];
+
+// Left brand / value panel (desktop only).
+function BrandPanel() {
+  return (
+    <div style={{
+      position: 'relative', overflow: 'hidden',
+      background: `linear-gradient(160deg, ${P.bgPanel} 0%, #070D1A 100%)`,
+      borderRight: `1px solid ${P.border}`,
+      padding: '48px 44px',
+      display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+      minHeight: 560,
+    }}>
+      {/* Ambient emerald glow */}
+      <div style={{ position: 'absolute', top: -120, left: -80, width: 460, height: 460, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(16,185,129,0.16) 0%, transparent 60%)', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative' }}>
+        <Link to="/" aria-label="Koala Statements home" style={{ textDecoration: 'none', display: 'inline-block' }}>
+          <BrandLockup size={34} />
+        </Link>
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        <h1 style={{ ...disp, fontSize: 'clamp(28px, 2.6vw, 38px)', fontWeight: 800, color: P.ink, letterSpacing: '-0.03em', lineHeight: 1.12, margin: '0 0 16px' }}>
+          Your investors expect<br />institutional quality.
+        </h1>
+        <p style={{ ...body, fontSize: 15.5, color: P.ink2, lineHeight: 1.65, maxWidth: 380, margin: '0 0 32px' }}>
+          Build a complete, defensible financial model without a spreadsheet, a finance degree, or a credit card.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+          {VALUE_BULLETS.map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span aria-hidden="true" style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, background: P.accentSoft, border: `1px solid ${P.accentBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Check size={14} color={P.accent} strokeWidth={2.75} />
+              </span>
+              <span style={{ ...body, fontSize: 14.5, color: 'rgba(248,250,252,0.82)', lineHeight: 1.4 }}>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: P.accent, animation: 'authPulse 1.6s ease-in-out infinite', flexShrink: 0 }} />
+        <span style={{ ...body, fontSize: 12.5, color: P.muted, letterSpacing: '0.01em' }}>Trusted by founders building their next raise</span>
+      </div>
+    </div>
   );
 }
 
@@ -40,13 +113,14 @@ function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onTogg
   return (
     <div style={{ position: 'relative' }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        background: P.inputBg,
+        display: 'flex', alignItems: 'center', gap: 11,
+        background: focused ? 'rgba(255,255,255,0.06)' : P.inputBg,
         border: `1px solid ${error ? P.error : focused ? P.inputFocus : P.inputBorder}`,
-        borderRadius: 10, padding: '0 14px',
-        transition: 'border-color 180ms ease',
+        borderRadius: 12, padding: '0 15px',
+        boxShadow: focused ? '0 0 0 3px rgba(16,185,129,0.14)' : 'none',
+        transition: 'border-color 180ms ease, box-shadow 180ms ease, background 180ms ease',
       }}>
-        <Icon size={15} color={focused ? P.accent : P.muted} style={{ flexShrink: 0, transition: 'color 180ms' }} />
+        <Icon size={16} color={focused ? P.accent : P.muted} style={{ flexShrink: 0, transition: 'color 180ms' }} />
         <input
           type={type}
           placeholder={placeholder}
@@ -56,13 +130,18 @@ function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onTogg
           onBlur={() => setFocused(false)}
           style={{
             ...body, flex: 1, background: 'none', border: 'none', outline: 'none',
-            color: P.ink, fontSize: 14.5, padding: '13px 0',
+            color: P.ink, fontSize: 14.5, padding: '14px 0',
             '::placeholder': { color: P.muted },
           }}
         />
         {showToggle && (
-          <button type="button" onClick={onToggleShow} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: P.muted, display: 'flex' }}>
-            {type === 'password' ? <EyeOff size={15} /> : <Eye size={15} />}
+          <button
+            type="button"
+            onClick={onToggleShow}
+            aria-label={type === 'password' ? 'Show password' : 'Hide password'}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, margin: -6, color: P.muted, display: 'flex' }}
+          >
+            {type === 'password' ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         )}
       </div>
@@ -159,27 +238,51 @@ export default function AuthPage() {
     }
   };
 
+  const mob = useIsMobile(900);
+
   return (
-    <div className="koala-page" style={{ minHeight: '100vh', background: P.bgDark, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', boxSizing: 'border-box' }}>
+    <div className="koala-page" style={{ minHeight: '100vh', background: P.bgDark, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: mob ? '28px 16px' : '40px 24px', boxSizing: 'border-box', position: 'relative', overflow: 'hidden' }}>
+
+      <style>{`@keyframes authPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.82); } }`}</style>
 
       {/* Ambient glow */}
-      <div style={{ position: 'fixed', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 300, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 65%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: '18%', left: '50%', transform: 'translateX(-50%)', width: 720, height: 340, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(16,185,129,0.10) 0%, transparent 65%)', pointerEvents: 'none' }} />
 
-      <div style={{ width: '100%', maxWidth: 420, position: 'relative' }}>
+      <div style={{
+        width: '100%', maxWidth: mob ? 440 : 980, position: 'relative',
+        display: 'grid', gridTemplateColumns: mob ? '1fr' : '1.02fr 1fr',
+        background: P.bgCard, border: `1px solid ${P.border}`,
+        borderRadius: mob ? 20 : 24, overflow: 'hidden',
+        boxShadow: '0 50px 100px -30px rgba(0,0,0,0.7)',
+      }}>
 
-        {/* Brand */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}><BrandLockup /></Link>
-          <div style={{ ...disp, fontSize: 22, fontWeight: 700, color: P.ink, marginTop: 20, letterSpacing: '-0.02em' }}>
-            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+        {/* LEFT — brand / value panel (desktop only) */}
+        {!mob && <BrandPanel />}
+
+        {/* RIGHT — auth form panel */}
+        <div style={{ padding: mob ? '30px 22px 32px' : '48px 44px' }}>
+
+          {/* Compact brand lockup + tagline (mobile only) */}
+          {mob && (
+            <div style={{ textAlign: 'center', marginBottom: 26 }}>
+              <Link to="/" aria-label="Koala Statements home" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                <BrandLockup size={30} />
+              </Link>
+              <div style={{ ...body, fontSize: 13, color: P.ink2, marginTop: 14, lineHeight: 1.5 }}>
+                Institutional-quality financial models, in minutes.
+              </div>
+            </div>
+          )}
+
+          {/* Welcome copy */}
+          <div style={{ marginBottom: 26, textAlign: mob ? 'center' : 'left' }}>
+            <div style={{ ...disp, fontSize: mob ? 22 : 26, fontWeight: 800, color: P.ink, letterSpacing: '-0.025em' }}>
+              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            </div>
+            <div style={{ ...body, fontSize: 14.5, color: P.ink2, marginTop: 7, lineHeight: 1.55 }}>
+              {mode === 'signin' ? 'Sign in to access your financial models' : 'Models saved forever, shareable anywhere'}
+            </div>
           </div>
-          <div style={{ ...body, fontSize: 14, color: P.ink2, marginTop: 6 }}>
-            {mode === 'signin' ? 'Sign in to access your financial models' : 'Models saved forever, shareable anywhere'}
-          </div>
-        </div>
-
-        {/* Card */}
-        <div style={{ background: P.bgCard, border: `1px solid ${P.border}`, borderRadius: 16, padding: '28px 24px', boxShadow: '0 40px 80px -20px rgba(0,0,0,0.6)' }}>
 
           {/* Google OAuth */}
           <button
@@ -189,8 +292,8 @@ export default function AuthPage() {
             style={{
               ...body, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               background: 'rgba(255,255,255,0.05)', border: `1px solid ${P.border}`,
-              borderRadius: 10, padding: '12px 16px', cursor: 'pointer',
-              fontSize: 14, fontWeight: 500, color: P.ink,
+              borderRadius: 12, padding: '13px 16px', cursor: 'pointer', minHeight: 48,
+              fontSize: 14.5, fontWeight: 600, color: P.ink,
               transition: 'background 150ms, border-color 150ms',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)'; }}
@@ -208,7 +311,7 @@ export default function AuthPage() {
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
             <div style={{ flex: 1, height: 1, background: P.border }} />
-            <span style={{ ...body, fontSize: 12, color: P.muted }}>or continue with email</span>
+            <span style={{ ...body, fontSize: 12, color: P.muted, letterSpacing: '0.02em' }}>or continue with email</span>
             <div style={{ flex: 1, height: 1, background: P.border }} />
           </div>
 
@@ -225,26 +328,29 @@ export default function AuthPage() {
               onToggleShow={() => setShowPass(v => !v)}
             />
 
-            {error   && <div style={{ ...body, fontSize: 13, color: P.error, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 8, padding: '9px 12px' }}>{error}</div>}
-            {success && <div style={{ ...body, fontSize: 13, color: P.accent, background: P.accentSoft, border: `1px solid ${P.accentBorder}`, borderRadius: 8, padding: '9px 12px' }}>{success}</div>}
+            {error   && <div style={{ ...body, fontSize: 13, color: P.error, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: 10, padding: '10px 13px', lineHeight: 1.45 }}>{error}</div>}
+            {success && <div style={{ ...body, fontSize: 13, color: P.accent, background: P.accentSoft, border: `1px solid ${P.accentBorder}`, borderRadius: 10, padding: '10px 13px', lineHeight: 1.45 }}>{success}</div>}
 
             <button
               type="submit"
               disabled={loading}
               style={{
                 ...body, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: loading ? 'rgba(16,185,129,0.5)' : P.accent,
-                color: '#0F172A', border: 'none', borderRadius: 10,
-                padding: '13px 16px', fontSize: 15, fontWeight: 700, cursor: loading ? 'default' : 'pointer',
-                transition: 'opacity 150ms',
+                background: loading ? P.accentMid : P.accentDeep,
+                color: '#FFFFFF', border: 'none', borderRadius: 12,
+                padding: '14px 16px', minHeight: 48, fontSize: 15, fontWeight: 700, cursor: loading ? 'default' : 'pointer',
+                boxShadow: loading ? 'none' : '0 10px 24px -8px rgba(4,120,87,0.55)',
+                transition: 'transform 150ms ease, box-shadow 150ms ease, background 150ms ease',
               }}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = P.accentMid; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+              onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = P.accentDeep; e.currentTarget.style.transform = 'translateY(0)'; } }}
             >
-              {loading ? 'Please wait…' : mode === 'signin' ? <><ArrowRight size={16} /> Sign in</> : <><ArrowRight size={16} /> Create account</>}
+              {loading ? 'Please wait…' : mode === 'signin' ? <>Sign in <ArrowRight size={17} /></> : <>Create account <ArrowRight size={17} /></>}
             </button>
           </form>
 
           {/* Toggle mode */}
-          <div style={{ textAlign: 'center', marginTop: 18 }}>
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
             <span style={{ ...body, fontSize: 13, color: P.muted }}>
               {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
             </span>
@@ -256,15 +362,15 @@ export default function AuthPage() {
               {mode === 'signin' ? 'Sign up free' : 'Sign in'}
             </button>
           </div>
-        </div>
 
-        {/* Continue without signing in */}
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
-          <Link to="/app?new=manual" style={{ ...body, fontSize: 13, color: P.muted, textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 1 }}>
-            Continue without signing in →
-          </Link>
-          <div style={{ ...body, fontSize: 11, color: 'rgba(248,250,252,0.2)', marginTop: 6 }}>
-            Models will only be saved in this browser
+          {/* Continue without signing in */}
+          <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 22, borderTop: `1px solid ${P.border}` }}>
+            <Link to="/app?new=manual" style={{ ...body, fontSize: 13, color: P.ink2, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+              Continue without signing in <ArrowRight size={14} />
+            </Link>
+            <div style={{ ...body, fontSize: 11.5, color: P.muted, marginTop: 7 }}>
+              Models will only be saved in this browser
+            </div>
           </div>
         </div>
       </div>
