@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen } from './lib/persistence';
 import { capture } from './lib/analytics';
+import { useDialog } from './lib/useDialog';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import { buildXlsx, STYLE } from './lib/xlsx';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
@@ -507,12 +508,12 @@ const Ornament=({style={}})=>(<div className="flex items-center justify-center g
 const AnimatedNumber=({value,format=(v)=>fmt(v),tweenKey,className='',style={}})=>{const inM=React.useContext(MillionsCtx);const tw=useTween(value);const fk=useFlicker(tweenKey);const f=inM?fmtM:format;return (<span key={fk} className={`flicker ${className}`} style={style}>{f(tw)}</span>);};
 
 // Comma-aware number input: shows formatted on blur, raw on focus
-function NumberInput({value,onChange,className='',style={},onFocus,onBlur,placeholder='0'}){
+function NumberInput({value,onChange,className='',style={},onFocus,onBlur,placeholder='0',ariaLabel}){
 const[focused,setFocused]=useState(false);const[draft,setDraft]=useState('');
 const inM=React.useContext(MillionsCtx);
 const num=typeof value==='number'&&!Number.isNaN(value)?value:0;
 const display=focused?draft:(num===0?'':(inM?fmtM(num):num.toLocaleString('en-US')));
-return(<input type="text" inputMode="decimal" value={display} placeholder={placeholder} className={className} style={style}
+return(<input type="text" inputMode="decimal" aria-label={ariaLabel} value={display} placeholder={placeholder} className={className} style={style}
 onFocus={(e)=>{setFocused(true);setDraft(inM?(num===0?'':String(num/1e6)):(num===0?'':String(num)));setTimeout(()=>{try{e.target.select();}catch{}},0);onFocus?.(e);}}
 onChange={(e)=>{let raw=e.target.value.replace(/[^0-9.,\-]/g,'');const fd=raw.indexOf('.');if(fd>=0)raw=raw.slice(0,fd+1)+raw.slice(fd+1).replace(/\./g,'');setDraft(raw);const cl=raw.replace(/,/g,'');if(!cl||cl==='-'||cl==='.')return;const p=Number(cl);if(!Number.isNaN(p))onChange(inM?Math.round(p*1e6):p);}}
 onBlur={(e)=>{setFocused(false);setDraft('');onBlur?.(e);}}/>);
@@ -558,10 +559,11 @@ return(<div className="relative" ref={ref}>
 }
 
 function CustomGrowthModal({row,entry,periods,onClose,onChange}){
+const dialogRef=useDialog(onClose);
 const[base,setBase]=useState(entry.baseValue||0);const[rates,setRates]=useState(entry.customRates.slice());
 const preview=useMemo(()=>{const out=[Math.round(+base||0)];for(let i=0;i<rates.length;i++){const r=(+rates[i]||0)/100;out.push(Math.round(out[out.length-1]*(1+r)));}return out;},[base,rates]);
 return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}>
-<div onClick={e=>e.stopPropagation()} className="w-full max-w-2xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`}}>
+<div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Custom growth for ${row.label}`} tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-2xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`}}>
 <div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Custom growth · per period</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>{row.label}</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
 <div className="p-6 space-y-5">
 <div><Eyebrow className="mb-2">{periods[0]} starting value</Eyebrow><NumberInput value={base} onChange={setBase} className="w-full px-3 py-2 rounded-md ff-num text-[15px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
@@ -575,6 +577,7 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 // Revenue-only "Price × quantity" editor. Each service carries its own price and
 // a per-period quantity; revenue = Σ (price × quantity) for every period.
 function PricingModal({row,entry,periods,onClose,onChange}){
+const dialogRef=useDialog(onClose);
 const init=(entry.tiers&&entry.tiers.length)
   ?entry.tiers.map((t,i)=>({name:t.name||`Service ${i+1}`,price:+t.price||0,units:periods.map((_,j)=>+(t.units?.[j])||0)}))
   :[{name:'Service 1',price:0,units:periods.map(()=>0)}];
@@ -585,7 +588,7 @@ const addTier=()=>setTiers(ts=>[...ts,{name:`Service ${ts.length+1}`,price:0,uni
 const removeTier=ti=>setTiers(ts=>ts.length>1?ts.filter((_,i)=>i!==ti):ts);
 const totals=useMemo(()=>periods.map((_,i)=>Math.round(tiers.reduce((s,t)=>s+(+t.price||0)*(+(t.units?.[i])||0),0))),[tiers,periods]);
 return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}>
-<div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'88vh'}}>
+<div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Price and quantity for ${row.label}`} tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'88vh'}}>
 <div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Price × quantity · per period</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>{row.label}</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(88vh - 200px)'}}>
 {tiers.map((t,ti)=>(<div key={ti} className="rounded-md p-4" style={{background:C.bg,border:`1px solid ${C.border}`}}>
@@ -604,11 +607,12 @@ return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-
 }
 
 function AddRowMenu({statement,rows,existingLabels,onAdd,onClose}){
+const dialogRef=useDialog(onClose);
 const parents=useMemo(()=>rows.filter(r=>r.type==='parent'),[rows]);
 const[selParent,setSelParent]=useState(parents[0]?.id||null);const[custom,setCustom]=useState('');const[mode,setMode]=useState('manual');
 const lib=(ROW_LIBRARY[statement]||{});const items=(selParent&&lib[selParent])||[];
 return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}>
-<div onClick={e=>e.stopPropagation()} className="w-full max-w-2xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'85vh'}}>
+<div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Add a line item" tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-2xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'85vh'}}>
 <div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Add to statement</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>Line item library</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(85vh - 180px)'}}>
 <div><Eyebrow className="mb-2">Add under</Eyebrow><div className="flex gap-1.5 flex-wrap">{parents.map(p=>(<button key={p.id} onClick={()=>setSelParent(p.id)} className="px-3 py-1.5 rounded-md ff-body text-[12px]" style={{background:selParent===p.id?C.ink:C.bg,border:`1px solid ${selParent===p.id?C.ink:C.border}`,color:selParent===p.id?C.surface:C.ink2,fontWeight:selParent===p.id?500:400}}>{p.label}</button>))}</div></div>
@@ -671,10 +675,11 @@ return buildStateFromCSV(text);
 }
 
 function SaveLoadModal({state,onLoad,onClose}){
+const dialogRef=useDialog(onClose);
 const[text,setText]=useState(JSON.stringify(state,null,2));const[error,setError]=useState(null);const[note,setNote]=useState(null);const[drag,setDrag]=useState(false);const fileRef=useRef(null);
 const handleFile=(file)=>{if(!file)return;setError(null);setNote(null);const rd=new FileReader();rd.onload=()=>{const content=String(rd.result||'');setText(content);try{const st=interpretImport(content,file.name);if(st.__importSummary){const s=st.__importSummary;setNote(`Ready to import ${s.count} line items across ${s.periods} periods (${s.rev} revenue · ${s.cogs} cost · ${s.opex} expense). Click "Load file".`);}else setNote('Saved model detected. Click "Load file" to restore.');}catch(e){setError(e.message);}};rd.onerror=()=>setError('Could not read that file.');rd.readAsText(file);};
 const doLoad=()=>{try{const st=interpretImport(text,'');const{__importSummary,...clean}=st;onLoad(clean);onClose();}catch(e){setError(e.message||'Could not read the data.');}};
-return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'90vh'}}>
+return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.36)'}} onClick={onClose}><div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Import and backup" tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.surface,border:`1px solid ${C.border}`,maxHeight:'90vh'}}>
 <div className="flex items-start justify-between px-6 pt-5 pb-4" style={{borderBottom:`1px solid ${C.border}`}}><div><Eyebrow color={C.gold}>Import &amp; backup</Eyebrow><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink}}>Upload a file or paste data</h3></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div>
 <div className="p-6 space-y-4 overflow-y-auto" style={{maxHeight:'calc(90vh - 170px)'}}>
 <input ref={fileRef} type="file" accept=".csv,.json,.txt,text/csv,application/json" style={{display:'none'}} onChange={e=>handleFile(e.target.files&&e.target.files[0])}/>
@@ -756,8 +761,8 @@ const changeMode=(m)=>{
   onUpdateData(patch);
 };
 const cells=[];
-if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
-else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
+if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} ariaLabel={`${row.label}, ${periods[i]}`} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
+else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} ariaLabel={`${row.label}, ${periods[0]} starting value`} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 else if(mode==='percentOfRevenue'||mode==='volumePricing'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 
 return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1px solid ${C.borderSoft}`}}>
@@ -767,11 +772,11 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 <div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label}/></div>
 <div className="mt-0.5 flex items-center gap-2 flex-wrap">
 <ModeMenu currentMode={mode} onChange={changeMode} allowed={allowed}/>
-{mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
-{mode==='decline'&&<div className="flex items-center gap-1"><span className="ff-num text-[10.5px]" style={{color:C.muted}}>−</span><input type="number" value={entry.declineAmount||0} onChange={e=>onUpdateData({declineAmount:+e.target.value||0})} className="w-16 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>/per</span></div>}
-{mode==='percentOfRevenue'&&<div className="flex items-center gap-1"><input type="number" value={entry.pctOfRev||0} onChange={e=>onUpdateData({pctOfRev:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>% of rev</span></div>}
-{mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit rates →</button>}
-{mode==='volumePricing'&&<button onClick={onOpenPricing} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.gold,border:`1px solid ${C.border}`}}>edit pricing →</button>}
+{mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" aria-label={`${row.label} growth rate, percent per period`} value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
+{mode==='decline'&&<div className="flex items-center gap-1"><span className="ff-num text-[10.5px]" style={{color:C.muted}}>−</span><input type="number" aria-label={`${row.label} reduction amount per period`} value={entry.declineAmount||0} onChange={e=>onUpdateData({declineAmount:+e.target.value||0})} className="w-16 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>/per</span></div>}
+{mode==='percentOfRevenue'&&<div className="flex items-center gap-1"><input type="number" aria-label={`${row.label}, percent of revenue`} value={entry.pctOfRev||0} onChange={e=>onUpdateData({pctOfRev:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>% of rev</span></div>}
+{mode==='customGrowth'&&<button onClick={onOpenCustom} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.goldText,border:`1px solid ${C.border}`}}>edit rates →</button>}
+{mode==='volumePricing'&&<button onClick={onOpenPricing} className="text-[10.5px] ff-body px-1.5 py-0.5 rounded-sm hover:underline" style={{color:C.goldText,border:`1px solid ${C.border}`}}>edit pricing →</button>}
 </div>
 </div>
 {row.deletable&&<button onClick={onDelete} title="Delete row" className="p-1 rounded opacity-30 hover:opacity-100 flex-shrink-0" style={{color:C.rust}}><Trash2 size={13}/></button>}
@@ -963,11 +968,12 @@ const sector=BB[sectorKey]||BB.other;const stmts=enabledStatements||{income:true
 const feasibility=useMemo(()=>computeFeasibilityScore(computedAll,periods,sectorKey,granularity,stmts),[computedAll,periods,sectorKey,granularity,stmts]);
 const insights=useMemo(()=>generateInsights(computedAll,periods,sectorKey,granularity,stmts,rows,rowData),[computedAll,periods,sectorKey,granularity,stmts,rows,rowData]);
 useEffect(()=>{if(open)document.body.style.overflow='hidden';else document.body.style.overflow='';return()=>{document.body.style.overflow='';};},[ open]);
+const dialogRef=useDialog(onClose,open);
 if(!open)return null;
 const TABS=[{id:'overview',label:'Overview'},{id:'insights',label:'Insights'},{id:'whatif',label:'What-if'},{id:'sensitivity',label:'Sensitivity'},{id:'ratios',label:'Ratios'},{id:'breakEven',label:'Break-even'},stmts.balance?{id:'warnings',label:'Warnings'}:null].filter(Boolean);
 return(<>
 <div className="fixed inset-0 z-40 anim-fade-in" style={{background:'rgba(15,23,42,0.32)'}} onClick={onClose}/>
-<div className="fixed top-0 right-0 bottom-0 z-50" style={{width:'min(640px,92vw)',background:C.bg,borderLeft:`1px solid ${C.border}`,boxShadow:'-20px 0 60px -20px rgba(15,23,42,0.18)',display:'flex',flexDirection:'column'}}>
+<div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Analysis" tabIndex={-1} className="fixed top-0 right-0 bottom-0 z-50" style={{width:'min(640px,92vw)',background:C.bg,borderLeft:`1px solid ${C.border}`,boxShadow:'-20px 0 60px -20px rgba(15,23,42,0.18)',display:'flex',flexDirection:'column'}}>
 <style>{`@keyframes drawerSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}.anim-drawer-slide{animation:drawerSlide 280ms cubic-bezier(0.16,1,0.3,1);}`}</style>
 <div className="px-6 pt-5 pb-4 flex-none anim-drawer-slide" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}>
 <div className="flex items-start justify-between gap-3"><div className="flex-1 min-w-0"><div className="label-eyebrow ff-body" style={{color:C.gold}}>Analysis</div><h3 className="ff-display text-[26px] leading-tight mt-0.5" style={{color:C.ink,fontWeight:500}}>{projectName||'Untitled'}</h3><div className="ff-body text-[11px] mt-1.5 flex items-center gap-2 flex-wrap" style={{color:C.muted}}><span>{sector.label}</span><span style={{width:1,height:10,background:C.border}}/><span>{SCENARIO_META[scenarioKey].label} scenario</span><span style={{width:1,height:10,background:C.border}}/><span>{granularity==='annual'?'Annual':'Quarterly'}</span></div></div><div className="flex items-start gap-2 flex-none"><button onClick={onOpenCritique} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.ink,color:C.surface,fontWeight:500}}>Critique plan</button><button onClick={onClose} className="p-1.5 rounded-md" style={{color:C.ink2}}><X size={18}/></button></div></div>
@@ -990,6 +996,7 @@ return(<>
 
 function PlanCritiqueModal({open,onClose,projectName,sectorKey,computed,computedAll,periods,granularity,enabledStatements,rows,rowData,feasibility}){
 const insights=useMemo(()=>generateInsights(computedAll,periods,sectorKey,granularity,enabledStatements,rows,rowData),[computedAll,periods,sectorKey,granularity,enabledStatements,rows,rowData]);
+const dialogRef=useDialog(onClose,open);
 if(!open)return null;
 const sector=BB[sectorKey]||BB.other;const wo=SECTOR_WATCHOUTS[sectorKey]||SECTOR_WATCHOUTS.other;
 const rev=computed.values.revenue||[];const ni=computed.values.netIncome||[];const cumNI=ni.reduce((a,b)=>a+b,0);let cum=0,beI=null;for(let i=0;i<ni.length;i++){cum+=ni[i];if(cum>=0&&beI===null)beI=i;}
@@ -997,7 +1004,7 @@ const rG=rev[0]>0?((rev[rev.length-1]/rev[0]-1)*100).toFixed(0):0;
 const summary=`${projectName} is a ${sector.label.toLowerCase()} business. Under the Base scenario over ${periods.length} ${granularity==='annual'?'years':'quarters'}, revenue ${rev[0]>0?`grows ${rG}% from ${fmt(rev[0],{abbreviate:true})} to ${fmt(rev[rev.length-1],{abbreviate:true})}`:`reaches ${fmt(rev[rev.length-1],{abbreviate:true})}`}. Cumulative net income is ${fmt(cumNI,{paren:true,abbreviate:true})}. ${beI!==null?`Cumulative break-even at ${periods[beI]}.`:'No cumulative break-even within the horizon.'} Feasibility: ${feasibility.score}/100, ${feasibility.label}.`;
 const eC=insights.filter(i=>i.level==='error').length;const wC=insights.filter(i=>i.level==='warn').length;
 const verdict=(()=>{if(eC>0)return{label:'Plan needs attention',tone:C.rust,body:`${eC} structural issue${eC>1?'s':''} detected. Review and resolve before relying on this model.`};if(wC>1)return{label:'Plan is workable but watch closely',tone:C.gold,body:`${wC} cautions raised.`};if(feasibility.score>=65)return{label:'Plan looks promising',tone:C.green,body:'The model passes structural checks. Sector watch-outs still apply.'};return{label:'Plan is acceptable',tone:C.ink,body:'No major issues. Treat the result as a starting point, not a forecast.'};})();
-return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={onClose}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
+return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={onClose}><div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Plan critique" tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
 <div className="px-7 pt-6 pb-5 flex-none" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="label-eyebrow ff-body" style={{color:C.gold}}>Plan critique</div><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink,fontWeight:500}}>{projectName}</h3><div className="ff-body text-[11.5px] mt-1.5" style={{color:C.muted}}>{sector.label} · {new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div></div><button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button></div></div>
 <div className="px-7 py-5 overflow-y-auto flex-1 space-y-5" style={{minHeight:0}}>
 <div className="rounded-lg p-4 flex items-start gap-3" style={{background:verdict.tone===C.rust?C.rustSoft:verdict.tone===C.gold?C.goldSoft:verdict.tone===C.green?C.greenSoft:C.surface,border:`1px solid ${verdict.tone}55`}}><div className="ff-display text-[28px] leading-none flex-none" style={{color:verdict.tone,fontWeight:500}}>{feasibility.score}</div><div className="flex-1"><div className="ff-body text-[13px]" style={{color:verdict.tone,fontWeight:600}}>{verdict.label}</div><div className="ff-body text-[12px] mt-1" style={{color:C.ink2,lineHeight:1.5}}>{verdict.body}</div></div></div>
@@ -1048,6 +1055,7 @@ const[status,setStatus]=useState('idle'); // idle|generating|success|error
 const[result,setResult]=useState(null);
 const[err,setErr]=useState('');
 const taRef=useRef(null);
+const dialogRef=useDialog(onClose);
 useEffect(()=>{if(!open){setDesc('');setStatus('idle');setResult(null);setErr('');}else{setTimeout(()=>taRef.current?.focus(),80);}},[open]);
 const generate=async()=>{
 const t=desc.trim();if(!t||status==='generating')return;
@@ -1073,7 +1081,7 @@ if(!open)return null;
 const BB_LABELS=Object.fromEntries(Object.entries(BB).map(([k,b])=>[k,b.label]));
 return(
 React.createElement('div',{style:{position:'fixed',inset:0,zIndex:51,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(15,23,42,0.55)'},onClick:onClose},
-React.createElement('div',{style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:'0 32px 64px -16px rgba(15,23,42,0.4)',width:'min(560px,calc(100vw - 32px))',maxHeight:'calc(100dvh - 24px)',display:'flex',flexDirection:'column',overflow:'hidden'},onClick:e=>e.stopPropagation()},
+React.createElement('div',{ref:dialogRef,role:'dialog','aria-modal':'true','aria-label':'Build a model from a description',tabIndex:-1,style:{background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,boxShadow:'0 32px 64px -16px rgba(15,23,42,0.4)',width:'min(560px,calc(100vw - 32px))',maxHeight:'calc(100dvh - 24px)',display:'flex',flexDirection:'column',overflow:'hidden'},onClick:e=>e.stopPropagation()},
 // Header
 React.createElement('div',{style:{flexShrink:0,padding:'18px 22px',borderBottom:`1px solid ${C.border}`,background:C.bgWarm,display:'flex',alignItems:'center',justifyContent:'space-between'}},
 React.createElement('div',null,
@@ -1128,6 +1136,7 @@ const inputRef=useRef(null);
 
 useEffect(()=>{if(!open){setMsgs([]);setInput('');setLoading(false);setError(null);setPendingPatch(null);setPatchApplied(false);}},[open]);
 useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth'});},[msgs,loading]);
+const dialogRef=useDialog(onClose,open);
 
 const callAI=async(apiHistory)=>{
 setLoading(true);setError(null);
@@ -1175,7 +1184,7 @@ return React.createElement('div',{key:i,className:'mt-0.5'},parts.map((p,j)=>j%2
 if(!open)return null;
 return React.createElement(React.Fragment,null,
 React.createElement('div',{style:{position:'fixed',inset:0,zIndex:49,background:'rgba(15,23,42,0.15)'},onClick:onClose}),
-React.createElement('div',{className:'anim-fade-in',style:{position:'fixed',zIndex:50,bottom:80,right:16,width:'min(400px,calc(100vw - 32px))',height:'min(560px,calc(100vh - 100px))',background:C.surface,border:'1px solid '+C.border,borderRadius:16,boxShadow:'0 24px 60px -8px rgba(15,23,42,0.35)',display:'flex',flexDirection:'column',overflow:'hidden'}},
+React.createElement('div',{ref:dialogRef,role:'dialog','aria-modal':'true','aria-label':'AI Advisor',tabIndex:-1,className:'anim-fade-in',style:{position:'fixed',zIndex:50,bottom:80,right:16,width:'min(400px,calc(100vw - 32px))',height:'min(560px,calc(100vh - 100px))',background:C.surface,border:'1px solid '+C.border,borderRadius:16,boxShadow:'0 24px 60px -8px rgba(15,23,42,0.35)',display:'flex',flexDirection:'column',overflow:'hidden'}},
   React.createElement('div',{style:{padding:'12px 16px',borderBottom:'1px solid '+C.border,background:C.bgWarm,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}},
     React.createElement('div',{style:{display:'flex',alignItems:'center',gap:10}},
       React.createElement('div',{style:{width:30,height:30,borderRadius:'50%',background:C.gold,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'#fff',flexShrink:0}},'AI'),
@@ -1273,6 +1282,7 @@ return(<div className="flex items-center gap-2 flex-wrap"><span className="label
 
 // Wizard
 function WizardModal({initialAnswers,onComplete,onClose,onStartManual,allowSkip}){
+const dialogRef=useDialog(allowSkip?onClose:null);
 const[step,setStep]=useState(0);const[name,setName]=useState(initialAnswers?.name||'');const[sK,setSK]=useState(initialAnswers?.sectorKey||null);const[rK,setRK]=useState(initialAnswers?.regionKey||null);const[cK,setCK]=useState(initialAnswers?.currencyKey||'usd');const[stmts,setStmts]=useState(initialAnswers?.statements||'incomeOnly');const[search,setSearch]=useState('');
 const STEPS=[{id:'name',ey:'Step 01 of 05',title:'Name your project',sub:'Give this idea a working title.'},{id:'business',ey:'Step 02 of 05',title:'What kind of business?',sub:'Pick the closest match.'},{id:'region',ey:'Step 03 of 05',title:'Where will it operate?',sub:'Sets a default tax rate.'},{id:'currency',ey:'Step 04 of 05',title:'Pick a currency',sub:'Used for display.'},{id:'statements',ey:'Step 05 of 05',title:'Which statements?',sub:'Income is always on.'}];
 const canAdv=step===0?name.trim().length>0:step===1?!!sK:step===2?!!rK:step===3?!!cK:!!stmts;
@@ -1288,7 +1298,7 @@ const skipStep=()=>{
 const filtered=useMemo(()=>{if(!search.trim())return BB;const q=search.toLowerCase();const f={};for(const[k,b]of Object.entries(BB))if(b.label.toLowerCase().includes(q)||b.blurb.toLowerCase().includes(q)||b.category.toLowerCase().includes(q))f[k]=b;return f;},[search]);
 const surp=()=>{const ks=Object.keys(BB).filter(k=>k!=='other');setSK(ks[Math.floor(Math.random()*ks.length)]);if(!rK)setRK('us');if(!name.trim())setName(BB[ks[0]]?.label+' · Quick Test');};
 const Card=({active,onClick,title,blurb,right,icon,eyebrow})=>(<button onClick={onClick} className="text-left p-3.5 rounded-md" style={{background:active?C.surface:C.bg,border:`1px solid ${active?C.gold:C.border}`,boxShadow:active?`0 0 0 1px ${C.gold}`:'none'}}><div className="flex items-start justify-between gap-3"><div className="flex items-start gap-2.5 flex-1 min-w-0">{icon&&<span className="text-[20px] flex-none" style={{lineHeight:1,marginTop:1}}>{icon}</span>}<div className="flex-1 min-w-0">{eyebrow&&<div className="label-eyebrow ff-body" style={{color:active?C.gold:C.muted,fontSize:9}}>{eyebrow}</div>}<div className="ff-display text-[16px] mt-0.5" style={{color:C.ink,fontWeight:500,lineHeight:1.15}}>{title}</div>{blurb&&<div className="ff-body text-[11px] mt-1" style={{color:C.muted,lineHeight:1.4}}>{blurb}</div>}</div></div>{right}</div></button>);
-return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={allowSkip?onClose:undefined}><div onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
+return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={allowSkip?onClose:undefined}><div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Set up your model" tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
 <div className="px-7 pt-6 pb-5 flex-none" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="label-eyebrow ff-body" style={{color:C.gold}}>{STEPS[step].ey}</div><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink,fontWeight:500}}>{STEPS[step].title}</h3><p className="ff-body text-[12px] mt-1.5" style={{color:C.muted}}>{STEPS[step].sub}</p></div>{allowSkip&&<button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button>}</div><div className="flex gap-1.5 mt-4">{STEPS.map((_,i)=>(<div key={i} className="flex-1 h-1 rounded-full" style={{background:i<=step?C.gold:C.border,transition:'background 240ms ease-out'}}/>))}</div></div>
 <div className="px-7 py-5 overflow-y-auto flex-1" style={{minHeight:0}}>
 {step===0&&(<div><input type="text" value={name} placeholder="e.g. Coffee Shop in Tel Aviv" onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&canAdv)next();}} autoFocus className="w-full px-4 py-3 rounded-md ff-display text-[22px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink,fontWeight:500}}/><div className="ff-body text-[11px] mt-2" style={{color:C.muted}}>Press Enter to continue.</div></div>)}
