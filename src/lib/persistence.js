@@ -10,6 +10,7 @@ import { supabase } from './supabase';
 const PREFIX   = 'koala:v1';
 const IDX_KEY  = `${PREFIX}:projects`;
 const LAST_KEY = `${PREFIX}:lastActive`;
+const TOUR_KEY = `${PREFIX}:tourSeen`;
 const projKey  = (id) => `${PREFIX}:project:${id}`;
 const shareKey = (id) => `${PREFIX}:share:${id}`;
 
@@ -29,6 +30,11 @@ export function genId() {
 
 export function getLastActive() { return safeGet(LAST_KEY); }
 export function setLastActive(id) { safeSet(LAST_KEY, id); }
+
+// First-run product tour: a single per-browser flag so the guided walkthrough
+// shows once and can still be replayed on demand via the "Take a tour" button.
+export function hasSeenTour() { return safeGet(TOUR_KEY) === true; }
+export function markTourSeen() { safeSet(TOUR_KEY, true); }
 
 async function getSession() {
   if (!supabase) return null;

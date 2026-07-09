@@ -13,3 +13,24 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50%      { opacity: 0.35; transform: scale(0.8); }
 }
+
+/* Keyboard focus indicator. Inputs/buttons across the app clear their outline
+   (outline:none) for the mouse aesthetic; restore a clear ring for keyboard
+   users only so the dense grid is navigable (WCAG 2.4.7). */
+:focus-visible {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Respect the OS "reduce motion" setting: neutralize the app's page-in,
+   stagger, scroll-reveal, number tween/flicker and the infinite pulse/rotate
+   animations for vestibular-sensitive users (WCAG 2.3.3 / 2.2.2). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

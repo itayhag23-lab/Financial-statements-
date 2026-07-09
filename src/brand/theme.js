@@ -13,11 +13,12 @@ export const C = {
   ink2: '#334155',        // slate-700 — secondary text
   muted: '#64748B',       // slate-500
   faint: '#94A3B8',       // slate-400
-  green: '#059669',       // emerald-600 — positive values
+  green: '#047857',       // emerald-700 — positive values (AA on white: ~5.3:1)
   greenSoft: '#ECFDF5',   // emerald-50
   rust: '#DC2626',        // red-600 — negative values
   rustSoft: '#FEF2F2',    // red-50
-  gold: '#10B981',        // emerald-500 — primary brand accent
+  gold: '#10B981',        // emerald-500 — primary brand accent (fills / borders)
+  goldText: '#047857',    // AA-compliant emerald for gold-colored TEXT on light bg
   goldSoft: 'rgba(16,185,129,0.10)',
   blue: '#2563EB',        // blue-600 — secondary accent (charts)
   blueSoft: 'rgba(37,99,235,0.10)',

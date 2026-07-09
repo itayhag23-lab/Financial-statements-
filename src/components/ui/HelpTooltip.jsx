@@ -139,7 +139,7 @@ export default function HelpTooltip({ glossaryKey, term, what, why, wizardHint, 
           {resolvedHint && (
             <div className="flex items-start gap-1.5" style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
               <Sparkles size={11} style={{ color: C.gold, marginTop: 2, flexShrink: 0 }} />
-              <div style={{ fontFamily: FONTS.body, fontSize: 11, lineHeight: 1.45, color: C.gold, fontWeight: 500 }}>{resolvedHint}</div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 11, lineHeight: 1.45, color: C.goldText, fontWeight: 500 }}>{resolvedHint}</div>
             </div>
           )}
         </div>,

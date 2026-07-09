@@ -1,14 +1,15 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator,HelpCircle}from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
-import { loadProject, saveProject, getLastActive, genId, saveShare } from './lib/persistence';
+import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen } from './lib/persistence';
 import { capture } from './lib/analytics';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
 import { buildXlsx, STYLE } from './lib/xlsx';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
 import HelpTooltip from './components/ui/HelpTooltip';
+import ProductTour from './components/ui/ProductTour';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 
@@ -1250,14 +1251,14 @@ return(<span className="ff-body text-[11px] px-2.5 py-1 rounded-full inline-flex
 {saving?<><span style={{width:7,height:7,borderRadius:'50%',background:C.gold,display:'inline-block',animation:'koala-pulse 1s ease-in-out infinite'}}/> Saving…</>:<><Check size={11}/> Saved</>}
 </span>);
 }
-function Masthead({todayLabel,projectName,sectorLabel,regionLabel,saveStatus,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport}){
+function Masthead({todayLabel,projectName,sectorLabel,regionLabel,saveStatus,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport,onOpenTour}){
 const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(projectName||'');
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
 const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t);setEditing(false);};
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-4"><div className="flex-1 min-w-0">
 <div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}<SaveBadge status={saveStatus}/></div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-tight outline-none w-full" style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-tight cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em'}}>{projectName||'Untitled Project'}</h1>)}
-<div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions"><button onClick={()=>setEditing(true)} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Edit3 size={12}/> Rename</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Reopen wizard</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.gold,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onImport} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><Upload size={12}/> Import file</button></div>
+<div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions" data-tour="masthead"><button onClick={onOpenTour} data-tour="take-tour" className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><HelpCircle size={12}/> Take a tour</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenWizard} className="ff-body text-[12px]" style={{color:C.muted}}>Edit setup</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onNewProject} className="ff-body text-[12px]" style={{color:C.muted}}>New project</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.goldText,fontWeight:600}}><Sparkles size={12}/> Build from description</button></div>
 </div><div className="text-right flex-none hidden md:block"><div className="ff-body text-[10px]" style={{color:C.faint,letterSpacing:'0.1em',textTransform:'uppercase'}}>Last updated</div><div className="ff-body text-[14px] mt-1" style={{color:C.ink2,fontWeight:500}}>{todayLabel}</div></div></div>
 </div></div>);
 }
@@ -1313,7 +1314,7 @@ const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeri
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
-const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);
+const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);const[showTour,setShowTour]=useState(false);
 // Tracks whether a real model exists yet (loaded / wizard / AI). When false,
 // dismissing the wizard means "start in Manual Mode" → a blank, all-zero model.
 const[hasModel,setHasModel]=useState(false);
@@ -1457,6 +1458,30 @@ useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(
 // when authenticated, otherwise the cleanup would cancel the /auth redirect.
 if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
 else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAuthForAI,navigate]);
+// First-run product tour: auto-launch once the user is looking at a populated
+// builder (wizard/AI modal closed, a model exists) and hasn't seen it before.
+// Deferred a tick so the data-tour targets are mounted. Replay is manual via
+// the "Take a tour" button (which ignores the seen flag).
+const tourFiredRef=useRef(false);
+useEffect(()=>{
+if(tourFiredRef.current)return;
+if(showWizard||showAIGen||!hasModel)return;
+if(hasSeenTour())return;
+tourFiredRef.current=true;
+const t=setTimeout(()=>setShowTour(true),400);
+return()=>clearTimeout(t);
+},[showWizard,showAIGen,hasModel]);
+const closeTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_dismissed');},[]);
+const finishTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_completed');},[]);
+const openTour=useCallback(()=>{tourFiredRef.current=true;capture('tour_started');setShowTour(true);},[]);
+const TOUR_STEPS=useMemo(()=>[
+{target:'[data-tour="model-table"]',placement:'top',onBeforeStep:()=>setBuildTab('income'),title:'This is your model',body:'Every figure below is editable. Click any cell in a year column and type — the whole statement recalculates instantly.'},
+{target:'[data-tour="scenario"]',placement:'bottom',title:'Compare Base, Best & Worst',body:'Switch scenarios here. Edits apply to the selected scenario only — build a realistic Base, then stress-test the upside and downside.'},
+{target:'[data-tour="statement-tabs"]',placement:'bottom',title:'Add the other statements',body:'Start with the Income Statement, then add a Balance Sheet and Cash Flow when you’re ready — they link together automatically.'},
+{target:'[data-tour="ai-advisor"]',placement:'left',title:'Ask the AI Advisor',body:'Stuck on the numbers? The advisor reviews your model, suggests assumptions, and can apply changes for you.'},
+{target:'[data-tour="analysis"]',placement:'left',title:'Score, analyze & export',body:'The badge is your feasibility score. Open Analysis for what-if and sensitivity — and use Excel or Share in the toolbar to export.'},
+{target:'[data-tour="take-tour"]',placement:'bottom',title:'Replay anytime',body:'That’s the tour. Reopen it from here whenever you like, or use Edit setup to rerun the wizard. Happy modeling!'},
+],[]);
 useEffect(()=>{if(showWizard)return;setSaveStatus('saving');const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});setSaveStatus('saved');},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 // Keep the latest save payload in a ref so we can flush it the instant the user
 // leaves the builder (navigates back to the dashboard, closes the tab, etc.).
@@ -1504,30 +1529,30 @@ if(isPortraitMob)return(
 </div>
 );
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} saveStatus={saveStatus} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} saveStatus={saveStatus} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)} onOpenTour={openTour}/></div>
 
-<button onClick={()=>{if(requireAuthForAI())setShowAI(true);}} className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>{if(requireAuthForAI())setShowAI(true);}} data-tour="ai-advisor" aria-label="Open the AI Advisor" className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
 </button>
-<button onClick={()=>setShowAnalysisDrawer(true)} className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-analysis" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>setShowAnalysisDrawer(true)} data-tour="analysis" aria-label="Open Analysis, what-if and export" className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-analysis" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <BarChart3 size={14}/><span className="text-[12.5px]" style={{fontWeight:500}}>Analysis</span>
-<span className="ff-num text-[10px] px-1.5 py-0.5 rounded" style={{background:C.gold,color:C.ink}}>{(()=>{const f=computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements);return f.score;})()}</span>
+<span className="ff-num text-[10px] px-1.5 py-0.5 rounded" title="Feasibility score (0–100)" aria-label={'Feasibility score '+(()=>{const f=computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements);return f.score;})()+' out of 100'} style={{background:C.gold,color:C.ink}}>Score {(()=>{const f=computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements);return f.score;})()}</span>
 </button>
 
 <div className="px-6 md:px-10 mt-6 stagger stagger-3"><div className="max-w-[1400px] mx-auto space-y-3">
-<div className="flex items-baseline justify-between flex-wrap gap-2 mb-1"><Eyebrow color={C.gold}>Editing scenario · {SCENARIO_META[activeScenario].label}</Eyebrow><span className="ff-body text-[10.5px]" style={{color:C.muted}}>All changes apply to the selected scenario only</span></div>
-<div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-md koala-toolbar" style={{background:C.surface,border:`1px solid ${C.border}`}}>
-<CompactScenarioPicker activeScenario={activeScenario} onSelect={setActiveScenario} computedAll={computedAll} periods={periods}/>
+<div className="flex items-baseline justify-between flex-wrap gap-2 mb-1"><Eyebrow color={C.gold}>Editing scenario · {SCENARIO_META[activeScenario].label}</Eyebrow></div>
+<div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-md koala-toolbar" data-tour="toolbar" style={{background:C.surface,border:`1px solid ${C.border}`}}>
+<span data-tour="scenario"><CompactScenarioPicker activeScenario={activeScenario} onSelect={setActiveScenario} computedAll={computedAll} periods={periods}/></span>
 <div style={{width:1,height:24,background:C.border}} className="hidden md:block"/>
 <div className="flex items-center gap-2 flex-wrap"><span className="label-eyebrow ff-body" style={{color:C.muted}}>View</span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{['annual','quarterly'].map(g=>(<button key={g} onClick={()=>setGranularity(g)} className="px-3 py-1 ff-body text-[11.5px]" style={{background:granularity===g?C.ink:'transparent',color:granularity===g?C.surface:C.ink2,textTransform:'capitalize'}}>{g}</button>))}</div></div>
-<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Periods</span><input type="number" min={2} max={20} value={numPeriods} onChange={e=>setNumPeriods(Math.max(2,Math.min(20,+e.target.value||2)))} className="w-14 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
-<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Start</span><input type="number" value={startYear} onChange={e=>setStartYear(+e.target.value||2025)} className="w-20 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Periods</span><input type="number" min={2} max={20} value={numPeriods} aria-label="Number of periods (2 to 20)" onChange={e=>setNumPeriods(Math.max(2,Math.min(20,+e.target.value||2)))} className="w-14 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Start</span><input type="number" value={startYear} aria-label="Start year" onChange={e=>setStartYear(+e.target.value||2025)} className="w-20 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
 <div className="flex-1"/>
 <div className="flex items-center gap-2">
 <button onClick={handleUndo} disabled={!canUndo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canUndo?C.ink2:C.faint,opacity:canUndo?1:0.5,cursor:canUndo?'pointer':'not-allowed'}} title="Undo (Cmd+Z)">↶ Undo</button>
 <button onClick={handleRedo} disabled={!canRedo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canRedo?C.ink2:C.faint,opacity:canRedo?1:0.5,cursor:canRedo?'pointer':'not-allowed'}} title="Redo (Cmd+Shift+Z)">↷ Redo</button>
 <button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Upload size={12}/> Import / Save</button>
-<button onClick={()=>setInMillions(m=>!m)} title="Show all figures in millions · type 1 = $1,000,000" className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:inMillions?C.goldSoft:C.bg,border:`1px solid ${inMillions?C.gold:C.border}`,color:inMillions?C.gold:C.ink2,fontWeight:inMillions?600:400}}>In $M</button>
+<button onClick={()=>setInMillions(m=>!m)} title="Show all figures in millions · type 1 = $1,000,000" aria-pressed={inMillions} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:inMillions?C.goldSoft:C.bg,border:`1px solid ${inMillions?C.gold:C.border}`,color:inMillions?C.goldText:C.ink2,fontWeight:inMillions?600:400}}>Show millions</button>
 <button onClick={exportExcel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> Excel</button>
 <button onClick={handleShare} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:shareCopied?C.greenSoft:C.bg,border:`1px solid ${shareCopied?C.green:C.border}`,color:shareCopied?C.green:C.ink2}}>{shareCopied?'✓ Link copied':'↗ Share'}</button>
 <button onClick={resetModel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:'transparent',color:C.muted}}>Reset</button>
@@ -1538,7 +1563,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {!showWizard&&<div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto"><PerformanceDashboard computed={computed} periods={periods} scenarioLabel={SCENARIO_META[activeScenario].label} symbol={CURRENCIES[currencyKey]?.symbol||'$'}/></div></div>}
 
 <div className="px-6 md:px-10 mt-6 stagger stagger-4"><div className="max-w-[1400px] mx-auto">
-<div className="flex items-center gap-2 flex-wrap mb-1">
+<div className="flex items-center gap-2 flex-wrap mb-1" data-tour="statement-tabs">
 <button onClick={()=>setBuildTab('income')} className="px-3.5 py-1.5 rounded-full ff-body text-[12px]" style={{background:buildTab==='income'?C.ink:C.surface,color:buildTab==='income'?C.surface:C.ink2,border:`1px solid ${buildTab==='income'?C.ink:C.border}`,transition:'all .15s'}}>Income Statement</button>
 {enabledStatements.balance
 ?(<span className="flex items-center gap-1"><button onClick={()=>setBuildTab('balance')} className="px-3.5 py-1.5 rounded-full ff-body text-[12px]" style={{background:buildTab==='balance'?C.ink:C.surface,color:buildTab==='balance'?C.surface:C.ink2,border:`1px solid ${buildTab==='balance'?C.ink:C.border}`,transition:'all .15s'}}>Balance Sheet</button><button onClick={()=>handleRemoveStatement('balance')} title="Remove Balance Sheet" className="flex items-center justify-center rounded-full" style={{width:18,height:18,background:C.bg,border:`1px solid ${C.border}`,color:C.rust,cursor:'pointer',flexShrink:0,padding:0}}><X size={9}/></button></span>)
@@ -1547,7 +1572,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 ?(<span className="flex items-center gap-1"><button onClick={()=>setBuildTab('cashFlow')} className="px-3.5 py-1.5 rounded-full ff-body text-[12px]" style={{background:buildTab==='cashFlow'?C.ink:C.surface,color:buildTab==='cashFlow'?C.surface:C.ink2,border:`1px solid ${buildTab==='cashFlow'?C.ink:C.border}`,transition:'all .15s'}}>Cash Flow</button><button onClick={()=>handleRemoveStatement('cashFlow')} title="Remove Cash Flow" className="flex items-center justify-center rounded-full" style={{width:18,height:18,background:C.bg,border:`1px solid ${C.border}`,color:C.rust,cursor:'pointer',flexShrink:0,padding:0}}><X size={9}/></button></span>)
 :(<button onClick={()=>{setEnabledStatements(s=>({...s,cashFlow:true}));setBuildTab('cashFlow');}} className="px-3.5 py-1.5 rounded-full ff-body text-[12px] flex items-center gap-1.5" style={{background:'transparent',color:C.gold,border:`1px dashed ${C.gold}77`,transition:'all .15s'}}><Plus size={11}/>Cash Flow</button>)}
 </div>
-<div className="mt-5 overflow-x-auto pb-2" style={{WebkitOverflowScrolling:'touch'}}>
+<div className="mt-5 overflow-x-auto pb-2" data-tour="model-table" style={{WebkitOverflowScrolling:'touch'}}>
 {buildTab==='income'&&<StatementTable statementId="income" rows={rows.income} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.income} onToggleExpand={id=>toggleExpand('income',id)} onExpandAll={()=>expandAll('income')} onCollapseAll={()=>collapseAll('income')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('income')} scenarioKey={activeScenario}/>}
 {buildTab==='balance'&&enabledStatements.balance&&<StatementTable statementId="balance" rows={rows.balance} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.balance} onToggleExpand={id=>toggleExpand('balance',id)} onExpandAll={()=>expandAll('balance')} onCollapseAll={()=>collapseAll('balance')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('balance')} scenarioKey={activeScenario}/>}
 {buildTab==='cashFlow'&&enabledStatements.cashFlow&&<StatementTable statementId="cashFlow" rows={rows.cashFlow} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.cashFlow} onToggleExpand={id=>toggleExpand('cashFlow',id)} onExpandAll={()=>expandAll('cashFlow')} onCollapseAll={()=>collapseAll('cashFlow')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('cashFlow')} scenarioKey={activeScenario}/>}
@@ -1561,6 +1586,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true}/>}
+<ProductTour open={showTour} steps={TOUR_STEPS} onClose={closeTour} onFinish={finishTour}/>
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
