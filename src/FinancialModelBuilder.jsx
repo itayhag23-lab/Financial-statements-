@@ -534,6 +534,9 @@ return(<svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} sty
 
 const MODE_META={manual:{label:'Manual values',short:'Manual',icon:Edit3,blurb:'Type each period independently.'},flatGrowth:{label:'Flat % growth',short:'Flat %',icon:TrendingUp,blurb:'Set Y0 base + one growth rate.'},customGrowth:{label:'Custom % per period',short:'Custom %',icon:Sliders,blurb:'Set Y0 base + different rate each period.'},percentOfRevenue:{label:'% of revenue',short:'% of Rev',icon:Percent,blurb:'Value = revenue × this %.'},decline:{label:'Reduce by fixed amount',short:'Reduce',icon:TrendingDown,blurb:'Start at a base, subtract a fixed amount each period (e.g. debt repayment). Floors at 0.'},volumePricing:{label:'Price × quantity',short:'Price × Qty',icon:Calculator,blurb:'Build revenue from services: set each price and the quantity sold per period.'}};
 
+// Growth modes split into a plain-first / advanced grouping so a first-time
+// user sees the two everyday options before the power-user ones.
+const SIMPLE_MODES=['manual','flatGrowth','percentOfRevenue'];
 function ModeMenu({currentMode,onChange,allowed}){
 const[open,setOpen]=useState(false);
 const[menuPos,setMenuPos]=useState({top:0,left:0,width:252,maxHeight:300});
@@ -553,7 +556,12 @@ const handleOpen=()=>{if(btnRef.current){const r=btnRef.current.getBoundingClien
 return(<div className="relative" ref={ref}>
 <button ref={btnRef} onClick={handleOpen} className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] ff-body" style={{background:open?C.surfaceAlt:'transparent',color:C.ink2,border:`1px solid ${open?C.border:'transparent'}`}}><Icon size={12}/><span>{MODE_META[currentMode].short}</span><ChevronDown size={11} style={{opacity:0.6}}/></button>
 {open&&ReactDOM.createPortal(<div ref={portalRef} className="anim-fade-in" style={{position:'fixed',...(menuPos.top!=null?{top:menuPos.top}:{}),...(menuPos.bottom!=null?{bottom:menuPos.bottom}:{}),left:menuPos.left,width:menuPos.width||252,maxHeight:menuPos.maxHeight,overflowY:'auto',WebkitOverflowScrolling:'touch',background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,boxShadow:'0 10px 28px -8px rgba(15,23,42,0.18)',zIndex:9999}}>
-{allowed.map(m=>{const M=MODE_META[m];const I=M.icon;const active=m===currentMode;return(<button key={m} onClick={()=>{onChange(m);setOpen(false);}} className="w-full text-left px-3 py-2.5 ff-body text-[12px] flex items-start gap-2.5" style={{background:active?C.greenSoft:'transparent',borderBottom:`1px solid ${C.border}55`}}><I size={13} style={{marginTop:2,color:active?C.green:C.ink2}}/><div className="flex-1"><div style={{color:C.ink,fontWeight:500}}>{M.label}</div><div style={{color:C.muted,fontSize:10.5,marginTop:1}}>{M.blurb}</div></div>{active&&<Check size={12} style={{color:C.green,marginTop:3}}/>}</button>);})}
+{(()=>{
+const simple=allowed.filter(m=>SIMPLE_MODES.includes(m));
+const advanced=allowed.filter(m=>!SIMPLE_MODES.includes(m));
+const item=(m)=>{const M=MODE_META[m];const I=M.icon;const active=m===currentMode;return(<button key={m} onClick={()=>{onChange(m);setOpen(false);}} className="w-full text-left px-3 py-2.5 ff-body text-[12px] flex items-start gap-2.5" style={{background:active?C.greenSoft:'transparent',borderBottom:`1px solid ${C.border}55`}}><I size={13} style={{marginTop:2,color:active?C.green:C.ink2}}/><div className="flex-1"><div style={{color:C.ink,fontWeight:500}}>{M.label}</div><div style={{color:C.muted,fontSize:10.5,marginTop:1}}>{M.blurb}</div></div>{active&&<Check size={12} style={{color:C.green,marginTop:3}}/>}</button>);};
+return(<>{simple.map(item)}{advanced.length>0&&<div className="px-3 pt-2 pb-1 label-eyebrow ff-body" style={{color:C.faint,background:C.surfaceAlt,borderBottom:`1px solid ${C.border}55`}}>Advanced</div>}{advanced.map(item)}</>);
+})()}
 </div>,document.body)}
 </div>);
 }
