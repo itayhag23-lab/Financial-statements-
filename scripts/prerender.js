@@ -20,10 +20,12 @@ const BUILD_DIR = path.join(ROOT, 'build');
 const SITE = 'https://financial-statements-one.vercel.app';
 
 // Static, public, eagerly-imported routes. /app, /dashboard, /r/* are private
-// or dynamic (and code-split), so they stay client-rendered.
-const ROUTES = ['/', '/privacy', '/terms'];
+// or dynamic (and code-split), so they stay client-rendered. The Learn hub and
+// its articles are appended at runtime from the content library (see main).
+const BASE_ROUTES = ['/', '/privacy', '/terms'];
 
 // Per-route <head> overrides. "/" uses the defaults already in index.html.
+// Learn routes are merged in at runtime from prerender-entry's learnRoutes.
 const ROUTE_META = {
   '/privacy': {
     title: 'Privacy Policy | Koala Statements',
@@ -79,7 +81,14 @@ async function main() {
     alias: { 'posthog-js': path.join(__dirname, 'stubs', 'posthog.js') },
   });
 
-  const { renderRoute } = require(outfile);
+  const { renderRoute, learnRoutes = [] } = require(outfile);
+
+  // Merge the Learn library's routes + metadata in from the content library.
+  const ROUTES = [...BASE_ROUTES, ...learnRoutes.map((r) => r.path)];
+  for (const r of learnRoutes) {
+    ROUTE_META[r.path] = { title: r.title, description: r.description };
+  }
+
   let template = fs.readFileSync(indexPath, 'utf8');
   const MARKER = '<div id="root"></div>';
 

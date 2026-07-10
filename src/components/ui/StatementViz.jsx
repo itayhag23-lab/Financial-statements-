@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 
@@ -43,7 +43,7 @@ export const VIZ = {
   },
 };
 
-function Bars({ spec, played, accent }) {
+function Bars({ spec, played, accent, reduced }) {
   const max = Math.max(...spec.bars.map((b) => b.val));
   return (
     <div>
@@ -51,7 +51,7 @@ function Bars({ spec, played, accent }) {
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
           <div style={{ width: 150, flexShrink: 0, fontFamily: FONTS.body, fontSize: 12, color: b.tone === 'strong' ? C.ink : C.ink2, fontWeight: b.tone === 'strong' ? 700 : 500, textAlign: 'right' }}>{b.label}</div>
           <div style={{ flex: 1, height: 22, background: C.bgWarm, borderRadius: 5, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: played ? `${(b.val / max) * 100}%` : '0%', background: toneColor(b.tone), borderRadius: 5, transition: prefersReducedMotion() ? 'none' : `width 620ms cubic-bezier(0.16,1,0.3,1) ${i * 240}ms` }} />
+            <div style={{ height: '100%', width: played ? `${(b.val / max) * 100}%` : '0%', background: toneColor(b.tone), borderRadius: 5, transition: reduced ? 'none' : `width 620ms cubic-bezier(0.16,1,0.3,1) ${i * 240}ms` }} />
           </div>
           <div className="ff-num" style={{ width: 34, flexShrink: 0, fontSize: 12.5, fontWeight: b.tone === 'strong' ? 700 : 500, color: toneColor(b.tone), opacity: played ? 1 : 0, transition: `opacity 300ms ${i * 240 + 300}ms` }}>{b.val}</div>
         </div>
@@ -60,11 +60,11 @@ function Bars({ spec, played, accent }) {
   );
 }
 
-function Balance({ spec, played, accent }) {
+function Balance({ spec, played, accent, reduced }) {
   const Col = ({ items, delay }) => (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 4, height: 180 }}>
       {items.map((it, i) => (
-        <div key={i} style={{ height: played ? `${it.val}%` : '0%', background: toneColor(it.tone), borderRadius: 6, transition: prefersReducedMotion() ? 'none' : `height 640ms cubic-bezier(0.16,1,0.3,1) ${delay + i * 200}ms`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <div key={i} style={{ height: played ? `${it.val}%` : '0%', background: toneColor(it.tone), borderRadius: 6, transition: reduced ? 'none' : `height 640ms cubic-bezier(0.16,1,0.3,1) ${delay + i * 200}ms`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
           <span className="ff-num" style={{ color: '#fff', fontSize: 12, fontWeight: 700, opacity: played ? 1 : 0, transition: `opacity 300ms ${delay + i * 200 + 400}ms`, whiteSpace: 'nowrap' }}>{it.label} {it.val}</span>
         </div>
       ))}
@@ -82,6 +82,11 @@ function Balance({ spec, played, accent }) {
 export default function StatementViz({ type, accent = C.green }) {
   const spec = VIZ[type];
   const [played, setPlayed] = useState(false);
+  // Resolve reduced-motion after mount so the first client render matches the
+  // server-rendered markup (window is absent during prerender). Avoids a
+  // hydration mismatch on the transition styles.
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => { setReduced(prefersReducedMotion()); }, []);
   if (!spec) return null;
   return (
     <div style={{ border: `1px solid ${C.border}`, borderRadius: 12, background: C.bg, padding: '18px 18px 16px', marginBottom: 24 }}>
@@ -95,7 +100,7 @@ export default function StatementViz({ type, accent = C.green }) {
           {played ? <><RotateCcw size={13} /> Replay</> : <><Play size={13} /> Play</>}
         </button>
       </div>
-      {spec.kind === 'balance' ? <Balance spec={spec} played={played} accent={accent} /> : <Bars spec={spec} played={played} accent={accent} />}
+      {spec.kind === 'balance' ? <Balance spec={spec} played={played} accent={accent} reduced={reduced} /> : <Bars spec={spec} played={played} accent={accent} reduced={reduced} />}
     </div>
   );
 }
