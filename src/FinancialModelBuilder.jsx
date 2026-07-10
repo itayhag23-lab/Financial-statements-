@@ -46,10 +46,10 @@ class AppErrorBoundary extends Component {
 }
 
 const FontStyles=()=>(<style>{`
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&family=Inter:wght@300..700&display=swap');
 .ff-display{font-family:'Plus Jakarta Sans','Inter',system-ui,sans-serif;letter-spacing:-0.02em;font-feature-settings:"ss01";}
 .ff-body{font-family:'Inter',system-ui,sans-serif;letter-spacing:-0.006em;}
-.ff-num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+.ff-num{font-family:'Inter',system-ui,sans-serif;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
 .label-eyebrow{letter-spacing:0.16em;text-transform:uppercase;font-size:10px;font-weight:600;}
 .label-folio{letter-spacing:0.18em;text-transform:uppercase;font-size:9.5px;font-weight:600;}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
@@ -1343,9 +1343,13 @@ const[hasModel,setHasModel]=useState(false);
 const[saveStatus,setSaveStatus]=useState('saved');
 const[buildTab,setBuildTab]=useState('income');
 // Expand/collapse per statement
-const[expandedIncome,setExpandedIncome]=useState(()=>new Set());
-const[expandedBalance,setExpandedBalance]=useState(()=>new Set());
-const[expandedCashFlow,setExpandedCashFlow]=useState(()=>new Set());
+// Default to fully expanded so users immediately see the editable leaf rows —
+// a collapsed statement only shows gray, non-editable subtotals, which makes
+// people try to type on lines that can't be edited.
+const parentIds=(stmt)=>TEMPLATES[stmt].filter(r=>r.type==='parent').map(r=>r.id);
+const[expandedIncome,setExpandedIncome]=useState(()=>new Set(parentIds('income')));
+const[expandedBalance,setExpandedBalance]=useState(()=>new Set(parentIds('balance')));
+const[expandedCashFlow,setExpandedCashFlow]=useState(()=>new Set(parentIds('cashFlow')));
 
 const[rows,setRows]=useState({income:TEMPLATES.income.map(r=>({...r})),balance:TEMPLATES.balance.map(r=>({...r})),cashFlow:TEMPLATES.cashFlow.map(r=>({...r}))});
 const[rowData,setRowData]=useState(()=>{
