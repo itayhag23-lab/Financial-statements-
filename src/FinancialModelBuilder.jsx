@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator,HelpCircle}from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
-import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen } from './lib/persistence';
+import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen, hasSeenStatements101, markStatements101Seen } from './lib/persistence';
 import { capture } from './lib/analytics';
 import { useDialog } from './lib/useDialog';
 import { parseModelDraftJSON, validateModelDraft, MODEL_GEN_SYSTEM_PROMPT, WHATIF_PATCH_ADDENDUM } from './lib/schema';
@@ -11,6 +11,7 @@ import { buildXlsx, STYLE } from './lib/xlsx';
 import PerformanceDashboard from './components/charts/PerformanceDashboard';
 import HelpTooltip from './components/ui/HelpTooltip';
 import ProductTour from './components/ui/ProductTour';
+import StatementsPrimer from './components/ui/StatementsPrimer';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 
@@ -208,7 +209,7 @@ const BUSINESS_CATEGORIES=['Food & Beverage','Retail','Services','Digital','Othe
 
 const REGIONS={us:{label:'United States',taxRate:21},il:{label:'Israel',taxRate:23},uk:{label:'United Kingdom',taxRate:25},eu:{label:'EU (avg)',taxRate:22},ca:{label:'Canada',taxRate:26},au:{label:'Australia',taxRate:30},sg:{label:'Singapore',taxRate:17},ae:{label:'UAE',taxRate:9},other:{label:'Other / Skip',taxRate:20}};
 const CURRENCIES={usd:{label:'USD',symbol:'$',name:'US Dollar'},ils:{label:'ILS',symbol:'₪',name:'Israeli Shekel'},eur:{label:'EUR',symbol:'€',name:'Euro'},gbp:{label:'GBP',symbol:'£',name:'British Pound'},cad:{label:'CAD',symbol:'C$',name:'Canadian Dollar'},aud:{label:'AUD',symbol:'A$',name:'Australian Dollar'}};
-const STATEMENT_OPTIONS={incomeOnly:{label:'Income only',blurb:'Just P&L. Fastest to set up.'},incomeAndCF:{label:'Income + Cash Flow',blurb:'For tracking runway.'},full:{label:'All three',blurb:'Income + Balance Sheet + Cash Flow.'}};
+const STATEMENT_OPTIONS={incomeOnly:{label:'Income only',blurb:'Revenue, costs, profit. The fastest start.'},incomeAndCF:{label:'Income + Cash Flow',blurb:'Adds a cash view so you can track runway.'},full:{label:'The full picture',blurb:'Income, Balance Sheet & Cash Flow — they link automatically.'}};
 
 const SECTOR_WATCHOUTS={
 coffeeshop:['Labor is typically 30-35% of revenue. Below 25% is unrealistic.','Rent should not exceed 8-10% of revenue in a sustainable model.'],
@@ -725,7 +726,7 @@ return(<div className="grid items-center" style={{...grid,background:bg,borderTo
 {isParent&&hasChildren?<button onClick={onToggle} className="p-0.5 rounded" style={{color:C.muted,marginLeft:-4}}><ChevronRight size={14} className={isExpanded?'chevron-exp':'chevron-col'}/></button>:<span style={{width:18,display:'inline-block'}}/>}
 {isComp&&<span className="ff-display text-[14px] italic" style={{color:C.green,marginRight:2}}>=</span>}
 <span className="truncate">{row.label}</span>
-<HelpTooltip glossaryKey={row.id} term={row.label}/>
+<HelpTooltip glossaryKey={row.id} term={row.label} parentKey={row.parentId} dataTour={row.id==='rev'?'row-help':undefined}/>
 </div>
 {periods.map((_,i)=>{const v=computedValues?.[i]??0;return(<div key={i} className="ff-num px-3 py-2.5 text-right text-[13px]" style={{color:isComp?C.green:v<0?C.rust:C.ink,fontWeight:fw}}><AnimatedNumber value={v} tweenKey={`${row.id}-${i}-${scenarioKey}`} format={x=>fmt(x,{paren:true})}/></div>);})}
 <div className="flex items-center justify-center px-2"><Sparkline values={computedValues||[]} color={sColor} width={70} height={20} smooth/></div>
@@ -739,7 +740,7 @@ return(<div className="grid items-center" style={{...grid,borderTop:`1px solid $
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
 <span style={{width:18,display:'inline-block'}}/>
 <div className="flex-1 min-w-0">
-<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label}/></div>
+<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label} parentKey={row.parentId}/></div>
 <div className="mt-0.5"><span className="ff-body text-[10px] px-1.5 py-0.5 rounded-sm inline-flex items-center gap-1" style={{color:C.green,background:C.greenSoft,border:`1px solid ${C.green}44`}}><RefreshCw size={9}/>{row.linkLabel||'auto-linked'}</span></div>
 </div>
 </div>
@@ -777,7 +778,7 @@ return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1
 <div className="py-2 flex items-center gap-2 min-w-0" style={{paddingLeft:indent}}>
 <span style={{width:18,display:'inline-block'}}/>
 <div className="flex-1 min-w-0">
-<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label}/></div>
+<div className="flex items-center gap-1"><span className="ff-body text-[13px] truncate" style={{color:C.ink}}>{row.label}</span><HelpTooltip glossaryKey={row.id} term={row.label} parentKey={row.parentId}/></div>
 <div className="mt-0.5 flex items-center gap-2 flex-wrap">
 <ModeMenu currentMode={mode} onChange={changeMode} allowed={allowed}/>
 {mode==='flatGrowth'&&<div className="flex items-center gap-1"><input type="number" aria-label={`${row.label} growth rate, percent per period`} value={entry.flatRate||0} onChange={e=>onUpdateData({flatRate:+e.target.value||0})} className="w-12 px-1.5 py-0.5 rounded-sm ff-num text-right text-[11px] outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/><span className="ff-num text-[10.5px]" style={{color:C.muted}}>%/per</span></div>}
@@ -1291,10 +1292,10 @@ return(<div className="flex items-center gap-2 flex-wrap"><span className="label
 }
 
 // Wizard
-function WizardModal({initialAnswers,onComplete,onClose,onStartManual,allowSkip}){
+function WizardModal({initialAnswers,onComplete,onClose,onStartManual,allowSkip,onOpenStatementsExplainer}){
 const dialogRef=useDialog(allowSkip?onClose:null);
 const[step,setStep]=useState(0);const[name,setName]=useState(initialAnswers?.name||'');const[sK,setSK]=useState(initialAnswers?.sectorKey||null);const[rK,setRK]=useState(initialAnswers?.regionKey||null);const[cK,setCK]=useState(initialAnswers?.currencyKey||'usd');const[stmts,setStmts]=useState(initialAnswers?.statements||'incomeOnly');const[search,setSearch]=useState('');
-const STEPS=[{id:'name',ey:'Step 01 of 05',title:'Name your project',sub:'Give this idea a working title.'},{id:'business',ey:'Step 02 of 05',title:'What kind of business?',sub:'Pick the closest match.'},{id:'region',ey:'Step 03 of 05',title:'Where will it operate?',sub:'Sets a default tax rate.'},{id:'currency',ey:'Step 04 of 05',title:'Pick a currency',sub:'Used for display.'},{id:'statements',ey:'Step 05 of 05',title:'Which statements?',sub:'Income is always on.'}];
+const STEPS=[{id:'name',ey:'Setup · 1 of 5',title:'Name your model',sub:'You’ll iterate on this — a rough name is perfect.'},{id:'business',ey:'Setup · 2 of 5',title:'What are you modeling?',sub:'This seeds realistic revenue, costs and margins to start from.'},{id:'region',ey:'Setup · 3 of 5',title:'Where does it operate?',sub:'We set your tax rate to match — change it anytime.'},{id:'currency',ey:'Setup · 4 of 5',title:'What currency?',sub:'Every figure shows in this — pick your reporting currency.'},{id:'statements',ey:'Setup · 5 of 5',title:'How complete a picture?',sub:'Start with profit. Add cash and balance sheet when you need them.'}];
 const canAdv=step===0?name.trim().length>0:step===1?!!sK:step===2?!!rK:step===3?!!cK:!!stmts;
 // Apply defaults for any unanswered step so the model is always complete.
 const withDefaults=()=>({name:name.trim()||'Untitled Project',sectorKey:sK||'other',regionKey:rK||'us',currencyKey:cK||'usd',incomeType:'main',stage:'early',statements:stmts||'incomeOnly'});
@@ -1311,11 +1312,11 @@ const Card=({active,onClick,title,blurb,right,icon,eyebrow})=>(<button onClick={
 return(<div className="fixed inset-0 z-50 flex items-center justify-center anim-fade-in" style={{background:'rgba(15,23,42,0.5)'}} onClick={allowSkip?onClose:undefined}><div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Set up your model" tabIndex={-1} onClick={e=>e.stopPropagation()} className="w-full max-w-3xl mx-4 rounded-lg overflow-hidden shadow-2xl" style={{background:C.bg,border:`1px solid ${C.border}`,maxHeight:'92vh',display:'flex',flexDirection:'column'}}>
 <div className="px-7 pt-6 pb-5 flex-none" style={{borderBottom:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-start justify-between gap-3"><div className="flex-1"><div className="label-eyebrow ff-body" style={{color:C.gold}}>{STEPS[step].ey}</div><h3 className="ff-display text-[28px] leading-tight mt-1" style={{color:C.ink,fontWeight:500}}>{STEPS[step].title}</h3><p className="ff-body text-[12px] mt-1.5" style={{color:C.muted}}>{STEPS[step].sub}</p></div>{allowSkip&&<button onClick={onClose} className="p-1.5 rounded-md mt-1" style={{color:C.ink2}}><X size={18}/></button>}</div><div className="flex gap-1.5 mt-4">{STEPS.map((_,i)=>(<div key={i} className="flex-1 h-1 rounded-full" style={{background:i<=step?C.gold:C.border,transition:'background 240ms ease-out'}}/>))}</div></div>
 <div className="px-7 py-5 overflow-y-auto flex-1" style={{minHeight:0}}>
-{step===0&&(<div><input type="text" value={name} placeholder="e.g. Coffee Shop in Tel Aviv" onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&canAdv)next();}} autoFocus className="w-full px-4 py-3 rounded-md ff-display text-[22px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink,fontWeight:500}}/><div className="ff-body text-[11px] mt-2" style={{color:C.muted}}>Press Enter to continue.</div></div>)}
+{step===0&&(<div><input type="text" value={name} placeholder="e.g. Coffee Shop in Tel Aviv" onChange={e=>setName(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&canAdv)next();}} autoFocus className="w-full px-4 py-3 rounded-md ff-display text-[22px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink,fontWeight:500}}/><div className="ff-body text-[11px] mt-2" style={{color:C.muted}}>Press Enter when you’re ready.</div></div>)}
 {step===1&&(<div><div className="flex items-center gap-2 mb-4 flex-wrap"><div className="relative flex-1 min-w-[220px]"><input type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search 'coffee', 'app', 'gym'..." className="w-full pl-3 pr-3 py-2 rounded-md ff-body text-[13px] outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div><button onClick={surp} className="px-3.5 py-2 rounded-md ff-body text-[12px] flex items-center gap-1.5" style={{background:C.goldSoft,border:`1px solid ${C.gold}55`,color:C.gold,fontWeight:500}}>Surprise me</button></div><div className="space-y-4">{BUSINESS_CATEGORIES.map(cat=>{const items=Object.entries(filtered).filter(([_,b])=>b.category===cat);if(!items.length)return null;return(<div key={cat}><div className="label-eyebrow ff-body mb-2" style={{color:C.muted,fontSize:9}}>{cat}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-2">{items.map(([key,biz])=>(<Card key={key} active={sK===key} onClick={()=>setSK(key)} icon={biz.icon} title={biz.label} blurb={biz.blurb} right={<div className="text-right ff-num flex-none" style={{minWidth:60}}><div className="text-[8.5px]" style={{color:C.faint,letterSpacing:'0.1em'}}>NET</div><div className="text-[11px]" style={{color:C.ink2}}>{biz.benchmarks.netMargin[0]}–{biz.benchmarks.netMargin[1]}%</div></div>}/>))}</div></div>);})}{Object.keys(filtered).length===0&&<div className="text-center py-8"><div className="ff-body text-[13px]" style={{color:C.muted}}>No matches for "{search}".</div><button onClick={()=>{setSK('other');setSearch('');}} className="ff-body text-[12px] mt-3 px-3 py-1.5 rounded-md" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}>Use "Something Else" instead →</button></div>}</div></div>)}
 {step===2&&(<div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(REGIONS).map(([key,reg])=>(<Card key={key} active={rK===key} onClick={()=>setRK(key)} title={reg.label} right={<div className="text-right ff-num flex-none" style={{minWidth:50}}><div className="text-[9px]" style={{color:C.faint,letterSpacing:'0.1em'}}>TAX</div><div className="text-[11.5px]" style={{color:C.ink2}}>{reg.taxRate}%</div></div>}/>))}</div>)}
 {step===3&&(<div className="grid grid-cols-2 md:grid-cols-3 gap-2">{Object.entries(CURRENCIES).map(([key,c])=>(<Card key={key} active={cK===key} onClick={()=>setCK(key)} title={`${c.symbol}  ${c.label}`} blurb={c.name}/>))}</div>)}
-{step===4&&(<div className="grid grid-cols-1 md:grid-cols-3 gap-2">{Object.entries(STATEMENT_OPTIONS).map(([key,s])=>(<Card key={key} active={stmts===key} onClick={()=>setStmts(key)} title={s.label} blurb={s.blurb}/>))}</div>)}
+{step===4&&(<div>{onOpenStatementsExplainer&&<button type="button" onClick={onOpenStatementsExplainer} className="ff-body text-[12px] mb-3 inline-flex items-center gap-1" style={{color:C.goldText,fontWeight:600}}>New to these? See what each statement shows →</button>}<div className="grid grid-cols-1 md:grid-cols-3 gap-2">{Object.entries(STATEMENT_OPTIONS).map(([key,s])=>(<Card key={key} active={stmts===key} onClick={()=>setStmts(key)} title={s.label} blurb={s.blurb}/>))}</div></div>)}
 </div>
 <div className="flex items-center justify-between px-7 py-4 gap-3 flex-none" style={{borderTop:`1px solid ${C.border}`,background:C.surface}}><div className="flex items-center gap-3"><button onClick={()=>setStep(Math.max(0,step-1))} disabled={step===0} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:step===0?C.faint:C.ink2,opacity:step===0?0.5:1,pointerEvents:step===0?'none':'auto'}}>← Back</button>{onStartManual&&<button onClick={onStartManual} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.muted,background:'transparent'}} title="Skip the wizard and start with an empty model (all values 0)">Start blank →</button>}</div><div className="flex items-center gap-3"><span className="ff-body text-[11px]" style={{color:C.muted}}>{step+1} of {STEPS.length}</span>{!canAdv&&<button onClick={skipStep} className="px-3 py-1.5 rounded-md ff-body text-[12.5px]" style={{color:C.ink2,background:'transparent',border:`1px solid ${C.border}`}}>Skip →</button>}<button onClick={next} disabled={!canAdv} className="px-5 py-2 rounded-md ff-body text-[12.5px]" style={{background:canAdv?C.ink:C.surfaceAlt,color:canAdv?C.surface:C.faint,fontWeight:500,cursor:canAdv?'pointer':'not-allowed'}}>{step===STEPS.length-1?'Build my model →':'Continue →'}</button></div></div>
 </div></div>);
@@ -1334,7 +1335,7 @@ const[granularity,setGranularity]=useState('annual');const[numPeriods,setNumPeri
 const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswers,setWizardAnswers]=useState(null);const[showWizard,setShowWizard]=useState(true);const[showAnalysisDrawer,setShowAnalysisDrawer]=useState(false);
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
-const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);const[showTour,setShowTour]=useState(false);const[confirmReset,setConfirmReset]=useState(false);
+const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);const[showTour,setShowTour]=useState(false);const[confirmReset,setConfirmReset]=useState(false);const[showPrimer,setShowPrimer]=useState(false);
 // Tracks whether a real model exists yet (loaded / wizard / AI). When false,
 // dismissing the wizard means "start in Manual Mode" → a blank, all-zero model.
 const[hasModel,setHasModel]=useState(false);
@@ -1482,10 +1483,23 @@ else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true})
 // builder (wizard/AI modal closed, a model exists) and hasn't seen it before.
 // Deferred a tick so the data-tour targets are mounted. Replay is manual via
 // the "Take a tour" button (which ignores the seen flag).
+// First-run onboarding runs in two lean layers: the macro "Statements 101"
+// primer (concepts) shows once, then the mechanics tour (UI). Both gate on a
+// populated builder with no modal open.
+const primerFiredRef=useRef(false);
+useEffect(()=>{
+if(primerFiredRef.current)return;
+if(showWizard||showAIGen||!hasModel)return;
+if(hasSeenStatements101())return;
+primerFiredRef.current=true;
+const t=setTimeout(()=>setShowPrimer(true),400);
+return()=>clearTimeout(t);
+},[showWizard,showAIGen,hasModel]);
 const tourFiredRef=useRef(false);
 useEffect(()=>{
 if(tourFiredRef.current)return;
 if(showWizard||showAIGen||!hasModel)return;
+if(!hasSeenStatements101())return; // the concept primer comes first
 if(hasSeenTour())return;
 tourFiredRef.current=true;
 const t=setTimeout(()=>setShowTour(true),400);
@@ -1494,8 +1508,15 @@ return()=>clearTimeout(t);
 const closeTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_dismissed');},[]);
 const finishTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_completed');},[]);
 const openTour=useCallback(()=>{tourFiredRef.current=true;capture('tour_started');setShowTour(true);},[]);
+const openPrimer=useCallback(()=>{primerFiredRef.current=true;capture('statements101_opened');setShowPrimer(true);},[]);
+// Closing the primer marks it seen and hands off to the mechanics tour if the
+// user hasn't seen it yet — concept first, then UI.
+const endPrimer=useCallback((event)=>{setShowPrimer(false);markStatements101Seen();capture(event);tourFiredRef.current=true;if(!hasSeenTour())setTimeout(()=>setShowTour(true),250);},[]);
+const closePrimer=useCallback(()=>endPrimer('statements101_dismissed'),[endPrimer]);
+const finishPrimer=useCallback(()=>endPrimer('statements101_completed'),[endPrimer]);
 const TOUR_STEPS=useMemo(()=>[
 {target:'[data-tour="model-table"]',placement:'top',onBeforeStep:()=>setBuildTab('income'),title:'This is your model',body:'Every figure below is editable. Click any cell in a year column and type — the whole statement recalculates instantly.'},
+{target:'[data-tour="row-help"]',placement:'bottom',onBeforeStep:()=>setBuildTab('income'),title:'Not sure what a line means?',body:'See the ⓘ next to a line? Hover or tap any one to learn what it is, why it matters, and where its number comes from. Every row has one.'},
 {target:'[data-tour="scenario"]',placement:'bottom',title:'Compare Base, Best & Worst',body:'Switch scenarios here. Edits apply to the selected scenario only — build a realistic Base, then stress-test the upside and downside.'},
 {target:'[data-tour="statement-tabs"]',placement:'bottom',title:'Add the other statements',body:'Start with the Income Statement, then add a Balance Sheet and Cash Flow when you’re ready — they link together automatically.'},
 {target:'[data-tour="ai-advisor"]',placement:'left',title:'Ask the AI Advisor',body:'Stuck on the numbers? The advisor reviews your model, suggests assumptions, and can apply changes for you.'},
@@ -1591,6 +1612,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {enabledStatements.cashFlow
 ?(<span className="flex items-center gap-1"><button onClick={()=>setBuildTab('cashFlow')} className="px-3.5 py-1.5 rounded-full ff-body text-[12px]" style={{background:buildTab==='cashFlow'?C.ink:C.surface,color:buildTab==='cashFlow'?C.surface:C.ink2,border:`1px solid ${buildTab==='cashFlow'?C.ink:C.border}`,transition:'all .15s'}}>Cash Flow</button><button onClick={()=>handleRemoveStatement('cashFlow')} title="Remove Cash Flow" className="flex items-center justify-center rounded-full" style={{width:18,height:18,background:C.bg,border:`1px solid ${C.border}`,color:C.rust,cursor:'pointer',flexShrink:0,padding:0}}><X size={9}/></button></span>)
 :(<button onClick={()=>{setEnabledStatements(s=>({...s,cashFlow:true}));setBuildTab('cashFlow');}} className="px-3.5 py-1.5 rounded-full ff-body text-[12px] flex items-center gap-1.5" style={{background:'transparent',color:C.gold,border:`1px dashed ${C.gold}77`,transition:'all .15s'}}><Plus size={11}/>Cash Flow</button>)}
+<button onClick={openPrimer} className="ff-body text-[12px] ml-1 inline-flex items-center gap-1" style={{color:C.muted}}><HelpCircle size={12}/> What are these?</button>
 </div>
 <div className="mt-5 overflow-x-auto pb-2" data-tour="model-table" style={{WebkitOverflowScrolling:'touch'}}>
 {buildTab==='income'&&<StatementTable statementId="income" rows={rows.income} rowData={rowData[activeScenario]} computedValues={computed.values} periods={periods} expandedIds={expandedFor.income} onToggleExpand={id=>toggleExpand('income',id)} onExpandAll={()=>expandAll('income')} onCollapseAll={()=>collapseAll('income')} onUpdateRowData={updateRowData} onDeleteRow={deleteRow} onOpenCustom={r=>setCustomGrowthRow(r)} onOpenPricing={r=>setPricingRow(r)} onAddRow={()=>setAddRowFor('income')} scenarioKey={activeScenario}/>}
@@ -1605,8 +1627,9 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {pricingRow&&<PricingModal row={pricingRow} entry={rowData[activeScenario][pricingRow.id]} periods={periods} onClose={()=>setPricingRow(null)} onChange={p=>updateRowData(pricingRow.id,p)}/>}
 {addRowFor&&<AddRowMenu statement={addRowFor} rows={rows[addRowFor]} existingLabels={rows[addRowFor].map(r=>r.label.toLowerCase())} onAdd={({label,parentId,defaultMode})=>{addRow(addRowFor,{label,parentId,defaultMode});}} onClose={()=>setAddRowFor(null)}/>}
 {showSaveLoad&&<SaveLoadModal state={fullState} onLoad={(s)=>{loadState(s);if(s.enabledStatements)setEnabledStatements(s.enabledStatements);setBuildTab('income');setShowWizard(false);}} onClose={()=>setShowSaveLoad(false)}/>}
-{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true}/>}
+{showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true} onOpenStatementsExplainer={openPrimer}/>}
 <ProductTour open={showTour} steps={TOUR_STEPS} onClose={closeTour} onFinish={finishTour}/>
+<StatementsPrimer open={showPrimer} onClose={closePrimer} onFinish={finishPrimer}/>
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
 <AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>

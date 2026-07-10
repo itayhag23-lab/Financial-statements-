@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useId } from 'react';
 import ReactDOM from 'react-dom';
-import { Info, Sparkles } from 'lucide-react';
+import { HelpCircle, Sparkles } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 import { getGlossaryEntry } from '../../lib/financialGlossary';
 
@@ -11,8 +11,8 @@ const VIEWPORT_MARGIN = 12;
 // Look up content by `glossaryKey` (row id / ratio key in financialGlossary.js),
 // or pass `what`/`why`/`wizardHint` directly for one-off use. Renders nothing
 // if there's no content to show, so unknown custom rows stay icon-free.
-export default function HelpTooltip({ glossaryKey, term, what, why, wizardHint, size = 13, className = '' }) {
-  const entry = getGlossaryEntry(glossaryKey);
+export default function HelpTooltip({ glossaryKey, parentKey, term, what, why, wizardHint, size = 13, className = '', dataTour }) {
+  const entry = getGlossaryEntry(glossaryKey, parentKey);
   const resolvedTerm = term || entry?.term || '';
   const resolvedWhat = what !== undefined ? what : entry?.what;
   const resolvedWhy = why !== undefined ? why : entry?.why;
@@ -78,7 +78,7 @@ export default function HelpTooltip({ glossaryKey, term, what, why, wizardHint, 
   if (!resolvedWhat && !resolvedWhy) return null;
 
   return (
-    <span className={`inline-flex items-center ${className}`} style={{ lineHeight: 0 }}>
+    <span className={`inline-flex items-center ${className}`} data-tour={dataTour} style={{ lineHeight: 0 }}>
       <button
         ref={btnRef}
         type="button"
@@ -93,11 +93,11 @@ export default function HelpTooltip({ glossaryKey, term, what, why, wizardHint, 
         className="inline-flex items-center justify-center rounded-full align-middle"
         style={{
           width: size + 7, height: size + 7, flexShrink: 0,
-          color: open ? C.gold : C.faint, background: open ? C.goldSoft : 'transparent',
+          color: open ? C.gold : C.muted, background: open ? C.goldSoft : 'transparent',
           transition: 'color 120ms ease-out, background-color 120ms ease-out',
         }}
       >
-        <Info size={size} strokeWidth={2} />
+        <HelpCircle size={size} strokeWidth={2} />
       </button>
       {open && ReactDOM.createPortal(
         <div

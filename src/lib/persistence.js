@@ -11,6 +11,7 @@ const PREFIX   = 'koala:v1';
 const IDX_KEY  = `${PREFIX}:projects`;
 const LAST_KEY = `${PREFIX}:lastActive`;
 const TOUR_KEY = `${PREFIX}:tourSeen`;
+const STMT_KEY = `${PREFIX}:statements101Seen`;
 const projKey  = (id) => `${PREFIX}:project:${id}`;
 const shareKey = (id) => `${PREFIX}:share:${id}`;
 
@@ -35,6 +36,10 @@ export function setLastActive(id) { safeSet(LAST_KEY, id); }
 // shows once and can still be replayed on demand via the "Take a tour" button.
 export function hasSeenTour() { return safeGet(TOUR_KEY) === true; }
 export function markTourSeen() { safeSet(TOUR_KEY, true); }
+
+// "Statements 101" macro primer — shown once before the mechanics tour.
+export function hasSeenStatements101() { return safeGet(STMT_KEY) === true; }
+export function markStatements101Seen() { safeSet(STMT_KEY, true); }
 
 async function getSession() {
   if (!supabase) return null;
