@@ -15,6 +15,7 @@ const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
 const SharedReport           = lazy(() => import('./pages/SharedReport'));
 const AuthPage               = lazy(() => import('./pages/AuthPage'));
 const Dashboard              = lazy(() => import('./pages/Dashboard'));
+const LearnPage              = lazy(() => import('./pages/LearnPage'));
 
 function Loading() {
   return (
@@ -75,6 +76,7 @@ export default function App() {
         <Route path="/"           element={<LandingPage />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
         <Route path="/dashboard"  element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
+        <Route path="/learn"      element={<Suspense fallback={<Loading />}><LearnPage /></Suspense>} />
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, LayoutDashboard, LogOut } from 'lucide-react';
+import { Home, LayoutDashboard, LogOut, GraduationCap } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 import { Logo } from '../../brand/Logo';
 import { useAuth, signOut } from '../../contexts/AuthContext';
@@ -26,6 +26,14 @@ export default function TopNav() {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2.5">
+          <Link
+            to="/learn"
+            aria-label="Learn"
+            style={{ fontFamily: FONTS.body, fontSize: 13, color: C.ink2, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+          >
+            <GraduationCap size={15} /> <span className="hidden sm:inline">Learn</span>
+          </Link>
+          <div style={{ width: 1, height: 16, background: C.border }} />
           {user ? (
             <>
               <Link
