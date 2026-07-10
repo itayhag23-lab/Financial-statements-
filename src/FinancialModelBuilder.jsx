@@ -889,7 +889,7 @@ const tw=useTween(score);
 return(<div className="rounded-lg p-5" style={{background:C.surface,border:`1px solid ${C.border}`,boxShadow:`0 1px 0 ${C.border},0 14px 32px -16px rgba(15,23,42,0.12)`}}>
 <div className="flex items-start gap-5 flex-wrap">
 <div className="relative" style={{width:132,height:132}}><svg width="132" height="132" viewBox="0 0 132 132" style={{transform:'rotate(-90deg)'}}><circle cx="66" cy="66" r="58" fill="none" stroke={C.border} strokeWidth="6"/><circle cx="66" cy="66" r="58" fill="none" stroke={tone} strokeWidth="6" strokeDasharray={`${(tw/100)*2*Math.PI*58} ${2*Math.PI*58}`} strokeLinecap="round" style={{transition:'stroke 240ms ease-out'}}/></svg><div className="absolute inset-0 flex flex-col items-center justify-center"><div className="ff-display" style={{fontSize:44,color:tone,lineHeight:1,fontWeight:500}}>{Math.round(tw)}</div><div className="ff-body text-[10px]" style={{color:C.muted,letterSpacing:'0.15em',textTransform:'uppercase',marginTop:2}}>of 100</div></div></div>
-<div className="flex-1 min-w-[200px]"><div className="label-eyebrow ff-body" style={{color:C.gold}}>Feasibility</div><div className="ff-display text-[28px] mt-0.5" style={{color:tone,fontWeight:500}}>{label}</div><div className="ff-body text-[12px] mt-2" style={{color:C.ink2}}>Composite score across five dimensions. Computed from Base scenario.</div>
+<div className="flex-1 min-w-[200px]"><div className="label-eyebrow ff-body inline-flex items-center gap-0.5" style={{color:C.gold}}>Feasibility<HelpTooltip term="Feasibility score" what="A 0–100 health check that blends five signals — profitability, margins, growth realism, cash and balance — from your Base scenario." why="A quick gut-check on whether the plan hangs together. Treat it as a sanity signal to improve, not a grade or a guarantee." size={12}/></div><div className="ff-display text-[28px] mt-0.5" style={{color:tone,fontWeight:500}}>{label}</div><div className="ff-body text-[12px] mt-2" style={{color:C.ink2}}>Composite score across five dimensions. Computed from Base scenario.</div>
 <div className="mt-4 space-y-1.5">{breakdown.map(c=>(<div key={c.key} className="flex items-center gap-2.5"><div className="ff-body text-[11px]" style={{color:C.ink2,width:132}}>{c.label}</div><div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{background:C.surfaceAlt}}><div style={{width:`${Math.round(c.value*100)}%`,height:'100%',background:c.value>0.7?C.green:c.value>0.4?C.gold:C.rust,transition:'width 320ms ease-out'}}/></div><div className="ff-num text-[10.5px] text-right" style={{color:C.muted,width:32}}>{Math.round(c.value*100)}</div></div>))}</div>
 </div></div></div>);
 }
@@ -1288,7 +1288,7 @@ return(<div className="flex items-end gap-0 flex-wrap" style={{borderBottom:`1px
 }
 
 function CompactScenarioPicker({activeScenario,onSelect,computedAll,periods}){
-return(<div className="flex items-center gap-2 flex-wrap"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Scenario</span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{SCENARIOS.map((sc,i)=>{const meta=SCENARIO_META[sc];const active=sc===activeScenario;const ni=computedAll[sc].values.netIncome||[];const lNI=ni[ni.length-1]||0;return(<button key={sc} onClick={()=>onSelect(sc)} className="px-3 py-1.5 ff-body text-[12px] flex items-center gap-2" style={{background:active?meta.tone:'transparent',color:active?C.surface:C.ink2,borderRight:i<SCENARIOS.length-1?`1px solid ${C.border}`:'none',fontWeight:active?500:400}}><span>{meta.label}</span><span className="ff-num text-[10.5px]" style={{color:active?'rgba(255,255,255,0.85)':lNI<0?C.rust:C.muted}}>{fmt(lNI,{abbreviate:true,paren:true})}</span></button>);})}</div></div>);
+return(<div className="flex items-center gap-2 flex-wrap"><span className="label-eyebrow ff-body inline-flex items-center gap-0.5" style={{color:C.muted}}>Scenario<HelpTooltip term="Scenarios" what="Three versions of the same model — Base (your realistic plan), Best (the upside) and Worst (the downside)." why="Building all three lets you stress-test a plan and see the range of outcomes, instead of betting on a single hopeful number." size={12}/></span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{SCENARIOS.map((sc,i)=>{const meta=SCENARIO_META[sc];const active=sc===activeScenario;const ni=computedAll[sc].values.netIncome||[];const lNI=ni[ni.length-1]||0;return(<button key={sc} onClick={()=>onSelect(sc)} className="px-3 py-1.5 ff-body text-[12px] flex items-center gap-2" style={{background:active?meta.tone:'transparent',color:active?C.surface:C.ink2,borderRight:i<SCENARIOS.length-1?`1px solid ${C.border}`:'none',fontWeight:active?500:400}}><span>{meta.label}</span><span className="ff-num text-[10.5px]" style={{color:active?'rgba(255,255,255,0.85)':lNI<0?C.rust:C.muted}}>{fmt(lNI,{abbreviate:true,paren:true})}</span></button>);})}</div></div>);
 }
 
 // Wizard
@@ -1483,37 +1483,38 @@ else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true})
 // builder (wizard/AI modal closed, a model exists) and hasn't seen it before.
 // Deferred a tick so the data-tour targets are mounted. Replay is manual via
 // the "Take a tour" button (which ignores the seen flag).
-// First-run onboarding runs in two lean layers: the macro "Statements 101"
-// primer (concepts) shows once, then the mechanics tour (UI). Both gate on a
+// First-run onboarding runs in two lean layers: the mechanics tour (how the
+// builder works) shows first, then the "Statements 101" primer (what the
+// statements are). Learn to drive, then learn the map. Both gate on a
 // populated builder with no modal open.
-const primerFiredRef=useRef(false);
-useEffect(()=>{
-if(primerFiredRef.current)return;
-if(showWizard||showAIGen||!hasModel)return;
-if(hasSeenStatements101())return;
-primerFiredRef.current=true;
-const t=setTimeout(()=>setShowPrimer(true),400);
-return()=>clearTimeout(t);
-},[showWizard,showAIGen,hasModel]);
 const tourFiredRef=useRef(false);
 useEffect(()=>{
 if(tourFiredRef.current)return;
 if(showWizard||showAIGen||!hasModel)return;
-if(!hasSeenStatements101())return; // the concept primer comes first
 if(hasSeenTour())return;
 tourFiredRef.current=true;
 const t=setTimeout(()=>setShowTour(true),400);
 return()=>clearTimeout(t);
 },[showWizard,showAIGen,hasModel]);
-const closeTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_dismissed');},[]);
-const finishTour=useCallback(()=>{setShowTour(false);markTourSeen();capture('tour_completed');},[]);
-const openTour=useCallback(()=>{tourFiredRef.current=true;capture('tour_started');setShowTour(true);},[]);
+const primerFiredRef=useRef(false);
+useEffect(()=>{
+if(primerFiredRef.current)return;
+if(showWizard||showAIGen||!hasModel)return;
+if(!hasSeenTour())return; // the mechanics tour comes first
+if(hasSeenStatements101())return;
+primerFiredRef.current=true;
+const t=setTimeout(()=>setShowPrimer(true),400);
+return()=>clearTimeout(t);
+},[showWizard,showAIGen,hasModel]);
 const openPrimer=useCallback(()=>{primerFiredRef.current=true;capture('statements101_opened');setShowPrimer(true);},[]);
-// Closing the primer marks it seen and hands off to the mechanics tour if the
-// user hasn't seen it yet — concept first, then UI.
-const endPrimer=useCallback((event)=>{setShowPrimer(false);markStatements101Seen();capture(event);tourFiredRef.current=true;if(!hasSeenTour())setTimeout(()=>setShowTour(true),250);},[]);
-const closePrimer=useCallback(()=>endPrimer('statements101_dismissed'),[endPrimer]);
-const finishPrimer=useCallback(()=>endPrimer('statements101_completed'),[endPrimer]);
+const closePrimer=useCallback(()=>{setShowPrimer(false);markStatements101Seen();capture('statements101_dismissed');},[]);
+const finishPrimer=useCallback(()=>{setShowPrimer(false);markStatements101Seen();capture('statements101_completed');},[]);
+// Finishing/closing the tour marks it seen and hands off to the concept primer
+// if the user hasn't seen it yet — mechanics first, then statement concepts.
+const endTour=useCallback((event)=>{setShowTour(false);markTourSeen();capture(event);primerFiredRef.current=true;if(!hasSeenStatements101())setTimeout(()=>setShowPrimer(true),250);},[]);
+const closeTour=useCallback(()=>endTour('tour_dismissed'),[endTour]);
+const finishTour=useCallback(()=>endTour('tour_completed'),[endTour]);
+const openTour=useCallback(()=>{tourFiredRef.current=true;capture('tour_started');setShowTour(true);},[]);
 const TOUR_STEPS=useMemo(()=>[
 {target:'[data-tour="model-table"]',placement:'top',onBeforeStep:()=>setBuildTab('income'),title:'This is your model',body:'Every figure below is editable. Click any cell in a year column and type — the whole statement recalculates instantly.'},
 {target:'[data-tour="row-help"]',placement:'bottom',onBeforeStep:()=>setBuildTab('income'),title:'Not sure what a line means?',body:'See the ⓘ next to a line? Hover or tap any one to learn what it is, why it matters, and where its number comes from. Every row has one.'},
@@ -1521,7 +1522,7 @@ const TOUR_STEPS=useMemo(()=>[
 {target:'[data-tour="statement-tabs"]',placement:'bottom',title:'Add the other statements',body:'Start with the Income Statement, then add a Balance Sheet and Cash Flow when you’re ready — they link together automatically.'},
 {target:'[data-tour="ai-advisor"]',placement:'left',title:'Ask the AI Advisor',body:'Stuck on the numbers? The advisor reviews your model, suggests assumptions, and can apply changes for you.'},
 {target:'[data-tour="analysis"]',placement:'left',title:'Score, analyze & export',body:'The badge is your feasibility score. Open Analysis for what-if and sensitivity — and use Excel or Share in the toolbar to export.'},
-{target:'[data-tour="take-tour"]',placement:'bottom',title:'Replay anytime',body:'That’s the tour. Reopen it from here whenever you like, or use Edit setup to rerun the wizard. Happy modeling!'},
+{target:'[data-tour="take-tour"]',placement:'bottom',title:'Replay anytime',body:'That’s the tour — reopen it from here whenever you like. Next, a 30-second intro to what your three statements actually mean.'},
 ],[]);
 useEffect(()=>{if(showWizard)return;setSaveStatus('saving');const t=setTimeout(async()=>{await saveProject(pidRef.current,{meta:{name:projectName,sectorKey:wizardAnswers?.sectorKey,regionKey:wizardAnswers?.regionKey,currencyKey,enabledStatements},model:fullState,wizardAnswers});setSaveStatus('saved');},800);return()=>clearTimeout(t);},[granularity,numPeriods,startYear,activeScenario,rows,rowData,projectName,currencyKey,enabledStatements,wizardAnswers,showWizard]); // eslint-disable-line
 // Keep the latest save payload in a ref so we can flush it the instant the user
