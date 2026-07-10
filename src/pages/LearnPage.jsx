@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Scale, Droplets, AlertTriangle, Target, PlayCircle, ArrowRight, GraduationCap, Link2 } from 'lucide-react';
+import { TrendingUp, Scale, Droplets, AlertTriangle, Target, ArrowRight, GraduationCap, Link2 } from 'lucide-react';
 import { C, FONTS } from '../brand/theme';
 import TopNav from '../components/nav/TopNav';
+import StatementViz from '../components/ui/StatementViz';
 
 // Koala Learn — a free, concise study hub on the three financial statements.
 // Built for founders learning the numbers, students, and teachers who want a
@@ -113,14 +114,8 @@ function StatementBlock({ s }) {
       <div style={{ padding: '22px 24px' }}>
         <p style={{ fontFamily: FONTS.body, fontSize: 15, lineHeight: 1.65, color: C.ink2, marginTop: 0, marginBottom: 22 }}>{s.what}</p>
 
-        {/* Video slot — embed-ready. Drop an <iframe>/<video> in when a walkthrough exists. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, border: `1px dashed ${C.border}`, background: C.bg, marginBottom: 24 }}>
-          <PlayCircle size={24} color={s.accent} />
-          <div>
-            <div style={{ fontFamily: FONTS.body, fontSize: 13.5, fontWeight: 600, color: C.ink }}>Video walkthrough</div>
-            <div style={{ fontFamily: FONTS.body, fontSize: 12.5, color: C.muted }}>A 2-minute explainer is on the way.</div>
-          </div>
-        </div>
+        {/* Interactive animated explainer — the "watch it happen" moment. */}
+        <StatementViz type={s.key} accent={s.accent} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 22 }}>
           <div>

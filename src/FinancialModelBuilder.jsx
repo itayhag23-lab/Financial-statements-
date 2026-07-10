@@ -55,6 +55,10 @@ const FontStyles=()=>(<style>{`
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 input[type=number]{-moz-appearance:textfield;}
 .row-hover:hover{background-color:#F1F5F9;}
+/* Editable number cells get a clear hover cue so it's obvious where you can
+   type; read-only totals/subtotals (plain divs) don't react. */
+.koala-cell-edit:hover{background:#EFF7F3 !important;box-shadow:inset 0 0 0 1px rgba(16,185,129,0.45);border-radius:4px;}
+.koala-cell-edit::placeholder{color:#CBD5E1;}
 @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .stagger{animation:slideUp 620ms cubic-bezier(0.16,1,0.3,1) backwards;}
 .stagger-1{animation-delay:40ms}.stagger-2{animation-delay:140ms}.stagger-3{animation-delay:240ms}.stagger-4{animation-delay:340ms}
@@ -770,8 +774,8 @@ const changeMode=(m)=>{
   onUpdateData(patch);
 };
 const cells=[];
-if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} ariaLabel={`${row.label}, ${periods[i]}`} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent',caretColor:'transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
-else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} ariaLabel={`${row.label}, ${periods[0]} starting value`} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent',caretColor:'transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
+if(mode==='manual'){for(let i=0;i<periods.length;i++)cells.push(<NumberInput key={i} ariaLabel={`${row.label}, ${periods[i]}`} value={entry.manualValues[i]??0} onChange={v=>{const n=entry.manualValues.slice();n[i]=v;onUpdateData({manualValues:n});}} className="koala-cell-edit w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent',caretColor:'transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);}
+else if(mode==='flatGrowth'||mode==='customGrowth'||mode==='decline'){cells.push(<NumberInput key={0} ariaLabel={`${row.label}, ${periods[0]} starting value`} value={entry.baseValue||0} onChange={v=>onUpdateData({baseValue:v})} className="koala-cell-edit w-full px-2 py-1.5 ff-num text-right text-[13px] outline-none" style={{background:'transparent',color:C.ink,border:'1px solid transparent',caretColor:'transparent'}} onFocus={e=>{e.target.style.background=C.bg;e.target.style.borderColor=C.gold+'88';}} onBlur={e=>{e.target.style.background='transparent';e.target.style.borderColor='transparent';}}/>);for(let i=1;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 else if(mode==='percentOfRevenue'||mode==='volumePricing'){for(let i=0;i<periods.length;i++)cells.push(<div key={i} className="px-2 py-1.5 text-right ff-num text-[13px]" style={{color:C.ink2}}><AnimatedNumber value={computedValues?.[i]??0} tweenKey={`${row.id}-${i}-${scenarioKey}`}/></div>);}
 
 return(<div className="grid items-center row-hover" style={{...grid,borderTop:`1px solid ${C.borderSoft}`}}>
