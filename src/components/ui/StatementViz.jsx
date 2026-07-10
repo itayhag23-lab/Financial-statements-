@@ -16,15 +16,15 @@ const toneColor = (t) => (t === 'neg' ? C.rust : t === 'strong' ? C.green : t ==
 
 export const VIZ = {
   income: {
-    kind: 'bars', caption: 'Revenue comes in at the top; each cost peels a slice away until Net income is what’s left.',
+    kind: 'bars', caption: 'Revenue comes in at the top. Each cost (in red) peels a slice away, until Net income is what’s left.',
     bars: [
       { label: 'Revenue', val: 100, tone: 'pos' },
-      { label: '− Cost of goods sold', val: 40, tone: 'neg' },
-      { label: '= Gross profit', val: 60, tone: 'pos' },
-      { label: '− Operating expenses', val: 35, tone: 'neg' },
-      { label: '= Operating income', val: 25, tone: 'pos' },
-      { label: '− Interest & tax', val: 5, tone: 'neg' },
-      { label: '= Net income', val: 20, tone: 'strong' },
+      { label: 'Cost of goods sold', val: 40, tone: 'neg' },
+      { label: 'Gross profit', val: 60, tone: 'pos' },
+      { label: 'Operating expenses', val: 35, tone: 'neg' },
+      { label: 'Operating income', val: 25, tone: 'pos' },
+      { label: 'Interest and tax', val: 5, tone: 'neg' },
+      { label: 'Net income', val: 20, tone: 'strong' },
     ],
   },
   cashflow: {
@@ -33,7 +33,7 @@ export const VIZ = {
       { label: 'Operating activities', val: 30, tone: 'pos' },
       { label: 'Investing activities', val: 15, tone: 'neg' },
       { label: 'Financing activities', val: 5, tone: 'pos' },
-      { label: '= Net change in cash', val: 20, tone: 'strong' },
+      { label: 'Net change in cash', val: 20, tone: 'strong' },
     ],
   },
   balance: {

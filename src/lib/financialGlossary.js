@@ -2,7 +2,7 @@
 // rows. Keyed by the row id from TEMPLATES in FinancialModelBuilder.jsx (plus a
 // few ratio keys used on the sector benchmark card). Every entry answers two
 // questions on purpose: "what is this" and "why should a non-accountant care."
-// wizardHint is optional — only set it when the row's starting value genuinely
+// wizardHint is optional, only set it when the row's starting value genuinely
 // traces back to a choice made in the setup wizard or is auto-pulled from
 // another statement; leave it out otherwise rather than stating the obvious.
 
@@ -305,19 +305,19 @@ const FINANCIAL_GLOSSARY = {
 
 // Generic explanations keyed by a row's parent bucket. Custom rows the user
 // adds get a generated id with no exact glossary entry, but they always carry a
-// meaningful parentId (rev/cogs/opex/…). This fallback means every line — even
-// a user-added one — still shows a helpful "?" instead of nothing.
+// meaningful parentId (rev/cogs/opex/…). This fallback means every line, even
+// a user-added one, still shows a helpful "?" instead of nothing.
 export const CATEGORY_FALLBACK = {
-  rev:      { what: "A revenue stream you added — money coming in from what you sell.", why: "It rolls up into total Revenue, the top line that everything else is measured against." },
-  cogs:     { what: "A direct cost of delivering what you sell — materials, hosting, product labor.", why: "It's subtracted from revenue to get Gross Profit, so it directly shapes your margin." },
-  opex:     { what: "An operating cost of running the business day to day — not tied to making the product itself.", why: "It's subtracted on the way to Operating Income. Watch it if it grows faster than revenue." },
-  'non-op': { what: "Income or expense outside normal operations — interest, one-off items, currency swings.", why: "It sits below Operating Income so you can see the core business separately from these side effects." },
-  assets:   { what: "Something the business owns that has value — cash, equipment, money owed to you.", why: "Assets are one half of the balance sheet: what you have to work with." },
-  liab:     { what: "Something the business owes to someone else — loans, unpaid bills, obligations.", why: "Liabilities are claims on your assets; what's left after them is truly yours." },
-  equity:   { what: "The owners' stake — what would remain if you sold every asset and paid every debt.", why: "It's the balancing figure: Assets − Liabilities. Rising equity means the business is building value." },
+  rev:      { what: "A revenue stream you added, money coming in from what you sell.", why: "It rolls up into total Revenue, the top line that everything else is measured against." },
+  cogs:     { what: "A direct cost of delivering what you sell, materials, hosting, product labor.", why: "It's subtracted from revenue to get Gross Profit, so it directly shapes your margin." },
+  opex:     { what: "An operating cost of running the business day to day, not tied to making the product itself.", why: "It's subtracted on the way to Operating Income. Watch it if it grows faster than revenue." },
+  'non-op': { what: "Income or expense outside normal operations, interest, one-off items, currency swings.", why: "It sits below Operating Income so you can see the core business separately from these side effects." },
+  assets:   { what: "Something the business owns that has value, cash, equipment, money owed to you.", why: "Assets are one half of the balance sheet: what you have to work with." },
+  liab:     { what: "Something the business owes to someone else, loans, unpaid bills, obligations.", why: "Liabilities are claims on your assets; what's left after them is truly yours." },
+  equity:   { what: "The owners' stake, what would remain if you sold every asset and paid every debt.", why: "It's the balancing figure: Assets minus Liabilities. Rising equity means the business is building value." },
   cfo:      { what: "Cash moving in or out from day-to-day operations.", why: "Operating cash flow shows whether the core business actually generates cash, not just paper profit." },
-  cfi:      { what: "Cash spent on or received from investments — equipment, acquisitions, asset sales.", why: "It shows how much you're reinvesting to grow versus harvesting from what you own." },
-  cff:      { what: "Cash from financing — raising money, repaying debt, paying dividends.", why: "It shows how the business is funded and how much is being returned to lenders or owners." },
+  cfi:      { what: "Cash spent on or received from investments, equipment, acquisitions, asset sales.", why: "It shows how much you're reinvesting to grow versus harvesting from what you own." },
+  cff:      { what: "Cash from financing, raising money, repaying debt, paying dividends.", why: "It shows how the business is funded and how much is being returned to lenders or owners." },
 };
 
 export function getGlossaryEntry(key, parentId) {
