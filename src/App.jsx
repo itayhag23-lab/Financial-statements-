@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 // only use deps already in the main bundle, so the size cost is negligible.
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import LearnPage from './pages/LearnPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />
+        <Route path="/learn"      element={<LearnPage />} />
         <Route path="/privacy"    element={<PrivacyPage />} />
         <Route path="/terms"      element={<TermsPage />} />
         <Route path="*"           element={<Navigate to="/" replace />} />

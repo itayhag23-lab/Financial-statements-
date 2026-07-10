@@ -588,6 +588,7 @@ export default function LandingPage() {
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>How it works</a>
+            <Link to="/learn"   style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Learn</Link>
             <a href="#free"     style={{ ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}>Free</a>
             <a href="#contact"  style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>
@@ -796,6 +797,7 @@ export default function LandingPage() {
               © {new Date().getFullYear()} Koala Statements · Not financial advice.
             </div>
             <div style={{ display: 'flex', gap: 24 }}>
+              <Link to="/learn"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Learn</Link>
               <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Privacy</Link>
               <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Terms</Link>
             </div>

@@ -21,10 +21,14 @@ const SITE = 'https://financial-statements-one.vercel.app';
 
 // Static, public, eagerly-imported routes. /app, /dashboard, /r/* are private
 // or dynamic (and code-split), so they stay client-rendered.
-const ROUTES = ['/', '/privacy', '/terms'];
+const ROUTES = ['/', '/learn', '/privacy', '/terms'];
 
 // Per-route <head> overrides. "/" uses the defaults already in index.html.
 const ROUTE_META = {
+  '/learn': {
+    title: 'Financial Statements Explained in Plain English | Koala Statements',
+    description: 'The founder’s guide to the Income Statement, Balance Sheet, and Cash Flow Statement — what they are, why they matter, and how to read them. No accounting degree required.',
+  },
   '/privacy': {
     title: 'Privacy Policy | Koala Statements',
     description: 'How Koala Statements collects, uses, stores, and protects your data.',

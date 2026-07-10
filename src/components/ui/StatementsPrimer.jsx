@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import ReactDOM from 'react-dom';
-import { X, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, ArrowUpRight, Check } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 
 // "Statements 101" — a short, friendly macro primer: three cards, one per
@@ -47,6 +47,8 @@ export const PRIMER_CARDS = [
     why: 'You can be profitable on paper and still go broke — this is the statement that warns you first.',
     closer: 'Profit, worth, and cash — three angles on one business. Koala links them, so a change in one updates the others automatically.',
     tip: 'Tip: hover the ⓘ beside any line to see what that specific number means.',
+    guideHref: '/learn',
+    guideLabel: 'Want the full story? Read the complete guide',
   },
 ];
 
@@ -77,10 +79,10 @@ export default function StatementsPrimer({ open, onClose, onFinish, initialIndex
       else if (e.key === 'ArrowLeft') { e.preventDefault(); goBack(); }
       else if (e.key === 'Enter') {
         const t = e.target;
-        if (t && (t.dataset?.primerAction === 'back' || t.dataset?.primerAction === 'skip')) return;
+        if (t && (t.dataset?.primerAction === 'back' || t.dataset?.primerAction === 'skip' || t.tagName === 'A')) return;
         e.preventDefault(); goNext();
       } else if (e.key === 'Tab') {
-        const f = cardRef.current?.querySelectorAll('button');
+        const f = cardRef.current?.querySelectorAll('button, a[href]');
         if (!f || !f.length) return;
         const first = f[0], last = f[f.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -161,6 +163,16 @@ export default function StatementsPrimer({ open, onClose, onFinish, initialIndex
             )}
             {card.tip && (
               <div style={{ marginTop: 8, fontFamily: FONTS.body, fontSize: 11, lineHeight: 1.45, color: C.muted }}>{card.tip}</div>
+            )}
+            {card.guideHref && (
+              <a
+                href={card.guideHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 10, fontFamily: FONTS.body, fontSize: 12, fontWeight: 600, color: C.goldText, textDecoration: 'none' }}
+              >
+                {card.guideLabel} <ArrowUpRight size={12} />
+              </a>
             )}
           </div>
 
