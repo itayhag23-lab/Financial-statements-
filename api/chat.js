@@ -1,15 +1,11 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// AI usage limits, enforced in Supabase (no external service needed).
-// Two fixed-window caps are checked per signed-in user on every request:
-//   • an hourly limit to blunt bursts/abuse, and
-//   • a monthly limit to cap overall cost.
-// Both are overridable via env vars. Counting happens atomically inside the
-// `check_ai_rate_limit` Postgres function (see supabase-setup.sql).
-const HOURLY_LIMIT   = parseInt(process.env.AI_HOURLY_LIMIT  || '15',  10);
-const HOURLY_WINDOW  = 3600;            // 1 hour
-const MONTHLY_LIMIT  = parseInt(process.env.AI_MONTHLY_LIMIT || '300', 10);
-const MONTHLY_WINDOW = 30 * 24 * 3600;  // 30 days
+// AI usage limit, enforced in Supabase (no external service needed).
+// Each signed-in user gets a fixed number of AI requests per calendar day,
+// overridable via AI_DAILY_LIMIT. Counting happens atomically inside the
+// `check_ai_usage_limit` Postgres function against the `user_ai_usage` table
+// (see supabase-setup.sql).
+const DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '15', 10);
 
 const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
 const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -30,21 +26,20 @@ async function getAuthedUser(token) {
   return data.user;
 }
 
-// Count one request against a named fixed-window bucket via the Supabase RPC.
-// The call is made AS the signed-in user (their token in the Authorization
-// header) so the function's auth.uid() resolves correctly. Fails open: a
-// Supabase hiccup should never block a legitimate user.
-async function checkLimit(token, bucket, limit, windowSeconds) {
+// Increment today's usage counter via the Supabase RPC and report whether the
+// caller is still within the daily limit. The call is made AS the signed-in
+// user (their token in the Authorization header) so the function's
+// auth.uid() resolves correctly. Fails open: a Supabase hiccup should never
+// block a legitimate user.
+async function checkDailyLimit(token) {
   if (!SUPABASE_URL || !SUPABASE_KEY) return { ok: true };
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data, error } = await supabase.rpc('check_ai_rate_limit', {
-      p_bucket: bucket,
-      p_limit: limit,
-      p_window_seconds: windowSeconds,
+    const { data, error } = await supabase.rpc('check_ai_usage_limit', {
+      p_daily_limit: DAILY_LIMIT,
     });
     if (error) return { ok: true };
     const row = Array.isArray(data) ? data[0] : data;
@@ -92,17 +87,10 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: 'Sign in required to use AI features.' });
   }
 
-  // Usage limits (per signed-in user), counted in Supabase. Check the hourly
-  // anti-burst cap first, then the monthly cost cap.
-  const hourly = await checkLimit(token, 'hour', HOURLY_LIMIT, HOURLY_WINDOW);
-  if (!hourly.ok) {
-    res.setHeader('Retry-After', HOURLY_WINDOW);
-    return res.status(429).json({ error: `Hourly AI limit reached. You can make ${HOURLY_LIMIT} AI requests per hour.` });
-  }
-  const monthly = await checkLimit(token, 'month', MONTHLY_LIMIT, MONTHLY_WINDOW);
-  if (!monthly.ok) {
-    res.setHeader('Retry-After', MONTHLY_WINDOW);
-    return res.status(429).json({ error: `Monthly AI limit reached. You can make ${MONTHLY_LIMIT} AI requests per month.` });
+  // Usage limit (per signed-in user, per calendar day), counted in Supabase.
+  const daily = await checkDailyLimit(token);
+  if (!daily.ok) {
+    return res.status(429).json({ error: `Daily AI limit reached. You can make ${DAILY_LIMIT} AI requests per day.` });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;

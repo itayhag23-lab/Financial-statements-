@@ -63,36 +63,29 @@ CREATE TRIGGER projects_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ── AI usage limits ───────────────────────────────────────────────────────────
--- Tracks AI (chat) requests per signed-in user using fixed time windows, so the
+-- Tracks AI (chat) requests per signed-in user per calendar day, so the
 -- /api/chat endpoint can cap usage without any external service (no Redis).
--- One row per (user, bucket); "bucket" lets us enforce several limits at once,
--- e.g. an hourly anti-burst limit AND a monthly cost cap.
-CREATE TABLE IF NOT EXISTS ai_usage (
-  user_id       UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  bucket        TEXT        NOT NULL,
-  window_start  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  request_count INTEGER     NOT NULL DEFAULT 0,
-  PRIMARY KEY (user_id, bucket)
+CREATE TABLE IF NOT EXISTS user_ai_usage (
+  user_id        UUID    NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  calls_count    INTEGER DEFAULT 0,
+  last_call_date DATE    DEFAULT CURRENT_DATE,
+  PRIMARY KEY (user_id)
 );
 
-ALTER TABLE ai_usage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_ai_usage ENABLE ROW LEVEL SECURITY;
 
 -- Users may read (only) their own usage — handy for showing "X of Y left" in the
 -- UI. All writes go through the SECURITY DEFINER function below, never directly.
 CREATE POLICY "Users can read own AI usage"
-  ON ai_usage FOR SELECT
+  ON user_ai_usage FOR SELECT
   USING (auth.uid() = user_id);
 
--- Atomically count one request against a fixed window and report whether it is
--- allowed. The window resets (count → 1) once `p_window_seconds` have elapsed
--- since it started. Runs as the function owner (SECURITY DEFINER) so it can
--- write to ai_usage despite RLS, and derives the user from auth.uid() so a
--- caller can never inflate another user's counter.
-CREATE OR REPLACE FUNCTION check_ai_rate_limit(
-  p_bucket         TEXT,
-  p_limit          INTEGER,
-  p_window_seconds INTEGER
-)
+-- Atomically increments today's call count and reports whether the caller is
+-- still within p_daily_limit. Resets the counter when last_call_date is not
+-- today. Runs as the function owner (SECURITY DEFINER) so it can write to
+-- user_ai_usage despite RLS, and derives the user from auth.uid() so a caller
+-- can never inflate another user's counter.
+CREATE OR REPLACE FUNCTION check_ai_usage_limit(p_daily_limit INTEGER)
 RETURNS TABLE (allowed BOOLEAN, used INTEGER, max_allowed INTEGER)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -106,24 +99,22 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  INSERT INTO ai_usage (user_id, bucket, window_start, request_count)
-  VALUES (v_user, p_bucket, NOW(), 1)
-  ON CONFLICT (user_id, bucket) DO UPDATE SET
-    request_count = CASE
-      WHEN ai_usage.window_start < NOW() - make_interval(secs => p_window_seconds)
-        THEN 1
-      ELSE ai_usage.request_count + 1
+  INSERT INTO user_ai_usage (user_id, calls_count, last_call_date)
+  VALUES (v_user, 1, CURRENT_DATE)
+  ON CONFLICT (user_id) DO UPDATE SET
+    calls_count = CASE
+      WHEN user_ai_usage.last_call_date < CURRENT_DATE THEN 1
+      ELSE user_ai_usage.calls_count + 1
     END,
-    window_start = CASE
-      WHEN ai_usage.window_start < NOW() - make_interval(secs => p_window_seconds)
-        THEN NOW()
-      ELSE ai_usage.window_start
-    END
-  RETURNING ai_usage.request_count INTO v_count;
+    last_call_date = CURRENT_DATE
+  RETURNING user_ai_usage.calls_count INTO v_count;
 
-  RETURN QUERY SELECT (v_count <= p_limit), v_count, p_limit;
+  RETURN QUERY SELECT (v_count <= p_daily_limit), v_count, p_daily_limit;
 END;
 $$;
 
 -- The /api/chat endpoint calls this as the signed-in user (so auth.uid() works).
-GRANT EXECUTE ON FUNCTION check_ai_rate_limit(TEXT, INTEGER, INTEGER) TO authenticated;
+-- Explicitly locked to signed-in users only — Postgres grants EXECUTE to
+-- PUBLIC by default, which would otherwise let the anon role call it too.
+REVOKE EXECUTE ON FUNCTION check_ai_usage_limit(INTEGER) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION check_ai_usage_limit(INTEGER) TO authenticated;
