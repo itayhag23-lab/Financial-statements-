@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
-  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle,
+  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
@@ -238,6 +238,14 @@ export default function Dashboard() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              to="/learn"
+              aria-label="Learn"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
+              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B', textDecoration: 'none' }}
+            >
+              <GraduationCap size={14} /> <span className="hidden sm:inline">Learn</span>
+            </Link>
             {/* User badge — email only appears once there's room for it */}
             <div className="flex items-center gap-2">
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
