@@ -57,7 +57,11 @@ export default function ProductTour({ open, steps = [], onClose, onFinish }) {
       const el = typeof document !== 'undefined' ? document.querySelector(step.target) : null;
       if (!el) { setRect(null); place(null); return; }
       const smooth = !prefersReducedMotion();
-      try { el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center', inline: 'center' }); } catch { el.scrollIntoView(); }
+      // A target taller than most of the viewport (e.g. the whole table) must not
+      // be centred — that scrolls its middle to the middle and shoves the bubble
+      // off-screen. Nudge it minimally into view instead.
+      const tall = el.getBoundingClientRect().height > window.innerHeight * 0.7;
+      try { el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: tall ? 'nearest' : 'center', inline: 'center' }); } catch { el.scrollIntoView(); }
       // Wait a frame for the scroll to settle before reading the rect.
       raf2 = requestAnimationFrame(() => {
         const r = el.getBoundingClientRect();
@@ -73,18 +77,31 @@ export default function ProductTour({ open, steps = [], onClose, onFinish }) {
 
   const place = (r) => {
     const vw = window.innerWidth, vh = window.innerHeight;
+    const bh = bubbleRef.current?.offsetHeight || 200;   // real bubble height once mounted
     if (!r) { // no target → center the bubble
-      setPos({ top: Math.max(MARGIN, vh / 2 - 90), left: Math.max(MARGIN, vw / 2 - BUBBLE_WIDTH / 2), placement: 'center' });
+      setPos({ top: Math.max(MARGIN, (vh - bh) / 2), left: Math.max(MARGIN, vw / 2 - BUBBLE_WIDTH / 2), placement: 'center' });
       return;
     }
     const want = step?.placement || 'auto';
-    const below = vh - r.bottom, above = r.top;
+    const spaceBelow = vh - r.bottom, spaceAbove = r.top;
     let placement = want;
-    if (want === 'auto') placement = below > 220 || below >= above ? 'bottom' : 'top';
-    let top, left = Math.min(Math.max(MARGIN, r.left + r.width / 2 - BUBBLE_WIDTH / 2), vw - BUBBLE_WIDTH - MARGIN);
-    if (placement === 'bottom') top = r.bottom + GAP;
-    else if (placement === 'top') top = r.top - GAP;               // translated up via transform
-    else { top = Math.min(Math.max(MARGIN, r.top), vh - 180); left = r.right + GAP; if (placement === 'left') left = r.left - GAP; }
+    if (want === 'auto') placement = spaceBelow >= spaceAbove ? 'bottom' : 'top';
+    // Explicit coordinates (no CSS transforms) so we can clamp the bubble fully
+    // on-screen — a tall spotlight (e.g. the whole table) must never push the
+    // bubble out of view.
+    let top, left;
+    if (placement === 'left' || placement === 'right') {
+      left = placement === 'left' ? r.left - GAP - BUBBLE_WIDTH : r.right + GAP;
+      top = r.top + r.height / 2 - bh / 2;
+    } else {
+      top = placement === 'bottom' ? r.bottom + GAP : r.top - GAP - bh;
+      left = r.left + r.width / 2 - BUBBLE_WIDTH / 2;
+    }
+    // Flip a vertical placement that doesn't fit toward the roomier side.
+    if (placement === 'top' && top < MARGIN && spaceBelow > spaceAbove) { placement = 'bottom'; top = r.bottom + GAP; }
+    else if (placement === 'bottom' && top + bh > vh - MARGIN && spaceAbove > spaceBelow) { placement = 'top'; top = r.top - GAP - bh; }
+    left = Math.min(Math.max(MARGIN, left), vw - BUBBLE_WIDTH - MARGIN);
+    top = Math.min(Math.max(MARGIN, top), vh - bh - MARGIN);
     setPos({ top, left, placement });
   };
 
@@ -134,10 +151,6 @@ export default function ProductTour({ open, steps = [], onClose, onFinish }) {
 
   if (!open || !step) return null;
 
-  const transform =
-    pos.placement === 'top' ? 'translateY(-100%)' :
-    pos.placement === 'left' ? 'translateX(-100%)' : 'none';
-
   const spotlight = rect ? {
     position: 'fixed',
     top: rect.top - PAD, left: rect.left - PAD,
@@ -164,12 +177,12 @@ export default function ProductTour({ open, steps = [], onClose, onFinish }) {
         aria-describedby={bodyId}
         style={{
           position: 'fixed', top: pos.top, left: pos.left, width: BUBBLE_WIDTH, zIndex: 10001,
-          transform, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
           boxShadow: '0 20px 48px -12px rgba(15,23,42,0.34)', padding: '16px 18px 14px',
           animation: prefersReducedMotion() ? 'none' : 'koala-tour-in 180ms ease-out',
         }}
       >
-        <style>{'@keyframes koala-tour-in{from{opacity:0;transform:'+transform+' translateY(6px)}to{opacity:1;transform:'+transform+'}}'}</style>
+        <style>{'@keyframes koala-tour-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}'}</style>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.goldText }}>

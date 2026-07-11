@@ -1,11 +1,16 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, useParams, useLocation, useNavigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-// Privacy/Terms are imported eagerly (not lazy) so they can be pre-rendered to
-// static HTML at build time and hydrate without a server/client mismatch. They
-// only use deps already in the main bundle, so the size cost is negligible.
+// Privacy/Terms and the Learn library are imported eagerly (not lazy) so they
+// can be pre-rendered to static HTML at build time and hydrate without a
+// server/client mismatch. They only use deps already in the main bundle, so the
+// size cost is negligible. (Prerendering Learn also fixes the hydration crash
+// that hit non-prerendered routes: the SPA rewrite serves the homepage's
+// prerendered HTML, which then mismatches a client-rendered Learn tree.)
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import LearnPage from './pages/LearnPage';
+import LearnArticlePage from './pages/LearnArticlePage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -75,6 +80,8 @@ export default function App() {
         <Route path="/"           element={<LandingPage />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
         <Route path="/dashboard"  element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
+        <Route path="/learn"      element={<LearnPage />} />
+        <Route path="/learn/:slug" element={<LearnArticlePage />} />
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />
