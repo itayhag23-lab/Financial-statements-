@@ -6,6 +6,61 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://koalastatements.com/learn</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/financial-statements-explained</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/profit-vs-cash</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/income-statement</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/balance-sheet</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/cash-flow-statement</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/how-statements-connect</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/profit-margins</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/liquidity-and-runway</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/common-mistakes</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://koalastatements.com/learn/cheat-sheet</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://koalastatements.com/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
