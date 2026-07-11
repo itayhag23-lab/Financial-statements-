@@ -1,4 +1,39 @@
 const { createClient } = require('@supabase/supabase-js');
+const { billingConfigured, serviceClient } = require('./_lemonsqueezy');
+
+// Koala Pro paywall. AI is unlimited for Pro subscribers; free users get a small
+// number of AI runs before the upgrade prompt. Enforced HERE (server-side) so it
+// can't be bypassed from the client. The gate only activates once billing is
+// configured (LEMONSQUEEZY_API_KEY + service role), so existing deployments keep
+// working unchanged until Lemon Squeezy is wired up.
+const FREE_AI_CREDITS = 3; // keep in sync with src/lib/subscription.js
+
+// Returns { allow, isPro, consume } describing the caller's AI access. `consume`
+// is called after a successful response to spend one free credit (Pro doesn't).
+async function checkAIAccess(userId) {
+  if (!billingConfigured()) return { allow: true, isPro: true, consume: async () => {} };
+  const admin = serviceClient();
+  if (!admin) return { allow: true, isPro: true, consume: async () => {} }; // not fully configured → don't block
+  const { data: row } = await admin
+    .from('subscriptions')
+    .select('plan,status,ai_credits_used')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const isPro = !!row && row.plan === 'pro' && (row.status === 'active' || row.status === 'trialing');
+  if (isPro) return { allow: true, isPro: true, consume: async () => {} };
+  const used = row?.ai_credits_used || 0;
+  if (used >= FREE_AI_CREDITS) return { allow: false, isPro: false, consume: async () => {} };
+  return {
+    allow: true,
+    isPro: false,
+    consume: async () => {
+      await admin.from('subscriptions').upsert(
+        { user_id: userId, ai_credits_used: used + 1 },
+        { onConflict: 'user_id' }
+      );
+    },
+  };
+}
 
 // Rate limiting via Upstash Redis REST API (zero extra packages).
 // Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN in Vercel to activate.
@@ -72,6 +107,15 @@ module.exports = async function handler(req, res) {
   const user = await getAuthedUser(req);
   if (!user) {
     return res.status(401).json({ error: 'Sign in required to use AI features.' });
+  }
+
+  // Paywall: Pro is unlimited; free users get FREE_AI_CREDITS runs, then 402.
+  const access = await checkAIAccess(user.id);
+  if (!access.allow) {
+    return res.status(402).json({
+      error: `You've used your ${FREE_AI_CREDITS} free AI runs. Upgrade to Koala Pro for unlimited AI.`,
+      code: 'upgrade_required',
+    });
   }
 
   // Rate limiting (per signed-in user, now that every caller is authenticated)
@@ -158,6 +202,8 @@ module.exports = async function handler(req, res) {
         // across multiple parts), not just the first.
         const text = (candidate?.content?.parts || []).map(p => p.text || '').join('');
         if (text) {
+          // Spend one free credit now that we know the run succeeded (Pro is a no-op).
+          try { await access.consume(); } catch {}
           // Anthropic-shaped response so the frontend needs no changes.
           return res.status(200).json({ content: [{ type: 'text', text }] });
         }

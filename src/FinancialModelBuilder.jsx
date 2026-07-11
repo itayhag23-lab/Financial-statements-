@@ -12,6 +12,8 @@ import PerformanceDashboard from './components/charts/PerformanceDashboard';
 import HelpTooltip from './components/ui/HelpTooltip';
 import ProductTour from './components/ui/ProductTour';
 import StatementsPrimer from './components/ui/StatementsPrimer';
+import ProUpgradeModal from './components/ui/PricingModal';
+import { fetchSubscription, canUseAI, isPro, remainingFreeCredits, openBillingPortal, AI_PAYWALL_ENABLED, FREE_AI_CREDITS } from './lib/subscription';
 import { supabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 
@@ -1273,7 +1275,7 @@ return(<span className="ff-body text-[11px] px-2.5 py-1 rounded-full inline-flex
 {saving?<><span style={{width:7,height:7,borderRadius:'50%',background:C.gold,display:'inline-block',animation:'koala-pulse 1s ease-in-out infinite'}}/> Saving…</>:<><Check size={11}/> Saved</>}
 </span>);
 }
-function Masthead({todayLabel,projectName,sectorLabel,regionLabel,saveStatus,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport,onOpenTour}){
+function Masthead({todayLabel,projectName,sectorLabel,regionLabel,saveStatus,onRename,onNewProject,onOpenWizard,onOpenAIGen,onImport,onOpenTour,isProUser,paywallOn,creditsLeft,onUpgrade,onManageBilling}){
 const[editing,setEditing]=useState(false);const[draft,setDraft]=useState(projectName||'');
 const[moreOpen,setMoreOpen]=useState(false);const moreRef=useRef(null);
 useEffect(()=>{setDraft(projectName||'');},[projectName]);
@@ -1282,7 +1284,7 @@ const commit=()=>{const t=(draft||'').trim();if(t&&t!==projectName)onRename?.(t)
 return(<div className="px-6 md:px-10 pt-8 pb-5"><div className="max-w-[1400px] mx-auto"><div className="flex items-start justify-between flex-wrap gap-4"><div className="flex-1 min-w-0">
 <div className="flex items-center gap-2 flex-wrap mb-2">{sectorLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.goldSoft,color:C.gold,fontWeight:600}}>{sectorLabel}</span>}{regionLabel&&<span className="ff-body text-[11px] px-2.5 py-1 rounded-full" style={{background:C.surfaceAlt,border:`1px solid ${C.border}`,color:C.muted}}>{regionLabel}</span>}<SaveBadge status={saveStatus}/></div>
 {editing?(<input value={draft} autoFocus onChange={e=>setDraft(e.target.value)} onBlur={commit} onKeyDown={e=>{if(e.key==='Enter')commit();if(e.key==='Escape'){setDraft(projectName||'');setEditing(false);}}} className="ff-display leading-tight outline-none w-full" style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em',background:'transparent',borderBottom:`2px solid ${C.gold}`}}/>):(<h1 className="ff-display leading-tight cursor-text" onClick={()=>setEditing(true)} style={{color:C.ink,fontSize:'clamp(28px,3.6vw,40px)',fontWeight:700,letterSpacing:'-0.025em'}}>{projectName||'Untitled Project'}</h1>)}
-<div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions" data-tour="masthead"><button onClick={onOpenTour} data-tour="take-tour" className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><HelpCircle size={12}/> Take a tour</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.goldText,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/><div className="relative" ref={moreRef}><button onClick={()=>setMoreOpen(o=>!o)} aria-haspopup="menu" aria-expanded={moreOpen} className="ff-body text-[12px] flex items-center gap-1" style={{color:C.muted}}>More <ChevronDown size={11} style={{opacity:0.7}}/></button>{moreOpen&&<div role="menu" className="absolute left-0 mt-1.5 py-1 rounded-md z-20 anim-fade-in" style={{minWidth:150,background:C.surface,border:`1px solid ${C.border}`,boxShadow:'0 10px 28px -8px rgba(15,23,42,0.2)'}}><button role="menuitem" onClick={()=>{setMoreOpen(false);onOpenWizard();}} className="w-full text-left px-3.5 py-2 ff-body text-[12.5px] row-hover" style={{color:C.ink2}}>Edit setup</button><button role="menuitem" onClick={()=>{setMoreOpen(false);onNewProject();}} className="w-full text-left px-3.5 py-2 ff-body text-[12.5px] row-hover" style={{color:C.ink2}}>New project</button></div>}</div></div>
+<div className="flex items-center gap-3 mt-3 flex-wrap koala-masthead-actions" data-tour="masthead"><button onClick={onOpenTour} data-tour="take-tour" className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.muted}}><HelpCircle size={12}/> Take a tour</button><span style={{width:1,height:12,background:C.border}}/><button onClick={onOpenAIGen} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.goldText,fontWeight:600}}><Sparkles size={12}/> Build from description</button><span style={{width:1,height:12,background:C.border}}/>{paywallOn&&(isProUser?(<><button onClick={onManageBilling} title="Manage your Koala Pro subscription" className="ff-body text-[12px] flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{color:C.goldText,fontWeight:700,background:C.goldSoft}}><Sparkles size={11}/> Pro</button><span style={{width:1,height:12,background:C.border}}/></>):(<><button onClick={onUpgrade} className="ff-body text-[12px] flex items-center gap-1.5" style={{color:C.goldText,fontWeight:700}}><Sparkles size={12}/> Upgrade{typeof creditsLeft==='number'?` · ${creditsLeft} free left`:''}</button><span style={{width:1,height:12,background:C.border}}/></>))}<div className="relative" ref={moreRef}><button onClick={()=>setMoreOpen(o=>!o)} aria-haspopup="menu" aria-expanded={moreOpen} className="ff-body text-[12px] flex items-center gap-1" style={{color:C.muted}}>More <ChevronDown size={11} style={{opacity:0.7}}/></button>{moreOpen&&<div role="menu" className="absolute left-0 mt-1.5 py-1 rounded-md z-20 anim-fade-in" style={{minWidth:150,background:C.surface,border:`1px solid ${C.border}`,boxShadow:'0 10px 28px -8px rgba(15,23,42,0.2)'}}><button role="menuitem" onClick={()=>{setMoreOpen(false);onOpenWizard();}} className="w-full text-left px-3.5 py-2 ff-body text-[12.5px] row-hover" style={{color:C.ink2}}>Edit setup</button><button role="menuitem" onClick={()=>{setMoreOpen(false);onNewProject();}} className="w-full text-left px-3.5 py-2 ff-body text-[12.5px] row-hover" style={{color:C.ink2}}>New project</button></div>}</div></div>
 </div><div className="text-right flex-none hidden md:block"><div className="ff-body text-[10px]" style={{color:C.faint,letterSpacing:'0.1em',textTransform:'uppercase'}}>Last updated</div><div className="ff-body text-[14px] mt-1" style={{color:C.ink2,fontWeight:500}}>{todayLabel}</div></div></div>
 </div></div>);
 }
@@ -1338,6 +1340,17 @@ const[projectName,setProjectName]=useState('Untitled Project');const[wizardAnswe
 const[enabledStatements,setEnabledStatements]=useState({income:true,balance:false,cashFlow:false});
 const[currencyKey,setCurrencyKey]=useState('usd');const[showCritique,setShowCritique]=useState(false);const[showAI,setShowAI]=useState(false);
 const[showAIGen,setShowAIGen]=useState(false);const[shareCopied,setShareCopied]=useState(false);const[inMillions,setInMillions]=useState(false);const[showTour,setShowTour]=useState(false);const[confirmReset,setConfirmReset]=useState(false);const[showPrimer,setShowPrimer]=useState(false);
+// Koala Pro subscription: gates the AI features once billing is enabled.
+const[subscription,setSubscription]=useState(null);const[showPricing,setShowPricing]=useState(false);const[pricingReason,setPricingReason]=useState(null);const[checkoutMsg,setCheckoutMsg]=useState(null);
+const refreshSubscription=useCallback(()=>{fetchSubscription().then(s=>setSubscription(s)).catch(()=>{});},[]);
+useEffect(()=>{refreshSubscription();},[user,refreshSubscription]);
+// Gate an AI action: require sign-in, then (when the paywall is on) require Pro
+// or a remaining free credit — otherwise surface the upgrade modal.
+const requireAIAccess=useCallback(()=>{if(!requireAuthForAI())return false;if(AI_PAYWALL_ENABLED&&!canUseAI(subscription)){setPricingReason('out-of-credits');setShowPricing(true);return false;}return true;},[requireAuthForAI,subscription]);
+const openUpgrade=useCallback(()=>{if(!requireAuthForAI())return;setPricingReason('upgrade');setShowPricing(true);},[requireAuthForAI]);
+// After the user returns from Stripe Checkout, confirm + refresh the plan. The
+// webhook can lag a beat, so poll a few times before giving up.
+useEffect(()=>{const p=new URLSearchParams(location.search);const c=p.get('checkout');if(!c)return;p.delete('checkout');navigate({pathname:location.pathname,search:p.toString()?`?${p.toString()}`:''},{replace:true});if(c==='success'){setCheckoutMsg('Welcome to Koala Pro! Your AI features are unlocked.');let n=0;const t=setInterval(()=>{n++;refreshSubscription();if(n>=4)clearInterval(t);},1500);setTimeout(()=>setCheckoutMsg(null),6000);}},[location.search,location.pathname,navigate,refreshSubscription]);
 // Tracks whether a real model exists yet (loaded / wizard / AI). When false,
 // dismissing the wizard means "start in Manual Mode" → a blank, all-zero model.
 const[hasModel,setHasModel]=useState(false);
@@ -1483,8 +1496,8 @@ useEffect(()=>{if(aiDeepLinkRef.current)return;const params=new URLSearchParams(
 // requireAuthForAI redirects to /auth (stashing this URL incl. ?new=ai) when
 // signed out — so on return the modal re-opens. Only proceed + clean the param
 // when authenticated, otherwise the cleanup would cancel the /auth redirect.
-if(requireAuthForAI()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
-else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAuthForAI,navigate]);
+if(requireAIAccess()){setShowWizard(false);setShowAIGen(true);navigate(location.pathname,{replace:true});}}
+else if(params.get('new')==='manual'){navigate(location.pathname,{replace:true});}},[location.search,location.pathname,requireAIAccess,navigate]);
 // First-run product tour: auto-launch once the user is looking at a populated
 // builder (wizard/AI modal closed, a model exists) and hasn't seen it before.
 // Deferred a tick so the data-tour targets are mounted. Replay is manual via
@@ -1577,9 +1590,9 @@ if(isPortraitMob)return(
 </div>
 );
 return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-body relative" style={{background:C.bg,color:C.ink}}><FontStyles/>
-<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} saveStatus={saveStatus} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAuthForAI())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)} onOpenTour={openTour}/></div>
+<div className="stagger stagger-1"><Masthead todayLabel={todayLabel} projectName={projectName} sectorLabel={wizardAnswers?BB[wizardAnswers.sectorKey]?.label:null} regionLabel={wizardAnswers?REGIONS[wizardAnswers.regionKey]?.label:null} saveStatus={saveStatus} onRename={n=>setProjectName(n)} onNewProject={handleNewProject} onOpenWizard={()=>setShowWizard(true)} onOpenAIGen={()=>{if(requireAIAccess())setShowAIGen(true);}} onImport={()=>setShowSaveLoad(true)} onOpenTour={openTour} isProUser={isPro(subscription)} paywallOn={AI_PAYWALL_ENABLED} creditsLeft={remainingFreeCredits(subscription)} onUpgrade={openUpgrade} onManageBilling={()=>openBillingPortal().catch(()=>{})}/></div>
 
-<button onClick={()=>{if(requireAuthForAI())setShowAI(true);}} data-tour="ai-advisor" aria-label="Open the AI Advisor" className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
+<button onClick={()=>{if(requireAIAccess())setShowAI(true);}} data-tour="ai-advisor" aria-label="Open the AI Advisor" className="fixed z-30 right-5 md:right-7 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-ai" style={{bottom:72,background:C.gold,color:C.ink,boxShadow:`0 8px 24px -8px rgba(184,137,62,0.55),0 0 0 1px ${C.gold}`,fontFamily:'Inter,system-ui,sans-serif'}}>
 <Sparkles size={14}/><span className="text-[12.5px]" style={{fontWeight:600}}>AI Advisor</span>
 </button>
 <button onClick={()=>setShowAnalysisDrawer(true)} data-tour="analysis" aria-label="Open Analysis, what-if and export" className="fixed z-30 right-5 bottom-5 md:right-7 md:bottom-5 flex items-center gap-2 px-4 py-2.5 rounded-full koala-fab-analysis" style={{background:C.ink,color:C.surface,boxShadow:`0 12px 28px -10px rgba(15,23,42,0.45),0 0 0 1px ${C.gold}55`,fontFamily:'Inter,system-ui,sans-serif'}}>
@@ -1637,8 +1650,10 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 {showWizard&&<WizardModal initialAnswers={wizardAnswers} onComplete={handleWizardComplete} onStartManual={handleStartManual} onClose={()=>{if(hasModel)setShowWizard(false);else handleStartManual();}} allowSkip={true} onOpenStatementsExplainer={openPrimer}/>}
 <ProductTour open={showTour} steps={TOUR_STEPS} onClose={closeTour} onFinish={finishTour}/>
 <StatementsPrimer open={showPrimer} onClose={closePrimer} onFinish={finishPrimer}/>
-{showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>setShowAIGen(false)} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
-<AIAdvisorPanel open={showAI} onClose={()=>setShowAI(false)} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
+<ProUpgradeModal open={showPricing} onClose={()=>setShowPricing(false)} reason={pricingReason} creditsLeft={remainingFreeCredits(subscription)}/>
+{checkoutMsg&&<div role="status" className="fixed z-[10002] left-1/2 -translate-x-1/2 bottom-6 flex items-center gap-2 px-4 py-2.5 rounded-full anim-fade-in" style={{background:C.ink,color:C.surface,boxShadow:'0 12px 28px -8px rgba(15,23,42,0.45)'}}><Sparkles size={14} style={{color:C.gold}}/><span className="ff-body text-[13px]">{checkoutMsg}</span></div>}
+{showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>{setShowAIGen(false);refreshSubscription();}} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
+<AIAdvisorPanel open={showAI} onClose={()=>{setShowAI(false);refreshSubscription();}} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
 </div></MillionsCtx.Provider>);
