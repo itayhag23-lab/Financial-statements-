@@ -79,8 +79,16 @@ function PostAuthRedirect() {
       // or arriving already authenticated) — go to the dashboard instead of
       // leaving them stuck looking at the login form.
       navigate('/dashboard', { replace: true });
+    } else if (location.pathname === '/' && (location.hash.includes('access_token') || location.search.includes('code='))) {
+      // Clicking an email confirmation / magic-link lands the browser on the
+      // bare site URL (not /auth) with the auth tokens in the URL — a brand
+      // new tab with nothing stashed in sessionStorage from an original
+      // sign-up tab. Without this, the user just sits on the marketing home
+      // page looking "logged in nowhere." Detect that callback shape and
+      // send them on to the dashboard like any other fresh sign-in.
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate, location.pathname]);
+  }, [user, navigate, location.pathname, location.hash, location.search]);
   return null;
 }
 

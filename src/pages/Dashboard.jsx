@@ -10,6 +10,8 @@ import { listProjects, deleteProject, duplicateProject, genId, saveProject } fro
 import { useAuth, signOut, deleteAccount } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
+import PricingModal from '../components/ui/PricingModal';
+import { fetchSubscription, isPro } from '../lib/subscription';
 
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
@@ -147,6 +149,8 @@ export default function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [subscription, setSubscription] = useState(null);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -158,6 +162,7 @@ export default function Dashboard() {
 
     loadProjects();
     checkLocalProjects();
+    if (supabase) fetchSubscription().then(setSubscription).catch(() => {});
   }, [user]); // eslint-disable-line
 
   const loadProjects = useCallback(async () => {
@@ -227,14 +232,14 @@ export default function Dashboard() {
       {/* Top nav — the brand can shrink/truncate and the action buttons collapse
           to icon-only on phones, so the row can never overflow and overlap the
           avatar (the bug this layout previously had on narrow viewports). */}
-      <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 40 }}>
+      <div style={{ background: '#FFFFFF', boxShadow: '0 1px 0 #E2E8F0, 0 1px 3px rgba(15,23,42,0.04)', position: 'sticky', top: 0, zIndex: 40 }}>
         <div
-          className="mx-auto flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6"
+          className="mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
           style={{ maxWidth: 1200 }}
         >
           <Link to="/" className="min-w-0 shrink overflow-hidden" style={{ textDecoration: 'none' }}>
-            <span className="hidden sm:inline-flex"><Logo size={26} /></span>
-            <span className="inline-flex sm:hidden"><Logo size={22} /></span>
+            <span className="hidden sm:inline-flex"><Logo size={38} /></span>
+            <span className="inline-flex sm:hidden"><Logo size={30} /></span>
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -246,6 +251,16 @@ export default function Dashboard() {
             >
               <GraduationCap size={14} /> <span className="hidden sm:inline">Learn</span>
             </Link>
+            {supabase && user && !isPro(subscription) && (
+              <button
+                onClick={() => setShowPricing(true)}
+                aria-label="Upgrade to Pro"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
+                style={{ ...body, background: '#0F172A', border: '1px solid #0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}
+              >
+                <Sparkles size={14} color="#10B981" /> <span className="hidden sm:inline">Upgrade to Pro</span>
+              </button>
+            )}
             {/* User badge — email only appears once there's room for it */}
             <div className="flex items-center gap-2">
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -439,6 +454,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <PricingModal open={showPricing} onClose={() => setShowPricing(false)} reason="dashboard" />
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }

@@ -133,7 +133,7 @@ export default function SharedReport() {
       {/* ── NAV ── */}
       <header style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)', borderBottom: `1px solid ${P.border}`, position: 'sticky', top: 0, zIndex: 40 }}>
         <div style={{ ...maxW, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}><Logo size={26} /></Link>
+          <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}><Logo size={38} /></Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ ...body, fontSize: 11, color: P.muted, display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
               <Lock size={11} color={P.accent} /> <span className="hidden sm:inline">Read-only shared model</span>

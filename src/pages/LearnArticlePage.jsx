@@ -41,7 +41,7 @@ function Callout({ tone = 'idea', title, children }) {
   const t = tones[tone] || tones.idea;
   const { Icon } = t;
   return (
-    <div style={{ border: `1px solid ${t.border}`, background: t.bg, borderRadius: 14, padding: '16px 20px', margin: '4px 0 20px' }}>
+    <div style={{ border: `1px solid ${t.border}`, background: t.bg, borderRadius: 8, padding: '16px 20px', margin: '4px 0 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONTS.display, fontSize: 14.5, fontWeight: 700, color: t.color, marginBottom: 8 }}>
         <Icon size={16} /> {title}
       </div>
@@ -52,7 +52,7 @@ function Callout({ tone = 'idea', title, children }) {
 
 function MiniStatement({ title, rows }) {
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, margin: '4px 0 20px', maxWidth: 520, overflow: 'hidden' }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, margin: '4px 0 20px', maxWidth: 520, overflow: 'hidden' }}>
       <div style={{ padding: '10px 18px', borderBottom: `1px solid ${C.border}`, fontFamily: FONTS.body, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.muted }}>{title}</div>
       <div style={{ padding: '8px 0' }}>
         {rows.map(([label, value, opts = {}], i) => (
@@ -116,7 +116,7 @@ function RelatedCard({ slug }) {
   const a = ARTICLES_BY_SLUG[slug];
   if (!a) return null;
   return (
-    <Link to={`/learn/${a.slug}`} style={{ display: 'block', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '16px 18px', textDecoration: 'none' }}>
+    <Link to={`/learn/${a.slug}`} style={{ display: 'block', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, padding: '16px 18px', textDecoration: 'none' }}>
       <div style={{ fontFamily: FONTS.body, fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: C.goldText, marginBottom: 6 }}>{categoryLabel(a.category)}</div>
       <div style={{ fontFamily: FONTS.display, fontSize: 15.5, fontWeight: 700, color: C.ink, lineHeight: 1.25, marginBottom: 6 }}>{a.title}</div>
       <div style={{ fontFamily: FONTS.body, fontSize: 13, lineHeight: 1.5, color: C.ink2 }}>{a.dek}</div>
@@ -170,14 +170,14 @@ export default function LearnArticlePage() {
           {/* Main column */}
           <div style={{ maxWidth: 760, minWidth: 0 }}>
             {/* Key takeaways */}
-            <div style={{ background: C.ink, borderRadius: 16, padding: '22px 24px', marginBottom: 34 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONTS.body, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.gold, marginBottom: 14 }}>
+            <div style={{ background: C.bgWarm, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.ink}`, borderRadius: 4, padding: '18px 22px', marginBottom: 34 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: FONTS.body, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.ink, marginBottom: 14 }}>
                 <ListChecks size={15} /> Key takeaways
               </div>
               {article.takeaways.map((t, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < article.takeaways.length - 1 ? 11 : 0 }}>
-                  <CheckCircle2 size={16} color={C.gold} style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span style={{ fontFamily: FONTS.body, fontSize: 14.5, lineHeight: 1.55, color: 'rgba(255,255,255,0.82)' }}>{t}</span>
+                  <CheckCircle2 size={16} color={C.ink2} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span style={{ fontFamily: FONTS.body, fontSize: 14.5, lineHeight: 1.55, color: C.ink2 }}>{t}</span>
                 </div>
               ))}
             </div>
@@ -191,10 +191,12 @@ export default function LearnArticlePage() {
             ))}
 
             {/* Practice CTA */}
-            <div style={{ background: C.gold, borderRadius: 16, padding: '26px 24px', textAlign: 'center', marginTop: 8 }}>
-              <div style={{ fontFamily: FONTS.display, fontSize: 20, fontWeight: 800, color: C.ink, letterSpacing: '-0.01em', marginBottom: 6 }}>See it in a real model</div>
-              <p style={{ fontFamily: FONTS.body, fontSize: 14.5, color: 'rgba(15,23,42,0.72)', maxWidth: 420, margin: '0 auto 18px' }}>The fastest way to make this stick is to build one and watch the numbers move.</p>
-              <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: FONTS.body, fontSize: 14.5, fontWeight: 700, color: C.surface, background: C.ink, textDecoration: 'none', padding: '12px 24px', borderRadius: 12 }}>Open the builder <ArrowRight size={16} /></Link>
+            <div style={{ border: `1px solid ${C.border}`, borderRadius: 8, padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontFamily: FONTS.display, fontSize: 15.5, fontWeight: 700, color: C.ink, marginBottom: 4 }}>See it in a real model</div>
+                <p style={{ fontFamily: FONTS.body, fontSize: 13.5, color: C.ink2, margin: 0 }}>Build one and watch the numbers move.</p>
+              </div>
+              <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: FONTS.body, fontSize: 13.5, fontWeight: 600, color: C.ink, background: C.bg, border: `1px solid ${C.border}`, textDecoration: 'none', padding: '10px 18px', borderRadius: 8, whiteSpace: 'nowrap' }}>Open the builder <ArrowRight size={14} /></Link>
             </div>
           </div>
 
@@ -207,7 +209,7 @@ export default function LearnArticlePage() {
                   const on = active === s.id;
                   return (
                     <a key={s.id} href={'#sec-' + s.id}
-                      style={{ fontFamily: FONTS.body, fontSize: 13, lineHeight: 1.4, color: on ? C.ink : C.muted, fontWeight: on ? 600 : 400, textDecoration: 'none', padding: '5px 0 5px 14px', marginLeft: -2, borderLeft: `2px solid ${on ? C.gold : 'transparent'}` }}>
+                      style={{ fontFamily: FONTS.body, fontSize: 13, lineHeight: 1.4, color: on ? C.ink : C.muted, fontWeight: on ? 600 : 400, textDecoration: 'none', padding: '5px 0 5px 14px', marginLeft: -2, borderLeft: `2px solid ${on ? C.ink : 'transparent'}` }}>
                       {s.title}
                     </a>
                   );
