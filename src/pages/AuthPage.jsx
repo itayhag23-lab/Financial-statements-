@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { FONTS } from '../brand/theme';
+import { Logo } from '../brand/Logo';
 import { supabase } from '../lib/supabase';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '../contexts/AuthContext';
 
@@ -23,17 +24,6 @@ const P = {
 
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
-
-function BrandLockup() {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <img src="/koala-mascot.png" alt="" width={58} height={58} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
-      <span style={{ ...disp, fontSize: 24, fontWeight: 700, color: P.ink, letterSpacing: '-0.03em' }}>
-        Koala <span style={{ color: P.accent, fontSize: 12, fontWeight: 600, letterSpacing: '0.18em', textTransform: 'uppercase', verticalAlign: 'middle', marginLeft: 2 }}>Statements</span>
-      </span>
-    </span>
-  );
-}
 
 function Input({ icon: Icon, type = 'text', placeholder, value, onChange, onToggleShow, showToggle, error }) {
   const [focused, setFocused] = React.useState(false);
@@ -161,7 +151,7 @@ export default function AuthPage() {
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}><BrandLockup /></Link>
+          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}><Logo size={38} color={P.ink} accent={P.accent} /></Link>
           <div style={{ ...disp, fontSize: 22, fontWeight: 700, color: P.ink, marginTop: 20, letterSpacing: '-0.02em' }}>
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}
           </div>

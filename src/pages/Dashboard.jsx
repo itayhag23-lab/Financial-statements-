@@ -10,6 +10,8 @@ import { listProjects, deleteProject, duplicateProject, genId, saveProject } fro
 import { useAuth, signOut, deleteAccount } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
+import PricingModal from '../components/ui/PricingModal';
+import { fetchSubscription, isPro } from '../lib/subscription';
 
 const body = { fontFamily: FONTS.body };
 const disp = { fontFamily: FONTS.display };
@@ -147,6 +149,8 @@ export default function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [subscription, setSubscription] = useState(null);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
@@ -158,6 +162,7 @@ export default function Dashboard() {
 
     loadProjects();
     checkLocalProjects();
+    if (supabase) fetchSubscription().then(setSubscription).catch(() => {});
   }, [user]); // eslint-disable-line
 
   const loadProjects = useCallback(async () => {
@@ -246,6 +251,16 @@ export default function Dashboard() {
             >
               <GraduationCap size={14} /> <span className="hidden sm:inline">Learn</span>
             </Link>
+            {supabase && user && !isPro(subscription) && (
+              <button
+                onClick={() => setShowPricing(true)}
+                aria-label="Upgrade to Pro"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
+                style={{ ...body, background: '#0F172A', border: '1px solid #0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}
+              >
+                <Sparkles size={14} color="#10B981" /> <span className="hidden sm:inline">Upgrade to Pro</span>
+              </button>
+            )}
             {/* User badge — email only appears once there's room for it */}
             <div className="flex items-center gap-2">
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -439,6 +454,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <PricingModal open={showPricing} onClose={() => setShowPricing(false)} reason="dashboard" />
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }

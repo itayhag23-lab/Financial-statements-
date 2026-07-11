@@ -7,8 +7,10 @@ import {
   GraduationCap, TrendingUp, Scale, Droplets,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
+import { Logo } from '../brand/Logo';
 import { capture } from '../lib/analytics';
 import ContactForm from '../components/ContactForm';
+import { PRICING, PRO_FEATURES } from '../lib/subscription';
 
 // Detects viewport width for truly responsive inline styles.
 // Starts as `false` (desktop) so the first client render matches the
@@ -110,19 +112,6 @@ function TypingLine({ lines, typeMs = 38, eraseMs = 22, holdMs = 1800 }) {
   }, [text, phase, i, lines, typeMs, eraseMs, holdMs]);
   return (
     <>"{text}<span style={{ opacity: 0.6 }}>|</span>"</>
-  );
-}
-
-// Brand lockup — mascot mark + wordmark.
-function BrandLockup({ size = 30, textColor = '#0F172A', accent = '#047857' }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <img src="/koala-mascot.png" alt="" width={size * 1.85} height={size * 1.85} style={{ display: 'block', objectFit: 'contain', flexShrink: 0 }} />
-      <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
-        <span style={{ fontFamily: FONTS.display, fontWeight: 700, fontSize: size * 0.62, color: textColor, letterSpacing: '-0.03em' }}>Koala</span>
-        <span style={{ fontFamily: FONTS.body, fontWeight: 600, fontSize: size * 0.29, color: accent, letterSpacing: '0.22em', textTransform: 'uppercase', marginTop: 3 }}>Statements</span>
-      </span>
-    </span>
   );
 }
 
@@ -585,12 +574,12 @@ export default function LandingPage() {
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${P.borderFaint}` }}>
         <div style={{ ...maxW, padding: `${mob ? 12 : 16}px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 36 }}>
-          <BrandLockup size={mob ? 34 : 48} />
+          <Logo size={mob ? 30 : 38} />
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>How it works</a>
             <a href="#learn"    style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Learn</a>
-            <a href="#free"     style={{ ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}>Free</a>
+            <a href="#pricing"  style={{ ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}>Pricing</a>
             <a href="#contact"  style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>
           <div style={{ display: 'flex', alignItems: 'center', gap: mob ? 8 : 14, marginLeft: 'auto' }}>
@@ -772,37 +761,71 @@ export default function LandingPage() {
       </section>
 
       {/* FREE — tinted rounded panel, the page's single color moment. */}
-      <section id="free" style={{ padding: `${vp} ${sp}` }}>
-        <Reveal style={{
-          ...maxW, background: P.bgMint, borderRadius: mob ? 24 : 32,
-          padding: mob ? '48px 24px' : '88px 64px', textAlign: 'center',
-        }}>
-          <div style={{ ...body, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: P.accentDeep, marginBottom: 16 }}>100% free</div>
-          <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 7.5vw, 34px)' : 'clamp(34px, 3.8vw, 52px)', fontWeight: 800, color: P.ink, margin: '0 0 16px', letterSpacing: '-0.03em' }}>Free for everyone.</h2>
-          <p style={{ ...body, fontSize: mob ? 15 : 17, color: P.ink2, lineHeight: 1.65, maxWidth: 560, margin: '0 auto' }}>
-            No plans, no paywalls, no credit card. Every feature is unlocked from the start.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 28 : 48, maxWidth: 920, margin: `${mob ? 36 : 56}px auto 0`, textAlign: mob ? 'center' : 'left' }}>
-            {[
-              { title: 'Every feature unlocked', body: 'AI model generation, multi-scenario analysis, industry benchmarks, and live investor reports, all included.' },
-              { title: 'Unlimited models',       body: 'Create, edit, and save as many financial models as you need. No project caps, no limits.' },
-              { title: 'No credit card',          body: 'Sign up with email or Google and start building in seconds. Nothing to pay, now or ever.' },
-            ].map(({ title, body: text }) => (
-              <div key={title}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: P.accentDeep, marginBottom: 14 }}>
-                  <Check size={16} color="#fff" />
-                </div>
-                <h3 style={{ ...disp, fontSize: 17, fontWeight: 700, color: P.ink, marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ ...body, fontSize: 14.5, lineHeight: 1.6, color: P.ink2, margin: 0 }}>{text}</p>
-              </div>
-            ))}
+      <section id="pricing" style={{ padding: `${vp} ${sp}` }}>
+        <Reveal style={{ ...maxW }}>
+          <div style={{ textAlign: 'center', marginBottom: mob ? 36 : 56 }}>
+            <div style={{ ...body, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: P.accentDeep, marginBottom: 16 }}>Pricing</div>
+            <h2 style={{ ...disp, fontSize: mob ? 'clamp(28px, 7.5vw, 34px)' : 'clamp(34px, 3.8vw, 52px)', fontWeight: 800, color: P.ink, margin: '0 0 16px', letterSpacing: '-0.03em' }}>
+              Free to build. Pay only for AI.
+            </h2>
+            <p style={{ ...body, fontSize: mob ? 15 : 17, color: P.ink2, lineHeight: 1.65, maxWidth: 560, margin: '0 auto' }}>
+              Every model, statement, scenario and export is free forever. Koala Pro just adds unlimited AI.
+            </p>
           </div>
 
-          <div style={{ marginTop: mob ? 36 : 52 }}>
-            <PillLink to="/auth" size={mob ? 'md' : 'lg'} onClick={() => capture('cta_click', { location: 'free_section' })}>
-              Get started free <ArrowRight size={17} />
-            </PillLink>
+          <div style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(2, 1fr)', gap: mob ? 20 : 28, maxWidth: 880, margin: '0 auto' }}>
+
+            {/* Free plan */}
+            <div style={{ background: P.bg, border: `1px solid ${P.border}`, borderRadius: 24, padding: mob ? '32px 26px' : '40px 36px' }}>
+              <h3 style={{ ...disp, fontSize: 20, fontWeight: 700, color: P.ink, margin: '0 0 6px', letterSpacing: '-0.01em' }}>Free</h3>
+              <p style={{ ...body, fontSize: 13.5, color: P.muted, margin: '0 0 20px' }}>For building and sharing models</p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 24 }}>
+                <span style={{ ...disp, fontSize: 40, fontWeight: 800, color: P.ink, letterSpacing: '-0.02em' }}>$0</span>
+                <span style={{ ...body, fontSize: 14, color: P.muted }}>forever</span>
+              </div>
+              <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0 }}>
+                {[
+                  'Unlimited financial models',
+                  'Income, balance sheet & cash flow statements',
+                  'Multi-scenario analysis & industry benchmarks',
+                  'Excel export & shareable investor links',
+                ].map(f => (
+                  <li key={f} style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                    <Check size={16} color={P.accentDeep} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ ...body, fontSize: 14, lineHeight: 1.55, color: P.ink2 }}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <PillLink to="/auth" tone="ghost" onClick={() => capture('cta_click', { location: 'pricing_free' })}>
+                Get started free <ArrowRight size={16} />
+              </PillLink>
+            </div>
+
+            {/* Pro plan */}
+            <div style={{ background: P.dark, borderRadius: 24, padding: mob ? '32px 26px' : '40px 36px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, ...body, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0F172A', background: P.accent, borderRadius: 999, padding: '5px 12px', marginBottom: 14 }}>
+                <Sparkles size={12} /> Koala Pro
+              </div>
+              <p style={{ ...body, fontSize: 13.5, color: 'rgba(248,250,252,0.5)', margin: '0 0 20px' }}>For unlimited AI-assisted modeling</p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                <span style={{ ...disp, fontSize: 40, fontWeight: 800, color: '#F8FAFC', letterSpacing: '-0.02em' }}>{PRICING.symbol}{PRICING.monthly.amount}</span>
+                <span style={{ ...body, fontSize: 14, color: 'rgba(248,250,252,0.5)' }}>/{PRICING.monthly.per}</span>
+              </div>
+              <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.45)', marginBottom: 24 }}>
+                or {PRICING.symbol}{PRICING.yearly.amount}/{PRICING.yearly.per} · save {PRICING.yearly.savePct}%
+              </div>
+              <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0 }}>
+                {PRO_FEATURES.map(f => (
+                  <li key={f} style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                    <Check size={16} color={P.accent} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <span style={{ ...body, fontSize: 14, lineHeight: 1.55, color: 'rgba(248,250,252,0.75)' }}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <PillLink to="/auth" tone="inverse" onClick={() => capture('cta_click', { location: 'pricing_pro' })}>
+                Upgrade to Pro <Sparkles size={15} />
+              </PillLink>
+            </div>
           </div>
         </Reveal>
       </section>

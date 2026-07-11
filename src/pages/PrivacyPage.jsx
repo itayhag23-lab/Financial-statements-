@@ -20,7 +20,7 @@ export default function PrivacyPage() {
   return (
     <div className="koala-page" style={S.page}>
       <nav style={S.nav}>
-        <Link to="/" style={{ textDecoration: 'none' }}><Logo size={26} /></Link>
+        <Link to="/" style={{ textDecoration: 'none' }}><Logo size={38} /></Link>
         <Link to="/" style={{ fontFamily: FONTS.body, fontSize: 13, color: '#64748B', textDecoration: 'none' }}>← Back to home</Link>
       </nav>
 
