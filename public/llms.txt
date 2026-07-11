@@ -6,10 +6,10 @@ Koala Statements is free for everyone: build, edit, and save financial models wi
 
 ## Pages
 
-- [Home](https://financial-statements-one.vercel.app/): Product overview, how it works, and key features of the AI financial modeling tool.
-- [Privacy Policy](https://financial-statements-one.vercel.app/privacy): How Koala Statements collects, uses, stores, and protects user data.
-- [Terms of Service](https://financial-statements-one.vercel.app/terms): The terms that govern use of Koala Statements.
+- [Home](https://koalastatements.com/): Product overview, how it works, and key features of the AI financial modeling tool.
+- [Privacy Policy](https://koalastatements.com/privacy): How Koala Statements collects, uses, stores, and protects user data.
+- [Terms of Service](https://koalastatements.com/terms): The terms that govern use of Koala Statements.
 
 ## Optional
 
-- [Sitemap](https://financial-statements-one.vercel.app/sitemap.xml): Full list of indexable URLs.
+- [Sitemap](https://koalastatements.com/sitemap.xml): Full list of indexable URLs.
