@@ -227,14 +227,14 @@ export default function Dashboard() {
       {/* Top nav — the brand can shrink/truncate and the action buttons collapse
           to icon-only on phones, so the row can never overflow and overlap the
           avatar (the bug this layout previously had on narrow viewports). */}
-      <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 40 }}>
+      <div style={{ background: '#FFFFFF', boxShadow: '0 1px 0 #E2E8F0, 0 1px 3px rgba(15,23,42,0.04)', position: 'sticky', top: 0, zIndex: 40 }}>
         <div
-          className="mx-auto flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6"
+          className="mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
           style={{ maxWidth: 1200 }}
         >
           <Link to="/" className="min-w-0 shrink overflow-hidden" style={{ textDecoration: 'none' }}>
-            <span className="hidden sm:inline-flex"><Logo size={26} /></span>
-            <span className="inline-flex sm:hidden"><Logo size={22} /></span>
+            <span className="hidden sm:inline-flex"><Logo size={38} /></span>
+            <span className="inline-flex sm:hidden"><Logo size={30} /></span>
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
