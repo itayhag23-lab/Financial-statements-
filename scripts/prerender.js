@@ -17,7 +17,7 @@ const esbuild = require('esbuild');
 const ROOT = path.resolve(__dirname, '..');
 const BUILD_DIR = path.join(ROOT, 'build');
 
-const SITE = 'https://financial-statements-one.vercel.app';
+const SITE = 'https://koalastatements.com';
 
 // Static, public, eagerly-imported routes. /app, /dashboard, /r/* are private
 // or dynamic (and code-split), so they stay client-rendered. The Learn hub and
