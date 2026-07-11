@@ -118,7 +118,7 @@ export default function PricingModal({ open, onClose, reason, creditsLeft }) {
             {busy ? <><Loader2 size={16} className="koala-spin" /> Redirecting…</> : <>Upgrade to Pro <Sparkles size={15} /></>}
           </button>
           <div style={{ fontFamily: FONTS.body, fontSize: 11.5, color: C.muted, textAlign: 'center', marginTop: 10 }}>
-            Secure checkout via Stripe · Cancel anytime
+            Secure checkout via Lemon Squeezy · Cancel anytime
           </div>
 
           <style>{'@keyframes koala-spin{to{transform:rotate(360deg)}}.koala-spin{animation:koala-spin 1s linear infinite}'}</style>

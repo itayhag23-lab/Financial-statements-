@@ -55,8 +55,9 @@ CREATE POLICY "Users can delete own shares"
 -- ── Subscriptions (paid "Pro" plan that unlocks the AI features) ──────────────
 -- One row per user. The client reads its own row (RLS below) to know whether AI
 -- is unlocked and how many free AI credits remain. All WRITES happen server-side
--- with the service-role key (Stripe webhook + /api/chat), which bypasses RLS —
--- so there is deliberately no INSERT/UPDATE policy for end users here.
+-- with the service-role key (Lemon Squeezy webhook + /api/chat), which bypasses
+-- RLS — so there is deliberately no INSERT/UPDATE policy for end users here.
+-- (The stripe_* column names are reused as generic billing-provider ids.)
 CREATE TABLE IF NOT EXISTS subscriptions (
   user_id                UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   plan                   TEXT        NOT NULL DEFAULT 'free',   -- 'free' | 'pro'

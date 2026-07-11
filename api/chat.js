@@ -1,17 +1,17 @@
 const { createClient } = require('@supabase/supabase-js');
-const { stripeConfigured, serviceClient } = require('./_stripe');
+const { billingConfigured, serviceClient } = require('./_lemonsqueezy');
 
 // Koala Pro paywall. AI is unlimited for Pro subscribers; free users get a small
 // number of AI runs before the upgrade prompt. Enforced HERE (server-side) so it
 // can't be bypassed from the client. The gate only activates once billing is
-// configured (STRIPE_SECRET_KEY + service role), so existing deployments keep
-// working unchanged until Stripe is wired up.
+// configured (LEMONSQUEEZY_API_KEY + service role), so existing deployments keep
+// working unchanged until Lemon Squeezy is wired up.
 const FREE_AI_CREDITS = 3; // keep in sync with src/lib/subscription.js
 
 // Returns { allow, isPro, consume } describing the caller's AI access. `consume`
 // is called after a successful response to spend one free credit (Pro doesn't).
 async function checkAIAccess(userId) {
-  if (!stripeConfigured()) return { allow: true, isPro: true, consume: async () => {} };
+  if (!billingConfigured()) return { allow: true, isPro: true, consume: async () => {} };
   const admin = serviceClient();
   if (!admin) return { allow: true, isPro: true, consume: async () => {} }; // not fully configured → don't block
   const { data: row } = await admin

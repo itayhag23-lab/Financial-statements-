@@ -1,48 +1,61 @@
-const { stripeConfigured, stripeRequest, serviceClient, getAuthedUser, getOrCreateCustomer } = require('./_stripe');
+const { billingConfigured, lsRequest, serviceClient, getAuthedUser } = require('./_lemonsqueezy');
 
-// Creates a Stripe Checkout Session for a Koala Pro subscription and returns its
-// hosted-checkout URL. The client redirects the browser there; Stripe handles
-// the payment and then sends the user back to returnUrl, while the webhook
-// (api/stripe-webhook.js) flips the user's plan to "pro".
+// Creates a Lemon Squeezy checkout for a Koala Pro subscription and returns its
+// hosted-checkout URL. The client redirects the browser there; Lemon Squeezy
+// (Merchant of Record) handles payment + tax, then sends the user back to
+// returnUrl, while the webhook (api/lemonsqueezy-webhook.js) flips the plan.
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!stripeConfigured()) {
-    return res.status(500).json({ error: 'Billing is not configured yet (STRIPE_SECRET_KEY missing).' });
+  if (!billingConfigured()) {
+    return res.status(500).json({ error: 'Billing is not configured yet (LEMONSQUEEZY_API_KEY missing).' });
   }
+  const storeId = process.env.LEMONSQUEEZY_STORE_ID;
+  if (!storeId) return res.status(500).json({ error: 'Billing is not configured yet (LEMONSQUEEZY_STORE_ID missing).' });
+
   const admin = serviceClient();
-  if (!admin) {
-    return res.status(500).json({ error: 'Billing is not configured yet (SUPABASE_SERVICE_ROLE_KEY missing).' });
-  }
+  if (!admin) return res.status(500).json({ error: 'Billing is not configured yet (SUPABASE_SERVICE_ROLE_KEY missing).' });
 
   const user = await getAuthedUser(req);
   if (!user) return res.status(401).json({ error: 'Sign in required.' });
 
   const { interval = 'month', returnUrl } = req.body || {};
-  const price = interval === 'year'
-    ? process.env.STRIPE_PRICE_YEARLY
-    : process.env.STRIPE_PRICE_MONTHLY;
-  if (!price) {
-    return res.status(500).json({ error: `Missing Stripe price id for the ${interval}ly plan.` });
+  const variantId = interval === 'year'
+    ? process.env.LEMONSQUEEZY_VARIANT_YEARLY
+    : process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
+  if (!variantId) {
+    return res.status(500).json({ error: `Missing Lemon Squeezy variant id for the ${interval}ly plan.` });
   }
 
   const base = (typeof returnUrl === 'string' && returnUrl) || `https://${req.headers.host}/app`;
 
   try {
-    const customer = await getOrCreateCustomer(admin, user);
-    const session = await stripeRequest('POST', '/checkout/sessions', {
-      mode: 'subscription',
-      customer,
-      client_reference_id: user.id,
-      allow_promotion_codes: true,
-      line_items: [{ price, quantity: 1 }],
-      metadata: { user_id: user.id },
-      subscription_data: { metadata: { user_id: user.id } },
-      success_url: `${base}?checkout=success`,
-      cancel_url: `${base}?checkout=cancel`,
+    const result = await lsRequest('POST', '/checkouts', {
+      data: {
+        type: 'checkouts',
+        attributes: {
+          // Prefill the buyer's email and stash our user id so the webhook can
+          // map the resulting subscription back to this account.
+          checkout_data: {
+            email: user.email || undefined,
+            custom: { user_id: user.id },
+          },
+          product_options: {
+            redirect_url: `${base}?checkout=success`,
+            receipt_button_text: 'Back to Koala',
+            enabled_variants: [Number(variantId)],
+          },
+        },
+        relationships: {
+          store: { data: { type: 'stores', id: String(storeId) } },
+          variant: { data: { type: 'variants', id: String(variantId) } },
+        },
+      },
     });
-    return res.status(200).json({ url: session.url });
+    const url = result?.data?.attributes?.url;
+    if (!url) return res.status(502).json({ error: 'Checkout URL was not returned.' });
+    return res.status(200).json({ url });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Could not start checkout.' });
   }

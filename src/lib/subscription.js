@@ -3,12 +3,15 @@ import { supabase } from './supabase';
 // Koala Pro — the paid plan that unlocks the AI features (AI Advisor +
 // Build-from-description). Everything else in the app stays free forever.
 //
-// Rollout switch: the paywall only *enforces* when REACT_APP_STRIPE_ENABLED is
-// "1" (client) and STRIPE_SECRET_KEY is set (server). Until then the app behaves
-// exactly as before — AI just requires sign-in — so nothing breaks before Stripe
-// is fully wired up.
+// Billing runs through Lemon Squeezy (a Merchant of Record — it collects and
+// remits global VAT/sales tax, and supports Israel, which Stripe does not).
+//
+// Rollout switch: the paywall only *enforces* when REACT_APP_BILLING_ENABLED is
+// "1" (client) and LEMONSQUEEZY_API_KEY is set (server). Until then the app
+// behaves exactly as before — AI just requires sign-in — so nothing breaks
+// before billing is fully wired up.
 
-export const AI_PAYWALL_ENABLED = process.env.REACT_APP_STRIPE_ENABLED === '1';
+export const AI_PAYWALL_ENABLED = process.env.REACT_APP_BILLING_ENABLED === '1';
 
 // Free signed-in users get a taste of the AI before the upgrade prompt.
 export const FREE_AI_CREDITS = 3;
