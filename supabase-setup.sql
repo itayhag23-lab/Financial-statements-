@@ -52,6 +52,32 @@ CREATE POLICY "Users can delete own shares"
   ON shares FOR DELETE
   USING (auth.uid() = user_id);
 
+-- ── Subscriptions (paid "Pro" plan that unlocks the AI features) ──────────────
+-- One row per user. The client reads its own row (RLS below) to know whether AI
+-- is unlocked and how many free AI credits remain. All WRITES happen server-side
+-- with the service-role key (Stripe webhook + /api/chat), which bypasses RLS —
+-- so there is deliberately no INSERT/UPDATE policy for end users here.
+CREATE TABLE IF NOT EXISTS subscriptions (
+  user_id                UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  plan                   TEXT        NOT NULL DEFAULT 'free',   -- 'free' | 'pro'
+  status                 TEXT,                                  -- Stripe status: active, trialing, past_due, canceled…
+  interval               TEXT,                                  -- 'month' | 'year'
+  stripe_customer_id     TEXT,
+  stripe_subscription_id TEXT,
+  current_period_end     TIMESTAMPTZ,
+  cancel_at_period_end   BOOLEAN     NOT NULL DEFAULT FALSE,
+  ai_credits_used        INTEGER     NOT NULL DEFAULT 0,        -- free-tier AI uses consumed
+  created_at             TIMESTAMPTZ DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Users may read (only) their own subscription row.
+CREATE POLICY "Users read their own subscription"
+  ON subscriptions FOR SELECT
+  USING (auth.uid() = user_id);
+
 -- ── Optional: auto-update updated_at on projects ──────────────────────────────
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -60,4 +86,8 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER projects_updated_at
   BEFORE UPDATE ON projects
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER subscriptions_updated_at
+  BEFORE UPDATE ON subscriptions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
