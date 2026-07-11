@@ -4,6 +4,7 @@ import {
   Sparkles, Share2,
   ArrowRight, Check, Zap, Link2,
   FileSpreadsheet, Upload,
+  GraduationCap, TrendingUp, Scale, Droplets,
 } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { capture } from '../lib/analytics';
@@ -583,11 +584,12 @@ export default function LandingPage() {
 
       {/* NAV */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${P.borderFaint}` }}>
-        <div style={{ ...maxW, padding: `${mob ? 10 : 14}px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 36 }}>
-          <BrandLockup size={mob ? 28 : 36} />
+        <div style={{ ...maxW, padding: `${mob ? 12 : 16}px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 36 }}>
+          <BrandLockup size={mob ? 34 : 48} />
           <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Features</a>
             <a href="#how"      style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>How it works</a>
+            <a href="#learn"    style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Learn</a>
             <a href="#free"     style={{ ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}>Free</a>
             <a href="#contact"  style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>
@@ -715,6 +717,60 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* LEARN — free education library as a top-of-funnel on-ramp. Catches the
+          visitor who is curious but intimidated ("I don't even know what a
+          balance sheet is") and turns that into either a read or a signup. The
+          three question-cards mirror the product's own three-statement motif. */}
+      <section id="learn" style={{ padding: `${vp} 0 0` }}>
+        <div style={{ ...maxW, padding: `0 ${sp}` }}>
+          <Reveal style={{ maxWidth: 720, margin: `0 auto ${mob ? '36px' : '56px'}`, textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, ...body, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: P.accentDeep, marginBottom: 16 }}>
+              <GraduationCap size={16} /> Free learning library
+            </div>
+            <h2 style={{ ...disp, fontSize: mob ? 'clamp(26px, 7vw, 32px)' : 'clamp(32px, 3.6vw, 48px)', fontWeight: 800, color: P.ink, margin: '0 0 16px', letterSpacing: '-0.03em', lineHeight: 1.12 }}>
+              Never read a balance sheet? Start here.
+            </h2>
+            <p style={{ ...body, fontSize: mob ? 15 : 17, color: P.muted, lineHeight: 1.65, maxWidth: 560, margin: '0 auto' }}>
+              A plain-English library that turns the three financial statements from intimidating to obvious. No jargon, no accounting degree, no cost.
+            </p>
+          </Reveal>
+
+          <Reveal delay={100} style={{ display: 'grid', gridTemplateColumns: mob ? '1fr' : 'repeat(3, 1fr)', gap: mob ? 16 : 24, maxWidth: 1000, margin: '0 auto' }}>
+            {[
+              { icon: TrendingUp, q: 'Are you making money?',      name: 'Income Statement',      slug: 'income-statement' },
+              { icon: Scale,      q: 'What do you own vs. owe?',    name: 'Balance Sheet',         slug: 'balance-sheet' },
+              { icon: Droplets,   q: 'Will you run out of cash?',   name: 'Cash Flow Statement',   slug: 'cash-flow-statement' },
+            ].map(({ icon: Icon, q, name, slug }) => (
+              <Link
+                key={slug}
+                to={`/learn/${slug}`}
+                onClick={() => capture('learn_card_click', { slug })}
+                style={{ display: 'flex', flexDirection: 'column', background: '#fff', border: `1px solid ${P.border}`, borderRadius: 18, padding: mob ? '22px 22px' : '26px 24px', textDecoration: 'none' }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: P.accentSoft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                  <Icon size={19} color={P.accentDeep} />
+                </div>
+                <div style={{ ...body, fontSize: 13, fontWeight: 700, color: P.accentDeep, marginBottom: 6 }}>{q}</div>
+                <h3 style={{ ...disp, fontSize: mob ? 18 : 19, fontWeight: 700, color: P.ink, margin: '0 0 auto', letterSpacing: '-0.015em' }}>{name}</h3>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, ...body, fontSize: 14, fontWeight: 600, color: P.ink }}>
+                  Read the guide <ArrowRight size={15} />
+                </span>
+              </Link>
+            ))}
+          </Reveal>
+
+          <Reveal delay={160} style={{ textAlign: 'center', marginTop: mob ? 32 : 44 }}>
+            <Link
+              to="/learn"
+              onClick={() => capture('cta_click', { location: 'learn_section' })}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}
+            >
+              Browse all 10 plain-English guides <ArrowRight size={16} />
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
       {/* FREE — tinted rounded panel, the page's single color moment. */}
       <section id="free" style={{ padding: `${vp} ${sp}` }}>
         <Reveal style={{
@@ -796,6 +852,7 @@ export default function LandingPage() {
               © {new Date().getFullYear()} Koala Statements · Not financial advice.
             </div>
             <div style={{ display: 'flex', gap: 24 }}>
+              <Link to="/learn"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Learn</Link>
               <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Privacy</Link>
               <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Terms</Link>
             </div>
