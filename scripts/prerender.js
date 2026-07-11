@@ -121,6 +121,42 @@ async function main() {
     fs.writeFileSync(outPath, page);
     console.log(`[prerender] wrote ${route} (${html.length} bytes of markup)`);
   }
+
+  try {
+    writeSitemap(ROUTES);
+  } catch (err) {
+    // Never let a sitemap hiccup undo the page pre-rendering above.
+    console.warn('[prerender] sitemap generation skipped:', err && err.message);
+  }
+}
+
+// Regenerates sitemap.xml from the exact list of routes just pre-rendered, so
+// it can never drift out of sync with the site again — every Learn article
+// added to learnContent.js appears automatically on the next deploy. This
+// overwrites the static public/sitemap.xml that CRA already copied verbatim
+// into the build output.
+function writeSitemap(routes) {
+  const today = new Date().toISOString().slice(0, 10);
+  const priority = (route) => {
+    if (route === '/') return '1.0';
+    if (route === '/learn') return '0.9';
+    if (route.startsWith('/learn/')) return '0.7';
+    return '0.3';
+  };
+  const changefreq = (route) => {
+    if (route === '/' || route === '/learn') return 'weekly';
+    if (route.startsWith('/learn/')) return 'monthly';
+    return 'yearly';
+  };
+  const urls = routes.map((route) => `  <url>
+    <loc>${SITE}${route}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${changefreq(route)}</changefreq>
+    <priority>${priority(route)}</priority>
+  </url>`).join('\n');
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+  fs.writeFileSync(path.join(BUILD_DIR, 'sitemap.xml'), xml);
+  console.log(`[prerender] wrote sitemap.xml (${routes.length} routes)`);
 }
 
 main().catch((err) => {
