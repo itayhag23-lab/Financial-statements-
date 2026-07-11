@@ -21,8 +21,8 @@ export default function TopNav() {
       >
         <Link to="/" className="min-w-0 shrink overflow-hidden" style={{ textDecoration: 'none' }}>
           {/* Smaller mark on phones so the lockup stays clear of the avatar */}
-          <span className="hidden sm:inline-flex"><Logo size={26} /></span>
-          <span className="inline-flex sm:hidden"><Logo size={22} /></span>
+          <span className="hidden sm:inline-flex"><Logo size={34} /></span>
+          <span className="inline-flex sm:hidden"><Logo size={28} /></span>
         </Link>
 
         <div className="flex shrink-0 items-center gap-2.5">
