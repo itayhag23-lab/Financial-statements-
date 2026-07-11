@@ -99,21 +99,12 @@ export default function AuthPage() {
   const [error, setError]         = useState('');
   const [success, setSuccess]     = useState('');
 
-  // Where to send the user after a successful auth. If they were sent here from
-  // somewhere in the app (e.g. trying an AI feature), return them there; this is
-  // stashed in sessionStorage by the caller. Otherwise default to the dashboard.
-  const postAuthDest = () => {
-    try {
-      const d = sessionStorage.getItem('koala:postAuthRedirect');
-      if (d) { sessionStorage.removeItem('koala:postAuthRedirect'); return d; }
-    } catch {}
-    return '/dashboard';
-  };
-
-  // Redirect if already signed in
-  useEffect(() => {
-    if (user) navigate(postAuthDest(), { replace: true });
-  }, [user, navigate]);
+  // Post-auth navigation is handled exclusively by the global PostAuthRedirect
+  // in App.jsx (it reacts to the same `user` becoming signed-in). Deciding it
+  // here too used to race that component for the same sessionStorage key —
+  // whichever ran second would find it already consumed and forcibly
+  // re-navigate to a hardcoded fallback, undoing a correct redirect. So this
+  // page does nothing once signed in; it just lets App.jsx take over.
 
   // If Supabase isn't configured, skip straight to app
   useEffect(() => {
@@ -129,16 +120,17 @@ export default function AuthPage() {
     setLoading(true);
     try {
       if (mode === 'signin') {
+        // No explicit navigate here — the `user` context update this triggers
+        // is picked up by the global PostAuthRedirect, which owns the redirect.
         await signInWithEmail(email, password);
-        navigate(postAuthDest(), { replace: true });
       } else {
         const signedIn = await signUpWithEmail(email, password);
-        if (signedIn) {
-          navigate(postAuthDest(), { replace: true });
-        } else {
+        if (!signedIn) {
           setSuccess('Check your email for a confirmation link, then sign in.');
           setMode('signin');
         }
+        // If signed in immediately (no email confirmation required), the same
+        // `user` update hands off to the global PostAuthRedirect.
       }
     } catch (err) {
       setError(friendlyError(err.message));

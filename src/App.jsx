@@ -53,12 +53,20 @@ function PageTracker() {
   return null;
 }
 
-// After an OAuth round-trip the browser may land on the homepage (depending on
-// Supabase's Site URL config). Once the session resolves, send the user to the
-// destination we stashed before redirecting.
+// The single source of truth for "where does the user go after signing in."
+// After an OAuth round-trip the browser lands back on the bare origin (see
+// signInWithGoogle in AuthContext.jsx), and for email sign-in the user is
+// still sitting on /auth — either way, once the session resolves this sends
+// them to the destination stashed before redirecting to /auth, or to the
+// dashboard as a sane default. This used to be duplicated inside AuthPage's
+// own effect too; running both raced on the same sessionStorage key, so
+// whichever fired second would find it already cleared and forcibly
+// re-navigate to a hardcoded fallback, silently undoing the correct
+// redirect. Keeping exactly one consumer here fixes that.
 function PostAuthRedirect() {
   const user = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   useEffect(() => {
     if (!user) return;
     let dest;
@@ -66,8 +74,13 @@ function PostAuthRedirect() {
     if (dest) {
       try { sessionStorage.removeItem('koala:postAuthRedirect'); } catch {}
       navigate(dest, { replace: true });
+    } else if (location.pathname === '/auth') {
+      // Signed in with nothing stashed to return to (a plain "log in" visit,
+      // or arriving already authenticated) — go to the dashboard instead of
+      // leaving them stuck looking at the login form.
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.pathname]);
   return null;
 }
 
