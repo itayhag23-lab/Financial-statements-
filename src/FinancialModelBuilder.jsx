@@ -1,6 +1,6 @@
 import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'react';
 import ReactDOM from 'react-dom';
-import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator,HelpCircle}from 'lucide-react';
+import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator,HelpCircle,Share2}from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { C } from './brand/theme';
 import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen, hasSeenStatements101, markStatements101Seen } from './lib/persistence';
@@ -61,6 +61,18 @@ input[type=number]{-moz-appearance:textfield;}
    type; read-only totals/subtotals (plain divs) don't react. */
 .koala-cell-edit:hover{background:#EFF7F3 !important;box-shadow:inset 0 0 0 1px rgba(16,185,129,0.45);border-radius:4px;}
 .koala-cell-edit::placeholder{color:#CBD5E1;}
+/* Model toolbar — grouped, consistent-height controls. Replaces the previous
+   single dense row of buttons with a settings cluster (left) + actions (right)
+   for a cleaner, more professional bar. */
+.ktool-set{display:flex;align-items:center;gap:2px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:3px 4px;}
+.ktool-field{display:flex;align-items:center;gap:7px;padding:3px 9px;}
+.ktool-field+.ktool-field{border-left:1px solid #E2E8F0;}
+.ktool-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;font-size:11.5px;font-weight:500;line-height:1;border:1px solid #E2E8F0;background:#FFFFFF;color:#334155;cursor:pointer;transition:background 140ms,border-color 140ms,color 140ms;white-space:nowrap;font-family:'Inter',system-ui,sans-serif;}
+.ktool-btn:hover:not(:disabled){background:#F1F5F9;border-color:#CBD5E1;color:#0F172A;}
+.ktool-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.ktool-btn-primary{background:#0F172A;border-color:#0F172A;color:#FFFFFF;}
+.ktool-btn-primary:hover:not(:disabled){background:#1E293B;border-color:#1E293B;color:#FFFFFF;}
+.ktool-div{width:1px;height:22px;background:#E2E8F0;flex-shrink:0;}
 @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .stagger{animation:slideUp 620ms cubic-bezier(0.16,1,0.3,1) backwards;}
 .stagger-1{animation-delay:40ms}.stagger-2{animation-delay:140ms}.stagger-3{animation-delay:240ms}.stagger-4{animation-delay:340ms}
@@ -1637,21 +1649,30 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 
 <div className="px-6 md:px-10 mt-6 stagger stagger-3"><div className="max-w-[1400px] mx-auto space-y-3">
 <div className="flex items-baseline justify-between flex-wrap gap-2 mb-1"><Eyebrow color={C.gold}>Editing scenario · {SCENARIO_META[activeScenario].label}</Eyebrow></div>
-<div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-md koala-toolbar" data-tour="toolbar" style={{background:C.surface,border:`1px solid ${C.border}`}}>
+<div className="flex items-center justify-between flex-wrap gap-3 px-3 py-2.5 rounded-xl koala-toolbar" data-tour="toolbar" style={{background:C.surface,border:`1px solid ${C.border}`,boxShadow:'0 1px 2px rgba(15,23,42,0.03)'}}>
+{/* Left — scenario + model settings, grouped in one inset cluster */}
+<div className="flex items-center gap-2.5 flex-wrap">
 <span data-tour="scenario"><CompactScenarioPicker activeScenario={activeScenario} onSelect={setActiveScenario} computedAll={computedAll} periods={periods}/></span>
-<div style={{width:1,height:24,background:C.border}} className="hidden md:block"/>
-<div className="flex items-center gap-2 flex-wrap"><span className="label-eyebrow ff-body" style={{color:C.muted}}>View</span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{['annual','quarterly'].map(g=>(<button key={g} onClick={()=>setGranularity(g)} className="px-3 py-1 ff-body text-[11.5px]" style={{background:granularity===g?C.ink:'transparent',color:granularity===g?C.surface:C.ink2,textTransform:'capitalize'}}>{g}</button>))}</div></div>
-<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Periods</span><input type="number" min={2} max={20} value={numPeriods} aria-label="Number of periods (2 to 20)" onChange={e=>setNumPeriods(Math.max(2,Math.min(20,+e.target.value||2)))} className="w-14 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
-<div className="flex items-center gap-2"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Start</span><input type="number" value={startYear} aria-label="Start year" onChange={e=>setStartYear(+e.target.value||2025)} className="w-20 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink}}/></div>
-<div className="flex-1"/>
-<div className="flex items-center gap-2">
-<button onClick={handleUndo} disabled={!canUndo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canUndo?C.ink2:C.faint,opacity:canUndo?1:0.5,cursor:canUndo?'pointer':'not-allowed'}} title="Undo (Cmd+Z)">↶ Undo</button>
-<button onClick={handleRedo} disabled={!canRedo} className="px-2.5 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:C.bg,border:`1px solid ${C.border}`,color:canRedo?C.ink2:C.faint,opacity:canRedo?1:0.5,cursor:canRedo?'pointer':'not-allowed'}} title="Redo (Cmd+Shift+Z)">↷ Redo</button>
-<button onClick={()=>setShowSaveLoad(true)} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Upload size={12}/> Import / Save</button>
-<button onClick={()=>setInMillions(m=>!m)} title="Show all figures in millions · type 1 = $1,000,000" aria-pressed={inMillions} className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:inMillions?C.goldSoft:C.bg,border:`1px solid ${inMillions?C.gold:C.border}`,color:inMillions?C.goldText:C.ink2,fontWeight:inMillions?600:400}}>Show millions</button>
-<button onClick={exportExcel} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:C.bg,border:`1px solid ${C.border}`,color:C.ink2}}><Download size={12}/> Excel</button>
-<button onClick={handleShare} className="px-3 py-1.5 rounded-md ff-body text-[11.5px] flex items-center gap-1.5" style={{background:shareCopied?C.greenSoft:C.bg,border:`1px solid ${shareCopied?C.green:C.border}`,color:shareCopied?C.green:C.ink2}}>{shareCopied?'✓ Link copied':'↗ Share'}</button>
-<button onClick={()=>{if(confirmReset){setConfirmReset(false);resetModel();}else{setConfirmReset(true);setTimeout(()=>setConfirmReset(false),3500);}}} title="Reset the entire model back to zero" className="px-3 py-1.5 rounded-md ff-body text-[11.5px]" style={{background:confirmReset?C.rustSoft:'transparent',color:confirmReset?C.rust:C.muted,border:confirmReset?`1px solid ${C.rust}55`:'1px solid transparent',fontWeight:confirmReset?600:400}}>{confirmReset?'Click again to confirm':'Reset'}</button>
+<div className="ktool-div hidden md:block"/>
+<div className="ktool-set">
+<div className="ktool-field"><span className="label-eyebrow ff-body" style={{color:C.muted}}>View</span><div className="flex rounded-md overflow-hidden" style={{border:`1px solid ${C.border}`}}>{['annual','quarterly'].map(g=>(<button key={g} onClick={()=>setGranularity(g)} className="px-3 py-1 ff-body text-[11.5px]" style={{background:granularity===g?C.ink:'transparent',color:granularity===g?C.surface:C.ink2,textTransform:'capitalize'}}>{g}</button>))}</div></div>
+<div className="ktool-field"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Periods</span><input type="number" min={2} max={20} value={numPeriods} aria-label="Number of periods (2 to 20)" onChange={e=>setNumPeriods(Math.max(2,Math.min(20,+e.target.value||2)))} className="w-14 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+<div className="ktool-field"><span className="label-eyebrow ff-body" style={{color:C.muted}}>Start</span><input type="number" value={startYear} aria-label="Start year" onChange={e=>setStartYear(+e.target.value||2025)} className="w-20 px-2 py-1 rounded-md ff-num text-[12px] text-center outline-none" style={{background:C.surface,border:`1px solid ${C.border}`,color:C.ink}}/></div>
+</div>
+</div>
+{/* Right — actions, grouped: history · file · export */}
+<div className="flex items-center gap-2 flex-wrap">
+<div className="flex items-center gap-1">
+<button onClick={handleUndo} disabled={!canUndo} className="ktool-btn" title="Undo (Cmd+Z)">↶ Undo</button>
+<button onClick={handleRedo} disabled={!canRedo} className="ktool-btn" title="Redo (Cmd+Shift+Z)">↷ Redo</button>
+</div>
+<div className="ktool-div"/>
+<button onClick={()=>setShowSaveLoad(true)} className="ktool-btn"><Upload size={13}/> Import / Save</button>
+<button onClick={()=>setInMillions(m=>!m)} title="Show all figures in millions · type 1 = $1,000,000" aria-pressed={inMillions} className="ktool-btn" style={inMillions?{background:C.goldSoft,borderColor:C.gold,color:C.goldText,fontWeight:600}:undefined}>Show millions</button>
+<div className="ktool-div"/>
+<button onClick={exportExcel} className="ktool-btn"><Download size={13}/> Excel</button>
+<button onClick={handleShare} className="ktool-btn" style={shareCopied?{background:C.greenSoft,borderColor:C.green,color:C.green}:undefined}>{shareCopied?<>✓ Link copied</>:<><Share2 size={13}/> Share</>}</button>
+<button onClick={()=>{if(confirmReset){setConfirmReset(false);resetModel();}else{setConfirmReset(true);setTimeout(()=>setConfirmReset(false),3500);}}} title="Reset the entire model back to zero" className="ktool-btn" style={confirmReset?{background:C.rustSoft,borderColor:`${C.rust}55`,color:C.rust,fontWeight:600}:{color:C.muted}}>{confirmReset?'Click again to confirm':'Reset'}</button>
 </div>
 </div>
 </div></div>
