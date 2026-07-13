@@ -1139,7 +1139,7 @@ status==='success'
 );
 }
 
-function AIAdvisorPanel({open,onClose,modelContext,rowLabels,currentRowData,onApplyPatch}){
+function AIAdvisorPanel({open,onClose,onUpgradeRequired,modelContext,rowLabels,currentRowData,onApplyPatch}){
 const[msgs,setMsgs]=useState([]);
 const[input,setInput]=useState('');
 const[loading,setLoading]=useState(false);
@@ -1161,18 +1161,42 @@ method:'POST',
 headers:await authedJSONHeaders(),
 body:JSON.stringify({max_tokens:1000,system:buildSystemPrompt(modelContext),messages:apiHistory})
 });
+
+// Server-side paywall: show pricing modal instead of an error string
+if(res.status===402){setLoading(false);onUpgradeRequired?.();return;}
+
+// Streaming SSE — first tokens appear within ~300 ms
+if(res.headers.get('content-type')?.includes('text/event-stream')){
+setMsgs(prev=>[...prev,{role:'assistant',text:''}]); // placeholder so text starts flowing immediately
+setLoading(false);
+const reader=res.body.getReader();const dec=new TextDecoder();
+let buf='';let fullText='';
+while(true){
+const{done,value}=await reader.read();if(done)break;
+buf+=dec.decode(value,{stream:true});
+const lines=buf.split('\n');buf=lines.pop();
+for(const line of lines){
+if(!line.startsWith('data: '))continue;
+const raw=line.slice(6).trim();if(!raw||raw==='[DONE]')continue;
+try{const chunk=JSON.parse(raw);const t=chunk.text||'';if(t){fullText+=t;setMsgs(prev=>{const next=[...prev];next[next.length-1]={role:'assistant',text:fullText};return next;});}}catch{}
+}}
+// Parse patch blocks from the now-complete streamed text
+const pm=fullText.match(/```patch\n([\s\S]*?)\n```/);
+if(pm){try{const p=JSON.parse(pm[1]);if(Array.isArray(p)&&p.length>0){const clean=fullText.replace(/```patch\n[\s\S]*?\n```/,'').trim();setMsgs(prev=>{const next=[...prev];next[next.length-1]={role:'assistant',text:clean};return next;});setPendingPatch(p);setPatchApplied(false);}}catch{}}
+}else{
+// Fallback: non-streaming JSON response
 const data=await res.json();
 if(data.error){setError('API: '+(data.error.message||data.error));setLoading(false);return;}
 const reply=data?.content?.[0]?.text;
 if(!reply){setError('No response received.');setLoading(false);return;}
-// Detect ```patch [...] ``` blocks — strip from displayed text, show as diff card
 let displayText=reply;let parsedPatch=null;
 const pm=reply.match(/```patch\n([\s\S]*?)\n```/);
 if(pm){try{const p=JSON.parse(pm[1]);if(Array.isArray(p)&&p.length>0){parsedPatch=p;displayText=reply.replace(/```patch\n[\s\S]*?\n```/,'').trim();}}catch{}}
 setMsgs(prev=>[...prev,{role:'assistant',text:displayText}]);
 if(parsedPatch){setPendingPatch(parsedPatch);setPatchApplied(false);}
-}catch(e){setError('Error: '+e.message);}
 setLoading(false);
+}
+}catch(e){setError('Error: '+e.message);setLoading(false);}
 setTimeout(()=>inputRef.current?.focus(),80);
 };
 
@@ -1653,7 +1677,7 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 <ProUpgradeModal open={showPricing} onClose={()=>setShowPricing(false)} reason={pricingReason} creditsLeft={remainingFreeCredits(subscription)}/>
 {checkoutMsg&&<div role="status" className="fixed z-[10002] left-1/2 -translate-x-1/2 bottom-6 flex items-center gap-2 px-4 py-2.5 rounded-full anim-fade-in" style={{background:C.ink,color:C.surface,boxShadow:'0 12px 28px -8px rgba(15,23,42,0.45)'}}><Sparkles size={14} style={{color:C.gold}}/><span className="ff-body text-[13px]">{checkoutMsg}</span></div>}
 {showAIGen&&<AIGenerateModal open={showAIGen} onClose={()=>{setShowAIGen(false);refreshSubscription();}} onApplyDraft={handleAIGenComplete} onUseWizard={()=>{setShowAIGen(false);setShowWizard(true);}}/>}
-<AIAdvisorPanel open={showAI} onClose={()=>{setShowAI(false);refreshSubscription();}} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
+<AIAdvisorPanel open={showAI} onClose={()=>{setShowAI(false);refreshSubscription();}} onUpgradeRequired={openUpgrade} modelContext={{projectName,sectorKey:wizardAnswers?.sectorKey||'other',sector:BB[wizardAnswers?.sectorKey||'other'],computed,periods,granularity}} rowLabels={rowLabels} currentRowData={rowData[activeScenario]} onApplyPatch={handleApplyAIPatch}/>
 <AnalysisDrawer open={showAnalysisDrawer} onClose={()=>setShowAnalysisDrawer(false)} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} scenarioKey={activeScenario} sectorKey={wizardAnswers?.sectorKey||'other'} projectName={projectName} enabledStatements={enabledStatements} rows={rows} rowData={rowData} numPeriods={numPeriods} onOpenCritique={()=>setShowCritique(true)}/>
 <PlanCritiqueModal open={showCritique} onClose={()=>setShowCritique(false)} projectName={projectName} sectorKey={wizardAnswers?.sectorKey||'other'} computed={computed} computedAll={computedAll} periods={periods} granularity={granularity} enabledStatements={enabledStatements} rows={rows} rowData={rowData} feasibility={computeFeasibilityScore(computedAll,periods,wizardAnswers?.sectorKey||'other',granularity,enabledStatements)}/>
 </div></MillionsCtx.Provider>);
