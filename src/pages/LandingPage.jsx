@@ -575,10 +575,11 @@ export default function LandingPage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(16px)', borderBottom: `1px solid ${P.borderFaint}` }}>
         <div style={{ ...maxW, padding: `${mob ? 12 : 16}px ${sp}`, display: 'flex', alignItems: 'center', gap: mob ? 12 : 36 }}>
           <Logo size={mob ? 30 : 38} />
-          <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 28, flex: 1 }}>
+          <nav style={{ display: mob ? 'none' : 'flex', alignItems: 'center', gap: 22, flex: 1 }}>
             <a href="#features" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Features</a>
-            <a href="#how"      style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>How it works</a>
-            <a href="#learn"    style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Learn</a>
+            <Link to="/templates" style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Templates</Link>
+            <Link to="/tools"     style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Calculators</Link>
+            <Link to="/learn"     style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Learn</Link>
             <a href="#pricing"  style={{ ...body, fontSize: 15, fontWeight: 600, color: P.accentDeep, textDecoration: 'none' }}>Pricing</a>
             <a href="#contact"  style={{ ...body, fontSize: 15, fontWeight: 500, color: P.ink2, textDecoration: 'none' }}>Contact</a>
           </nav>

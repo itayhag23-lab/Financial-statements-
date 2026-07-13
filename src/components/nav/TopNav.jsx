@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, LayoutDashboard, GraduationCap } from 'lucide-react';
+import { Home, LayoutDashboard, GraduationCap, LayoutTemplate, Calculator } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 import { Logo } from '../../brand/Logo';
 import UserMenu from './UserMenu';
@@ -23,6 +23,26 @@ export default function TopNav() {
         </Link>
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Resource links — hidden on mobile to keep the row clear of the
+              avatar; interior pages also cross-link in their bodies/footers. */}
+          <Link
+            to="/templates"
+            className="hidden sm:flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+            style={{ ...body, background: 'none', border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 13, color: C.ink2, textDecoration: 'none', transition: 'all 200ms ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = C.bgWarm; e.currentTarget.style.borderColor = C.borderSoft; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
+          >
+            <LayoutTemplate size={14} /> Templates
+          </Link>
+          <Link
+            to="/tools"
+            className="hidden sm:flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+            style={{ ...body, background: 'none', border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 13, color: C.ink2, textDecoration: 'none', transition: 'all 200ms ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = C.bgWarm; e.currentTarget.style.borderColor = C.borderSoft; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
+          >
+            <Calculator size={14} /> Calculators
+          </Link>
           <Link
             to="/learn"
             aria-label="Learn"
