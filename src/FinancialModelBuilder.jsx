@@ -1473,7 +1473,11 @@ const tabNames={income:'Income Statement',balance:'Balance Sheet',cashFlow:'Cash
 const sym=CURRENCIES[currencyKey]?.symbol||'$';
 const activeStmts=['income',...(enabledStatements.balance?['balance']:[]),...(enabledStatements.cashFlow?['cashFlow']:[])];
 const ncols=periods.length+1;
-const caption=' · '+projectName+' · '+SCENARIO_META[activeScenario].label+' · '+(granularity==='annual'?'Annual':'Quarterly')+' · '+sym+' (whole numbers)';
+// Carry the on-screen "Show millions" setting into the export so the workbook
+// states its own scale — critical once the file leaves the app, where there's
+// no UI to say whether a "5" means five dollars or five million.
+const unitsLabel=inMillions?sym+' millions ($M)':sym+' (whole numbers)';
+const caption=' · '+projectName+' · '+SCENARIO_META[activeScenario].label+' · '+(granularity==='annual'?'Annual':'Quarterly')+' · '+unitsLabel;
 const sheets=activeStmts.map(stmt=>{
 const out=[];
 const title=[{t:'s',v:stmtNames[stmt]+caption,s:STYLE.stmtHeader}];
@@ -1486,7 +1490,9 @@ const kind=r.type==='computed'?'computed':r.type==='parent'?'parent':'leaf';
 const lblS=kind==='computed'?STYLE.computedLabel:kind==='parent'?STYLE.parentLabel:STYLE.leafLabel;
 const numS=kind==='computed'?STYLE.numComputed:kind==='parent'?STYLE.numParent:STYLE.numLeaf;
 const cells=[{t:'s',v:r.label,s:lblS}];
-for(let i=0;i<periods.length;i++)cells.push({t:'n',v:Math.round(v[i]||0),s:numS});
+// In millions mode, store values in $M (value ÷ 1e6, 2 decimals) so the cells
+// match what's shown on screen; otherwise store whole-dollar numbers.
+for(let i=0;i<periods.length;i++){const raw=v[i]||0;const cell=inMillions?Math.round(raw/1e4)/100:Math.round(raw);cells.push({t:'n',v:cell,s:numS});}
 out.push({cells});
 }
 return{name:tabNames[stmt],ncols,rows:out,col0Width:42,colWidth:18};
@@ -1496,7 +1502,7 @@ const b=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.sp
 const url=URL.createObjectURL(b);const a=document.createElement('a');a.href=url;
 a.download=(projectName.replace(/[^a-z0-9]/gi,'-')||'model')+'-'+activeScenario+'-'+Date.now()+'.xlsx';
 a.click();URL.revokeObjectURL(url);
-},[rows,computed,periods,activeScenario,granularity,enabledStatements,currencyKey,projectName]);
+},[rows,computed,periods,activeScenario,granularity,enabledStatements,currencyKey,projectName,inMillions]);
 // --- Persistence: load saved project on mount, then debounced autosave ---
 // "New" deep-links (?new=manual / ?new=ai) must start a FRESH project, never
 // resume the last-active one — otherwise a returning user always sees their old
