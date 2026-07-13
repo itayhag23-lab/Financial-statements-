@@ -17,20 +17,44 @@ const Wrap = ({ children, style }) => (
   <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 24px', ...style }}>{children}</div>
 );
 
-function EntryRow({ a }) {
+function FeaturedEntry({ a }) {
+  const [hover, setHover] = useState(false);
   return (
     <Link
       to={`/learn/${a.slug}`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{ display: 'block', textDecoration: 'none', borderLeft: `3px solid ${C.goldText}`, paddingLeft: 14, paddingTop: 6, paddingBottom: 18 }}
+    >
+      <div style={{ ...disp, fontSize: 20, fontWeight: 700, color: hover ? C.goldText : C.ink, letterSpacing: '-0.01em', marginBottom: 6, transition: 'color 140ms ease' }}>{a.title}</div>
+      <div style={{ ...body, fontSize: 14, lineHeight: 1.55, color: C.ink2, maxWidth: 640, marginBottom: 8 }}>{a.dek}</div>
+      <span style={{ ...body, fontSize: 12.5, fontWeight: 600, color: C.goldText, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        Read the entry <ArrowRight size={13} style={{ transform: hover ? 'translateX(3px)' : 'none', transition: 'transform 140ms ease' }} />
+      </span>
+    </Link>
+  );
+}
+
+function EntryRow({ a }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <Link
+      to={`/learn/${a.slug}`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 16,
-        padding: '16px 0', textDecoration: 'none', borderBottom: `1px solid ${C.borderSoft}`,
+        padding: '16px 12px', margin: '0 -12px', borderRadius: 10, textDecoration: 'none',
+        borderBottom: `1px solid ${C.borderSoft}`,
+        background: hover ? C.greenSoft : 'transparent',
+        transition: 'background 140ms ease, color 140ms ease',
       }}
     >
       <div style={{ minWidth: 0 }}>
-        <div style={{ ...disp, fontSize: 16, fontWeight: 700, color: C.ink, letterSpacing: '-0.01em', marginBottom: 4 }}>{a.title}</div>
+        <div style={{ ...disp, fontSize: 16, fontWeight: 700, color: hover ? C.goldText : C.ink, letterSpacing: '-0.01em', marginBottom: 4, transition: 'color 140ms ease' }}>{a.title}</div>
         <div style={{ ...body, fontSize: 13.5, lineHeight: 1.5, color: C.ink2, maxWidth: 620 }}>{a.dek}</div>
       </div>
-      <div style={{ ...body, fontSize: 12, color: C.muted, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      <div style={{ ...body, fontSize: 12, color: hover ? C.goldText : C.muted, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, transition: 'color 140ms ease' }}>
         <Clock size={11} /> {a.readTime} min
       </div>
     </Link>
@@ -99,13 +123,7 @@ export default function LearnPage() {
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, borderLeft: `3px solid ${C.goldText}`, paddingLeft: 14 }}>
                 <span style={{ ...body, fontSize: 11.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: C.goldText }}>Start here</span>
               </div>
-              <Link to={`/learn/${featured.slug}`} style={{ display: 'block', textDecoration: 'none', borderLeft: `3px solid ${C.goldText}`, paddingLeft: 14, paddingTop: 6, paddingBottom: 18 }}>
-                <div style={{ ...disp, fontSize: 20, fontWeight: 700, color: C.ink, letterSpacing: '-0.01em', marginBottom: 6 }}>{featured.title}</div>
-                <div style={{ ...body, fontSize: 14, lineHeight: 1.55, color: C.ink2, maxWidth: 640, marginBottom: 8 }}>{featured.dek}</div>
-                <span style={{ ...body, fontSize: 12.5, fontWeight: 600, color: C.goldText, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  Read the entry <ArrowRight size={13} />
-                </span>
-              </Link>
+              <FeaturedEntry a={featured} />
             </Wrap>
           )}
 
@@ -133,7 +151,12 @@ export default function LearnPage() {
             <div style={{ ...disp, fontSize: 15, fontWeight: 700, color: C.ink }}>Reading is step one.</div>
             <div style={{ ...body, fontSize: 13.5, color: C.ink2 }}>Build your own three-statement model and watch these ideas play out with real numbers.</div>
           </div>
-          <Link to="/app" style={{ ...body, fontSize: 13.5, fontWeight: 600, color: C.ink, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 16px', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <Link
+            to="/app"
+            onMouseEnter={(e) => { e.currentTarget.style.color = C.goldText; e.currentTarget.style.borderColor = C.gold; e.currentTarget.style.background = C.greenSoft; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = C.ink; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = 'transparent'; }}
+            style={{ ...body, fontSize: 13.5, fontWeight: 600, color: C.ink, border: `1px solid ${C.border}`, borderRadius: 8, padding: '9px 16px', textDecoration: 'none', whiteSpace: 'nowrap', background: 'transparent', transition: 'color 140ms ease, border-color 140ms ease, background 140ms ease' }}
+          >
             Open the model builder →
           </Link>
         </div>

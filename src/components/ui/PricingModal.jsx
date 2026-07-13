@@ -6,46 +6,22 @@ import { useDialog } from '../../lib/useDialog';
 import { PRICING, PRO_FEATURES, FREE_AI_CREDITS, startCheckout } from '../../lib/subscription';
 
 // Upgrade-to-Pro modal. Opened when a free user runs out of AI credits (or from
-// an explicit "Upgrade" entry). Monthly/yearly toggle, feature list, and a CTA
+// an explicit "Upgrade" entry). Single monthly plan, feature list, and a CTA
 // that kicks off Stripe Checkout. Dependency-free, inline styles, CSP-clean.
 
 export default function PricingModal({ open, onClose, reason, creditsLeft }) {
-  const [interval, setInterval] = useState('year'); // default to the better-value plan
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const ref = useDialog(open ? onClose : null, open);
 
   if (!open) return null;
 
-  const plan = interval === 'year' ? PRICING.yearly : PRICING.monthly;
+  const plan = PRICING.monthly;
 
   const upgrade = async () => {
     setBusy(true); setErr(null);
-    try { await startCheckout(interval); }
+    try { await startCheckout('month'); }
     catch (e) { setErr(e.message || 'Could not start checkout.'); setBusy(false); }
-  };
-
-  const Toggle = ({ id, label, sub }) => {
-    const on = interval === id;
-    return (
-      <button
-        type="button"
-        onClick={() => setInterval(id)}
-        aria-pressed={on}
-        style={{
-          flex: 1, textAlign: 'left', padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
-          background: on ? C.goldSoft : C.surface, border: `1.5px solid ${on ? C.gold : C.border}`,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <span style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600, color: C.ink }}>{label}</span>
-          <span style={{ width: 15, height: 15, borderRadius: '50%', border: `1.5px solid ${on ? C.gold : C.faint}`, background: on ? C.gold : 'transparent', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            {on && <Check size={10} color="#fff" />}
-          </span>
-        </div>
-        {sub && <div style={{ fontFamily: FONTS.body, fontSize: 11.5, color: C.muted, marginTop: 3 }}>{sub}</div>}
-      </button>
-    );
   };
 
   return ReactDOM.createPortal(
@@ -78,19 +54,11 @@ export default function PricingModal({ open, onClose, reason, creditsLeft }) {
               : `The AI Advisor and Build-from-description are part of Koala Pro. Everything else stays free, always.`}
           </p>
 
-          {/* Interval toggle */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
-            <Toggle id="year" label={`${PRICING.symbol}${PRICING.yearly.amount}/yr`} sub={`${PRICING.symbol}${PRICING.yearly.perMonth}/mo · ${PRICING.yearly.monthsFree} months free`} />
-            <Toggle id="month" label={`${PRICING.symbol}${PRICING.monthly.amount}/mo`} sub="Billed monthly" />
-          </div>
-
-          {/* Price headline */}
+          {/* Price headline — single monthly plan */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 16 }}>
             <span style={{ fontFamily: FONTS.display, fontSize: 34, fontWeight: 800, color: C.ink, letterSpacing: '-0.02em' }}>{PRICING.symbol}{plan.amount}</span>
             <span style={{ fontFamily: FONTS.body, fontSize: 14, color: C.muted }}>/ {plan.per}</span>
-            {interval === 'year' && (
-              <span style={{ marginLeft: 'auto', fontFamily: FONTS.body, fontSize: 11.5, fontWeight: 700, color: C.green, background: C.greenSoft, borderRadius: 999, padding: '4px 10px' }}>Save {PRICING.yearly.savePct}%</span>
-            )}
+            <span style={{ marginLeft: 'auto', fontFamily: FONTS.body, fontSize: 12, color: C.muted }}>Billed monthly · cancel anytime</span>
           </div>
 
           {/* Features */}

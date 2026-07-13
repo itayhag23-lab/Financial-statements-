@@ -28,13 +28,21 @@ function timeAgo(ts) {
 }
 
 function ProjectCard({ project, onDelete, onDuplicate }) {
+  const navigate = useNavigate();
   const [hover, setHover] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+
+  const open = () => navigate(`/app/${project.id}`);
 
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => { setHover(false); setConfirmDel(false); }}
+      onClick={open}
+      role="link"
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }}
+      aria-label={`Open ${project.name || 'Untitled Project'}`}
       style={{
         background: hover ? '#F8FAFC' : '#FFFFFF',
         border: `1px solid ${hover ? C.borderSoft : '#E2E8F0'}`,
@@ -42,6 +50,7 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
         transition: 'background 140ms, border-color 140ms, box-shadow 140ms',
         boxShadow: hover ? '0 8px 24px -8px rgba(15,23,42,0.12)' : 'none',
         position: 'relative', display: 'flex', flexDirection: 'column', gap: 12,
+        cursor: 'pointer',
       }}
     >
       {/* Header */}
@@ -64,7 +73,7 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
             on touch devices, and the delete is clearly marked in red. */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
           <button
-            onClick={e => { e.preventDefault(); onDuplicate(project.id); }}
+            onClick={e => { e.preventDefault(); e.stopPropagation(); onDuplicate(project.id); }}
             title="Duplicate"
             style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center' }}
           >
@@ -73,16 +82,16 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
           {confirmDel
             ? <>
                 <button
-                  onClick={e => { e.preventDefault(); onDelete(project.id); }}
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); onDelete(project.id); }}
                   style={{ background: '#EF4444', border: '1px solid #EF4444', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', color: '#fff', fontSize: 11.5, fontWeight: 600, ...body }}
                 >Delete</button>
                 <button
-                  onClick={e => { e.preventDefault(); setConfirmDel(false); }}
+                  onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmDel(false); }}
                   style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '6px 10px', cursor: 'pointer', color: '#64748B', fontSize: 11.5, ...body }}
                 >Cancel</button>
               </>
             : <button
-                onClick={e => { e.preventDefault(); setConfirmDel(true); }}
+                onClick={e => { e.preventDefault(); e.stopPropagation(); setConfirmDel(true); }}
                 title="Delete project"
                 style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 7, padding: '6px 8px', cursor: 'pointer', color: '#EF4444', display: 'flex', alignItems: 'center' }}
               >
@@ -107,13 +116,14 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
         )}
       </div>
 
-      {/* Open link */}
-      <Link
-        to={`/app/${project.id}`}
-        style={{ ...body, fontSize: 13, fontWeight: 600, color: '#10B981', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, marginTop: 'auto' }}
+      {/* Open affordance — the whole card is clickable; this is the visual cue.
+          Rendered as a span (not a link) to avoid a nested interactive element
+          inside the clickable card. */}
+      <span
+        style={{ ...body, fontSize: 13, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 5, marginTop: 'auto' }}
       >
         Open model <ChevronRight size={14} />
-      </Link>
+      </span>
     </div>
   );
 }
@@ -255,12 +265,12 @@ export default function Dashboard() {
               <button
                 onClick={() => setShowPricing(true)}
                 aria-label="Upgrade to Pro"
-                className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
-                style={{ ...body, background: '#10B981', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#FFFFFF', transition: 'all 200ms ease' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#047857'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#10B981'; }}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2"
+                style={{ ...body, background: '#0F172A', border: '1px solid #0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#FFFFFF', transition: 'all 200ms ease', boxShadow: '0 1px 2px rgba(15,23,42,0.12)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#1E293B'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px -4px rgba(15,23,42,0.35)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#0F172A'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 2px rgba(15,23,42,0.12)'; }}
               >
-                <Sparkles size={14} /> <span className="hidden sm:inline">Upgrade</span>
+                <Sparkles size={14} color="#10B981" /> <span className="hidden sm:inline">Upgrade to Pro</span>
               </button>
             )}
             <UserMenu
@@ -271,8 +281,8 @@ export default function Dashboard() {
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
               }}
-              onDeleteAccount={() => setShowDeleteAccount(true)}
-              canDelete={true}
+              onDeleteAccount={() => { setShowDeleteAccount(true); setDeleteConfirm(''); setDeleteError(''); }}
+              canDelete={!!(supabase && user)}
             />
           </div>
         </div>
@@ -339,9 +349,12 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Feedback / contact — collapsed to a slim bar by default so it doesn't
-            dominate the dashboard; expands to the full form on click. */}
-        <div id="feedback" style={{ marginTop: 40, scrollMarginTop: 80, maxWidth: 560, margin: '40px auto 0' }}>
+        {/* Feedback / contact — the last thing on the page, set well below the
+            models grid. Collapsed to a slim bar by default so it doesn't
+            dominate the dashboard; expands to the full form on click.
+            Account deletion now lives in the avatar menu (top-right), so there's
+            no separate danger-zone link beneath this. */}
+        <div id="feedback" style={{ scrollMarginTop: 80, maxWidth: 560, margin: '80px auto 24px' }}>
           {!feedbackOpen ? (
             <button
               onClick={() => setFeedbackOpen(true)}
@@ -373,17 +386,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Danger zone — permanent account deletion */}
-        {supabase && user && (
-          <div style={{ maxWidth: 560, margin: '20px auto 0', textAlign: 'center' }}>
-            <button
-              onClick={() => { setShowDeleteAccount(true); setDeleteConfirm(''); setDeleteError(''); }}
-              style={{ ...body, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12.5, color: '#DC2626', fontWeight: 600 }}
-            >
-              Delete my account
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Delete-account confirmation modal */}
