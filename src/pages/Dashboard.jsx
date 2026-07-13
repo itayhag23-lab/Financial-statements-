@@ -11,6 +11,7 @@ import { useAuth, signOut, deleteAccount } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
 import PricingModal from '../components/ui/PricingModal';
+import UserMenu from '../components/nav/UserMenu';
 import { fetchSubscription, isPro } from '../lib/subscription';
 
 const body = { fontFamily: FONTS.body };
@@ -229,10 +230,8 @@ export default function Dashboard() {
   return (
     <div className="koala-page" style={{ minHeight: '100vh', background: '#F8FAFC', ...body }}>
 
-      {/* Top nav — the brand can shrink/truncate and the action buttons collapse
-          to icon-only on phones, so the row can never overflow and overlap the
-          avatar (the bug this layout previously had on narrow viewports). */}
-      <div style={{ background: '#FFFFFF', boxShadow: '0 1px 0 #E2E8F0, 0 1px 3px rgba(15,23,42,0.04)', position: 'sticky', top: 0, zIndex: 40 }}>
+      {/* Top nav */}
+      <div style={{ background: '#FFFFFF', boxShadow: '0 1px 2px rgba(15,23,42,0.08)', position: 'sticky', top: 0, zIndex: 40 }}>
         <div
           className="mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6"
           style={{ maxWidth: 1200 }}
@@ -246,8 +245,10 @@ export default function Dashboard() {
             <Link
               to="/learn"
               aria-label="Learn"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
-              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B', textDecoration: 'none' }}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+              style={{ ...body, background: 'none', border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 13, color: C.ink2, textDecoration: 'none', transition: 'all 200ms ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.bgWarm; e.currentTarget.style.borderColor = C.borderSoft; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
             >
               <GraduationCap size={14} /> <span className="hidden sm:inline">Learn</span>
             </Link>
@@ -255,41 +256,25 @@ export default function Dashboard() {
               <button
                 onClick={() => setShowPricing(true)}
                 aria-label="Upgrade to Pro"
-                className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
-                style={{ ...body, background: '#0F172A', border: '1px solid #0F172A', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#fff' }}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+                style={{ ...body, background: '#10B981', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#FFFFFF', transition: 'all 200ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#047857'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#10B981'; }}
               >
-                <Sparkles size={14} color="#10B981" /> <span className="hidden sm:inline">Upgrade to Pro</span>
+                <Sparkles size={14} /> <span className="hidden sm:inline">Upgrade</span>
               </button>
             )}
-            {/* User badge — email only appears once there's room for it */}
-            <div className="flex items-center gap-2">
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <span style={{ ...body, fontSize: 13, fontWeight: 700, color: '#059669' }}>{userInitial}</span>
-              </div>
-              <span className="hidden min-w-0 truncate md:block" style={{ ...body, fontSize: 13, color: '#334155', maxWidth: 200 }}>{userEmail}</span>
-            </div>
-            <button
-              onClick={() => {
+            <UserMenu
+              onFeedbackClick={() => {
                 setFeedbackOpen(true);
                 requestAnimationFrame(() => {
                   const el = document.getElementById('feedback');
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
               }}
-              aria-label="Feedback"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
-              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
-            >
-              <MessageSquare size={14} /> <span className="hidden sm:inline">Feedback</span>
-            </button>
-            <button
-              onClick={async () => { await signOut(); navigate('/auth', { replace: true }); }}
-              aria-label="Sign out"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 sm:px-3"
-              style={{ ...body, background: 'none', border: '1px solid #E2E8F0', cursor: 'pointer', fontSize: 13, color: '#64748B' }}
-            >
-              <LogOut size={14} /> <span className="hidden sm:inline">Sign out</span>
-            </button>
+              onDeleteAccount={() => setShowDeleteAccount(true)}
+              canDelete={true}
+            />
           </div>
         </div>
       </div>
