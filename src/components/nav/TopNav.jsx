@@ -1,14 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Home, LayoutDashboard, LogOut, GraduationCap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Home, LayoutDashboard, GraduationCap } from 'lucide-react';
 import { C, FONTS } from '../../brand/theme';
 import { Logo } from '../../brand/Logo';
 import UserMenu from './UserMenu';
-import { useAuth, signOut } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function TopNav() {
-  const user     = useAuth();
-  const navigate = useNavigate();
+  const user = useAuth();
 
   const body = { fontFamily: FONTS.body };
 

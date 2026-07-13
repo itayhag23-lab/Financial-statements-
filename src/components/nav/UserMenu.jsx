@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, MessageSquare, Settings, Trash2 } from 'lucide-react';
+import { LogOut, MessageSquare, Trash2 } from 'lucide-react';
 import { FONTS, C } from '../../brand/theme';
 import { useAuth, signOut } from '../../contexts/AuthContext';
 
@@ -140,7 +140,6 @@ export default function UserMenu({ onFeedbackClick, onDeleteAccount, canDelete }
                   fontWeight: 500,
                   color: isDanger ? C.rust : C.ink2,
                   transition: 'background 120ms ease',
-                  ':hover': { background: isDanger ? 'rgba(220, 38, 38, 0.05)' : C.bgWarm },
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = isDanger ? 'rgba(220, 38, 38, 0.05)' : C.bgWarm;

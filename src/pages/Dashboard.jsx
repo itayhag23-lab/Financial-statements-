@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
-  LogOut, User, ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap,
+  ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
 import { listProjects, deleteProject, duplicateProject, genId, saveProject } from '../lib/persistence';
-import { useAuth, signOut, deleteAccount } from '../contexts/AuthContext';
+import { useAuth, deleteAccount } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
 import PricingModal from '../components/ui/PricingModal';
@@ -224,7 +224,6 @@ export default function Dashboard() {
     }
   }, [navigate]);
 
-  const userInitial = user?.email?.[0]?.toUpperCase() || '?';
   const userEmail   = user?.email || '';
 
   return (

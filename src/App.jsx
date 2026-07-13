@@ -21,6 +21,18 @@ const SharedReport           = lazy(() => import('./pages/SharedReport'));
 const AuthPage               = lazy(() => import('./pages/AuthPage'));
 const Dashboard              = lazy(() => import('./pages/Dashboard'));
 
+// Captured ONCE at module load — before Supabase's async `detectSessionInUrl`
+// clears the auth params from the URL. An OAuth (Google) round-trip lands the
+// browser back on the bare origin with either `#access_token=…` (implicit) or
+// `?code=…` (PKCE). By the time PostAuthRedirect's effect runs the params are
+// already gone, so we snapshot the shape here to know "this page load was a
+// sign-in callback" and route accordingly — without bouncing an ordinary
+// signed-in visitor off the homepage.
+const IS_OAUTH_CALLBACK =
+  typeof window !== 'undefined' &&
+  (window.location.hash.includes('access_token') ||
+   new URLSearchParams(window.location.search).has('code'));
+
 function Loading() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONTS.body, color: C.muted, fontSize: 14 }}>
@@ -79,10 +91,15 @@ function PostAuthRedirect() {
       // or arriving already authenticated) — go to the dashboard instead of
       // leaving them stuck looking at the login form.
       navigate('/dashboard', { replace: true });
-    } else if (location.pathname === '/') {
-      // OAuth flow lands on / with tokens in URL, but Supabase auth library
-      // removes tokens before this effect runs. If no destination was stashed
-      // (e.g., sessionStorage issue in incognito), assume they want the dashboard.
+    } else if (location.pathname === '/' && IS_OAUTH_CALLBACK) {
+      // OAuth (Google) lands back on the bare origin. Normally the destination
+      // stashed by signInWithGoogle handles the redirect above, but if that
+      // sessionStorage entry was lost (incognito, cross-subdomain Site URL,
+      // storage cleared) the user would be stranded on the marketing homepage
+      // looking "logged in nowhere." IS_OAUTH_CALLBACK — snapshotted at module
+      // load before Supabase strips the URL — lets us still route them to the
+      // dashboard, WITHOUT redirecting an ordinary signed-in visitor who just
+      // navigated to the homepage on purpose.
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate, location.pathname]);
