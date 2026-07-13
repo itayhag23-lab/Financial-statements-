@@ -17,14 +17,12 @@ export const AI_PAYWALL_ENABLED = process.env.REACT_APP_BILLING_ENABLED === '1';
 export const FREE_AI_CREDITS = 3;
 
 // Prices are display-only here (the real charge amount lives in the Stripe Price
-// objects referenced by STRIPE_PRICE_MONTHLY / STRIPE_PRICE_YEARLY on the
-// server). Keep these in sync with your Stripe dashboard.
-//   $9/mo, or $90/yr  →  $90 = 10 × $9, i.e. "2 months free".
+// object referenced by STRIPE_PRICE_MONTHLY on the server). Keep in sync with
+// your Stripe dashboard. Koala Pro is a single monthly plan.
 export const PRICING = {
   currency: 'USD',
   symbol: '$',
   monthly: { amount: 9, per: 'month', interval: 'month' },
-  yearly:  { amount: 90, per: 'year', interval: 'year', perMonth: 7.5, monthsFree: 2, savePct: 17 },
 };
 
 export const PRO_FEATURES = [

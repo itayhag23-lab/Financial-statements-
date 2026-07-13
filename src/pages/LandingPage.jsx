@@ -812,7 +812,7 @@ export default function LandingPage() {
                 <span style={{ ...body, fontSize: 14, color: 'rgba(248,250,252,0.5)' }}>/{PRICING.monthly.per}</span>
               </div>
               <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.45)', marginBottom: 24 }}>
-                or {PRICING.symbol}{PRICING.yearly.amount}/{PRICING.yearly.per} · save {PRICING.yearly.savePct}%
+                Billed monthly · cancel anytime
               </div>
               <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0 }}>
                 {PRO_FEATURES.map(f => (
