@@ -6,7 +6,7 @@ const { billingConfigured, serviceClient } = require('./_lemonsqueezy');
 // can't be bypassed from the client. The gate only activates once billing is
 // configured (LEMONSQUEEZY_API_KEY + service role), so existing deployments keep
 // working unchanged until Lemon Squeezy is wired up.
-const FREE_AI_CREDITS = 3; // keep in sync with src/lib/subscription.js
+const FREE_AI_CREDITS = 0; // keep in sync with src/lib/subscription.js
 
 // Returns { allow, isPro, consume } describing the caller's AI access. `consume`
 // is called after a successful response to spend one free credit (Pro doesn't).
