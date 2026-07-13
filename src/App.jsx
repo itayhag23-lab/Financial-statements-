@@ -11,6 +11,12 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import LearnPage from './pages/LearnPage';
 import LearnArticlePage from './pages/LearnArticlePage';
+// Templates + Tools are programmatic-SEO growth pages — eagerly imported (like
+// Learn) so they pre-render to static HTML at build time and rank on their own.
+import TemplatesPage from './pages/TemplatesPage';
+import TemplatePage from './pages/TemplatePage';
+import ToolsPage from './pages/ToolsPage';
+import ToolPage from './pages/ToolPage';
 import TopNav from './components/nav/TopNav';
 import { C, FONTS } from './brand/theme';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -117,6 +123,10 @@ export default function App() {
         <Route path="/dashboard"  element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
         <Route path="/learn"      element={<LearnPage />} />
         <Route path="/learn/:slug" element={<LearnArticlePage />} />
+        <Route path="/templates"       element={<TemplatesPage />} />
+        <Route path="/templates/:slug" element={<TemplatePage />} />
+        <Route path="/tools"           element={<ToolsPage />} />
+        <Route path="/tools/:slug"     element={<ToolPage />} />
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />

@@ -5,6 +5,8 @@ import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from '../src/App';
 import { ARTICLES } from '../src/lib/learnContent';
+import { TEMPLATES } from '../src/lib/templateContent';
+import { TOOLS } from '../src/lib/toolsContent';
 
 export function renderRoute(path) {
   return renderToString(
@@ -27,5 +29,35 @@ export const learnRoutes = [
     path: `/learn/${a.slug}`,
     title: `${a.title} | Koala Statements`,
     description: a.dek,
+  })),
+];
+
+// Programmatic-SEO growth routes: the Templates hub + one page per industry,
+// and the Tools hub + one page per calculator. Each gets its own <head>.
+export const templateRoutes = [
+  {
+    path: '/templates',
+    title: 'Financial Model Templates by Industry (Free) | Koala Statements',
+    description:
+      'Free financial model templates for SaaS, e-commerce, marketplace, agency, restaurant, and subscription businesses. Pick your industry and AI builds a full 3-statement model.',
+  },
+  ...TEMPLATES.map((t) => ({
+    path: `/templates/${t.slug}`,
+    title: t.metaTitle,
+    description: t.metaDescription,
+  })),
+];
+
+export const toolRoutes = [
+  {
+    path: '/tools',
+    title: 'Free Startup Finance Calculators | Koala Statements',
+    description:
+      'Free finance calculators for founders: startup runway, burn rate, and LTV:CAC. Instant answers, no signup — then turn any of them into a full financial model.',
+  },
+  ...TOOLS.map((t) => ({
+    path: `/tools/${t.slug}`,
+    title: t.metaTitle,
+    description: t.metaDescription,
   })),
 ];

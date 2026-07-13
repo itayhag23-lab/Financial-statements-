@@ -874,7 +874,9 @@ export default function LandingPage() {
             <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.4)' }}>
               © {new Date().getFullYear()} Koala Statements · Not financial advice.
             </div>
-            <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+              <Link to="/templates" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Templates</Link>
+              <Link to="/tools"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Calculators</Link>
               <Link to="/learn"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Learn</Link>
               <Link to="/privacy" style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Privacy</Link>
               <Link to="/terms"   style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.55)', textDecoration: 'none' }}>Terms</Link>

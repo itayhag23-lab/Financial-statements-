@@ -1071,7 +1071,12 @@ const[result,setResult]=useState(null);
 const[err,setErr]=useState('');
 const taRef=useRef(null);
 const dialogRef=useDialog(onClose);
-useEffect(()=>{if(!open){setDesc('');setStatus('idle');setResult(null);setErr('');}else{setTimeout(()=>taRef.current?.focus(),80);}},[open]);
+useEffect(()=>{if(!open){setDesc('');setStatus('idle');setResult(null);setErr('');}else{
+// A template/tool page may have stashed an AI "seed" description (see
+// BuildCTA) before deep-linking here with ?new=ai. Pre-fill the box with it
+// once, then clear it so it doesn't leak into the next manual open.
+try{const s=sessionStorage.getItem('koala:aiSeed');if(s){setDesc(s);sessionStorage.removeItem('koala:aiSeed');}}catch{}
+setTimeout(()=>taRef.current?.focus(),80);}},[open]);
 const generate=async()=>{
 const t=desc.trim();if(!t||status==='generating')return;
 setStatus('generating');setErr('');setResult(null);

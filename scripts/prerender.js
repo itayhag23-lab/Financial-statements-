@@ -81,11 +81,13 @@ async function main() {
     alias: { 'posthog-js': path.join(__dirname, 'stubs', 'posthog.js') },
   });
 
-  const { renderRoute, learnRoutes = [] } = require(outfile);
+  const { renderRoute, learnRoutes = [], templateRoutes = [], toolRoutes = [] } = require(outfile);
 
-  // Merge the Learn library's routes + metadata in from the content library.
-  const ROUTES = [...BASE_ROUTES, ...learnRoutes.map((r) => r.path)];
-  for (const r of learnRoutes) {
+  // Merge the content-library routes + metadata (Learn, Templates, Tools) in
+  // from their source of truth so prerender.js never hardcodes slugs.
+  const dynamicRoutes = [...learnRoutes, ...templateRoutes, ...toolRoutes];
+  const ROUTES = [...BASE_ROUTES, ...dynamicRoutes.map((r) => r.path)];
+  for (const r of dynamicRoutes) {
     ROUTE_META[r.path] = { title: r.title, description: r.description };
   }
 
@@ -139,13 +141,14 @@ function writeSitemap(routes) {
   const today = new Date().toISOString().slice(0, 10);
   const priority = (route) => {
     if (route === '/') return '1.0';
-    if (route === '/learn') return '0.9';
+    if (route === '/learn' || route === '/templates' || route === '/tools') return '0.9';
+    if (route.startsWith('/templates/') || route.startsWith('/tools/')) return '0.8';
     if (route.startsWith('/learn/')) return '0.7';
     return '0.3';
   };
   const changefreq = (route) => {
-    if (route === '/' || route === '/learn') return 'weekly';
-    if (route.startsWith('/learn/')) return 'monthly';
+    if (route === '/' || route === '/learn' || route === '/templates' || route === '/tools') return 'weekly';
+    if (route.startsWith('/learn/') || route.startsWith('/templates/') || route.startsWith('/tools/')) return 'monthly';
     return 'yearly';
   };
   const urls = routes.map((route) => `  <url>
