@@ -4,7 +4,7 @@ import { C, FONTS } from './theme';
 // Illustrated koala mascot mark.
 export function KoalaMark({ size = 30 }) {
   return (
-    <img src="/koala-mascot.png" alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} />
+    <img src="/koala-mascot-160.png" alt="" width={size} height={size} decoding="async" style={{ display: 'block', objectFit: 'contain' }} />
   );
 }
 

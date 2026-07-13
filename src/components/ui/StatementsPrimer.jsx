@@ -126,7 +126,7 @@ export default function StatementsPrimer({ open, onClose, onFinish, initialIndex
           </div>
 
           {card.mascot && (
-            <img src="/koala-mascot.png" alt="" width={52} height={52} style={{ display: 'block', marginBottom: 12 }} />
+            <img src="/koala-mascot-160.png" alt="" width={52} height={52} loading="lazy" decoding="async" style={{ display: 'block', marginBottom: 12 }} />
           )}
 
           {card.badge && (

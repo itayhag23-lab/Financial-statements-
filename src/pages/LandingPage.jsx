@@ -868,7 +868,7 @@ export default function LandingPage() {
         <footer>
           <div style={{ ...maxW, padding: `28px ${sp} 36px`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <img src="/koala-mascot.png" alt="" width={44} height={44} style={{ display: 'block', objectFit: 'contain' }} />
+              <img src="/koala-mascot-160.png" alt="" width={44} height={44} loading="lazy" decoding="async" style={{ display: 'block', objectFit: 'contain' }} />
               <span style={{ ...disp, fontSize: 16, fontWeight: 700, color: '#F8FAFC', letterSpacing: '-0.015em' }}>Koala Statements</span>
             </div>
             <div style={{ ...body, fontSize: 13, color: 'rgba(248,250,252,0.4)' }}>
