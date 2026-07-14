@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
   ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap, Wallet,
+  LayoutTemplate, Calculator,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
@@ -141,14 +142,14 @@ function EmptyState() {
         <FileText size={26} color="#10B981" />
       </div>
       <div style={{ ...disp, fontSize: 20, fontWeight: 700, color: '#0F172A', marginBottom: 8 }}>No models yet</div>
-      <div style={{ ...body, fontSize: 14, color: '#64748B', maxWidth: 320, margin: '0 auto 24px' }}>
-        Create your first financial model: describe your business and AI builds it in under 60 seconds.
+      <div style={{ ...body, fontSize: 14, color: '#64748B', maxWidth: 340, margin: '0 auto 24px' }}>
+        Create your first statement — a business model AI builds in under 60 seconds, or a personal net-worth &amp; cash-flow statement.
       </div>
       <Link
-        to="/app?new=ai"
+        to="/app?new=choose"
         style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#10B981', color: '#0F172A', textDecoration: 'none', padding: '11px 20px', borderRadius: 10, fontSize: 14, fontWeight: 700 }}
       >
-        <Sparkles size={16} /> Create with AI
+        <Plus size={16} /> New statement
       </Link>
     </div>
   );
@@ -257,6 +258,24 @@ export default function Dashboard() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <Link
+              to="/templates"
+              className="hidden sm:flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+              style={{ ...body, background: 'none', border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 13, color: C.ink2, textDecoration: 'none', transition: 'all 200ms ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.bgWarm; e.currentTarget.style.borderColor = C.borderSoft; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
+            >
+              <LayoutTemplate size={14} /> Templates
+            </Link>
+            <Link
+              to="/tools"
+              className="hidden sm:flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2"
+              style={{ ...body, background: 'none', border: `1px solid ${C.border}`, cursor: 'pointer', fontSize: 13, color: C.ink2, textDecoration: 'none', transition: 'all 200ms ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = C.bgWarm; e.currentTarget.style.borderColor = C.borderSoft; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = C.border; }}
+            >
+              <Calculator size={14} /> Calculators
+            </Link>
             <Link
               to="/learn"
               aria-label="Learn"
