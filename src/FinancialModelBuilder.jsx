@@ -2,7 +2,8 @@ import React,{useState,useMemo,useCallback,useRef,useEffect,Component} from 'rea
 import ReactDOM from 'react-dom';
 import{Plus,Trash2,X,ChevronDown,ChevronRight,TrendingUp,TrendingDown,AlertTriangle,Download,Save,Edit3,Percent,Sliders,Check,Info,Target,BarChart3,Sparkles,RefreshCw,Upload,FileSpreadsheet,FileText,Calculator,HelpCircle,Share2}from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { C } from './brand/theme';
+import { C, FONTS } from './brand/theme';
+import PersonalStatement from './pages/PersonalStatement';
 import { loadProject, saveProject, getLastActive, genId, saveShare, hasSeenTour, markTourSeen, hasSeenStatements101, markStatements101Seen } from './lib/persistence';
 import { capture } from './lib/analytics';
 import { useDialog } from './lib/useDialog';
@@ -1715,6 +1716,70 @@ return(<MillionsCtx.Provider value={inMillions}><div className="min-h-screen ff-
 </div></MillionsCtx.Provider>);
 }
 
+// Decide whether this session is a PERSONAL financial statement (net worth +
+// cash flow) rather than the business projection model. Signals, in order:
+//   ?new=personal / ?kind=personal   → explicit (dashboard links carry ?kind)
+//   any other ?new=…                 → business (ai / manual / choose→business)
+//   saved project meta.kind/sectorKey → resume an existing personal statement
+// The localStorage peek is synchronous so there's no flash into the wrong UI;
+// personal projects are always written locally first (persistence.saveProject).
+function detectPersonal(projectId){
+  try{
+    const params=new URLSearchParams(window.location.search||'');
+    const nw=params.get('new');
+    if(nw==='personal')return true;
+    if(params.get('kind')==='personal')return true;
+    if(nw)return false;
+    const pid=projectId||getLastActive();
+    if(pid){
+      const raw=localStorage.getItem('koala:v1:project:'+pid);
+      if(raw){const doc=JSON.parse(raw);if(doc?.meta?.kind==='personal'||doc?.meta?.sectorKey==='personal'||doc?.model?.kind==='personal')return true;}
+    }
+  }catch{}
+  return false;
+}
+
+// "What are you building?" — shown on /app?new=choose before either builder
+// mounts, so every new statement starts by picking its type.
+function StatementTypePicker({onPick}){
+  const navigate=useNavigate();
+  const Card=({onClick,emoji,title,blurb,points})=>(
+    <button onClick={onClick} style={{textAlign:'left',cursor:'pointer',background:C.surface,border:`1px solid ${C.border}`,borderRadius:16,padding:'26px 24px',flex:1,minWidth:260,maxWidth:340,transition:'border-color 140ms, box-shadow 140ms, transform 140ms'}}
+      onMouseEnter={e=>{e.currentTarget.style.borderColor=C.gold;e.currentTarget.style.boxShadow='0 12px 30px -12px rgba(16,185,129,0.35)';e.currentTarget.style.transform='translateY(-2px)';}}
+      onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.boxShadow='none';e.currentTarget.style.transform='none';}}>
+      <div style={{fontSize:34,marginBottom:12}}>{emoji}</div>
+      <div style={{fontFamily:FONTS.display,fontWeight:700,fontSize:19,color:C.ink,marginBottom:6,letterSpacing:'-0.02em'}}>{title}</div>
+      <div style={{fontFamily:FONTS.body,fontSize:13.5,color:C.muted,lineHeight:1.5,marginBottom:14}}>{blurb}</div>
+      {points.map((p,i)=>(<div key={i} style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}><Check size={14} style={{color:C.green,flexShrink:0}}/><span style={{fontFamily:FONTS.body,fontSize:12.5,color:C.ink2}}>{p}</span></div>))}
+    </button>
+  );
+  return (
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:FONTS.body,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 20px'}}>
+      <div style={{maxWidth:760,width:'100%'}}>
+        <div style={{textAlign:'center',marginBottom:28}}>
+          <div style={{fontFamily:FONTS.display,fontWeight:800,fontSize:28,color:C.ink,letterSpacing:'-0.03em',marginBottom:8}}>What do you want to build?</div>
+          <div style={{fontFamily:FONTS.body,fontSize:15,color:C.muted}}>Pick a statement type — you can always start another.</div>
+        </div>
+        <div style={{display:'flex',gap:16,justifyContent:'center',flexWrap:'wrap'}}>
+          <Card onClick={()=>onPick('business')} emoji="🏢" title="Business model"
+            blurb="A forward-looking 3-statement model for a company or idea. AI can build it from a sentence."
+            points={['Income, balance sheet & cash flow','Multi-year forecast & scenarios','Guided wizard or AI']}/>
+          <Card onClick={()=>onPick('personal')} emoji="👤" title="Personal statement"
+            blurb="Your own finances: what you own vs. owe, and where your money goes each month. No wizard."
+            points={['Net worth (assets & liabilities)','Monthly income & expenses','Start typing right away']}/>
+        </div>
+        <div style={{textAlign:'center',marginTop:22}}>
+          <button onClick={()=>navigate('/dashboard')} style={{border:'none',background:'transparent',color:C.muted,fontFamily:FONTS.body,fontSize:13,cursor:'pointer'}}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function FinancialModelBuilder(props){
+  const isChoose=(()=>{try{return new URLSearchParams(window.location.search||'').get('new')==='choose';}catch{return false;}})();
+  const [mode,setMode]=useState(isChoose?'choose':(detectPersonal(props.projectId)?'personal':'business'));
+  if(mode==='choose')return React.createElement(StatementTypePicker,{onPick:setMode});
+  if(mode==='personal')return React.createElement(AppErrorBoundary,null,React.createElement(PersonalStatement,props));
   return React.createElement(AppErrorBoundary,null,React.createElement(FinancialModelBuilderInner,props));
 }

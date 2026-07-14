@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, Trash2, Copy, ExternalLink, Clock, TrendingUp,
-  ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap,
+  ChevronRight, FileText, Sparkles, MessageSquare, AlertTriangle, GraduationCap, Wallet,
 } from 'lucide-react';
 import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
@@ -32,7 +32,10 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
   const [hover, setHover] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
 
-  const open = () => navigate(`/app/${project.id}`);
+  // Personal statements ride the sector_key='personal' signal (see
+  // PersonalStatement autosave) so they resume in the right builder cross-device.
+  const isPersonal = project.kind === 'personal' || project.sectorKey === 'personal';
+  const open = () => navigate(`/app/${project.id}${isPersonal ? '?kind=personal' : ''}`);
 
   return (
     <div
@@ -57,7 +60,7 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <FileText size={17} color="#059669" />
+            {isPersonal ? <Wallet size={17} color="#059669" /> : <FileText size={17} color="#059669" />}
           </span>
           <div style={{ minWidth: 0 }}>
             <div style={{ ...disp, fontSize: 15.5, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 200 }}>
@@ -103,6 +106,9 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
 
       {/* Tags */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {isPersonal && (
+          <span style={{ ...body, fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#FFF7ED', color: '#C2410C', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Personal</span>
+        )}
         {project.currencyKey && (
           <span style={{ ...body, fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#F0FDF4', color: '#059669', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             {project.currencyKey}
@@ -122,7 +128,7 @@ function ProjectCard({ project, onDelete, onDuplicate }) {
       <span
         style={{ ...body, fontSize: 13, fontWeight: 600, color: '#10B981', display: 'flex', alignItems: 'center', gap: 5, marginTop: 'auto' }}
       >
-        Open model <ChevronRight size={14} />
+        {isPersonal ? 'Open statement' : 'Open model'} <ChevronRight size={14} />
       </span>
     </div>
   );
@@ -307,10 +313,10 @@ export default function Dashboard() {
               <Sparkles size={15} /> New with AI
             </Link>
             <Link
-              to="/app?new=manual"
+              to="/app?new=choose"
               style={{ ...body, display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', textDecoration: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}
             >
-              <Plus size={15} /> New model
+              <Plus size={15} /> New statement
             </Link>
           </div>
         </div>

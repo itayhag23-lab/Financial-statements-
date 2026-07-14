@@ -8,6 +8,18 @@ import { ARTICLES } from '../src/lib/learnContent';
 import { TEMPLATES } from '../src/lib/templateContent';
 import { TOOLS } from '../src/lib/toolsContent';
 
+// Turn an article's human "updated" (e.g. "July 2026") into an ISO date so the
+// sitemap can carry a real <lastmod> per article instead of "today" on every
+// build (which trains crawlers to distrust the dates). Undefined if unparseable.
+const _MONTHS = { january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11 };
+function isoFromUpdated(u) {
+  const m = String(u || '').trim().match(/([A-Za-z]+)\s+(\d{4})/);
+  if (!m) return undefined;
+  const mi = _MONTHS[m[1].toLowerCase()];
+  if (mi == null) return undefined;
+  return `${m[2]}-${String(mi + 1).padStart(2, '0')}-01`;
+}
+
 export function renderRoute(path) {
   return renderToString(
     <StaticRouter location={path}>
@@ -29,6 +41,7 @@ export const learnRoutes = [
     path: `/learn/${a.slug}`,
     title: `${a.title} | Koala Statements`,
     description: a.dek,
+    lastmod: isoFromUpdated(a.updated),
   })),
 ];
 

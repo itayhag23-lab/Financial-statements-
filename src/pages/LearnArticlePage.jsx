@@ -7,7 +7,43 @@ import {
 import { C, FONTS } from '../brand/theme';
 import TopNav from '../components/nav/TopNav';
 import StatementViz from '../components/ui/StatementViz';
+import JsonLd, { breadcrumbSchema } from '../components/growth/JsonLd';
 import { getArticle, categoryLabel, ARTICLES_BY_SLUG } from '../lib/learnContent';
+
+const SITE = 'https://koalastatements.com';
+const MONTHS = { january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11 };
+
+// Articles carry a human "updated" (e.g. "July 2026"); turn it into an ISO date
+// for Article schema. Returns undefined if it can't be parsed (schema omits it).
+function isoFromUpdated(u) {
+  const m = String(u || '').trim().match(/([A-Za-z]+)\s+(\d{4})/);
+  if (!m) return undefined;
+  const mi = MONTHS[m[1].toLowerCase()];
+  if (mi == null) return undefined;
+  return `${m[2]}-${String(mi + 1).padStart(2, '0')}-01`;
+}
+
+// Article + BreadcrumbList structured data. Rendered into the page markup (it
+// pre-renders via react-dom/server), so Google can understand and index each
+// Learn article faster and qualify it for rich results.
+function articleSchema(article) {
+  const url = `${SITE}/learn/${article.slug}`;
+  const iso = isoFromUpdated(article.updated);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.dek,
+    ...(iso ? { datePublished: iso, dateModified: iso } : {}),
+    author: { '@type': 'Organization', name: 'Koala Statements', url: `${SITE}/` },
+    publisher: { '@type': 'Organization', name: 'Koala Statements', logo: { '@type': 'ImageObject', url: `${SITE}/og-image.png` } },
+    image: `${SITE}/og-image.png`,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    ...(article.readTime ? { timeRequired: `PT${article.readTime}M` } : {}),
+    articleSection: categoryLabel(article.category),
+    inLanguage: 'en',
+  };
+}
 
 // Individual Learn article. Investopedia-style layout: breadcrumb, a boxed
 // "Key takeaways" summary up top, a sticky table-of-contents rail (with
@@ -140,6 +176,12 @@ export default function LearnArticlePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg }} ref={topRef}>
+      <JsonLd data={articleSchema(article)} />
+      <JsonLd data={breadcrumbSchema([
+        { name: 'Learn', url: `${SITE}/learn` },
+        { name: categoryLabel(article.category), url: `${SITE}/learn#${article.category}` },
+        { name: article.title, url: `${SITE}/learn/${article.slug}` },
+      ])} />
       <TopNav />
 
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px' }}>

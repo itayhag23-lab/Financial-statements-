@@ -87,8 +87,13 @@ async function main() {
   // from their source of truth so prerender.js never hardcodes slugs.
   const dynamicRoutes = [...learnRoutes, ...templateRoutes, ...toolRoutes];
   const ROUTES = [...BASE_ROUTES, ...dynamicRoutes.map((r) => r.path)];
+  // Per-route <lastmod> for the sitemap. Content routes that expose a real
+  // content date (Learn articles) use it; everything else falls back to the
+  // build date. Keyed by path.
+  const ROUTE_LASTMOD = {};
   for (const r of dynamicRoutes) {
     ROUTE_META[r.path] = { title: r.title, description: r.description };
+    if (r.lastmod) ROUTE_LASTMOD[r.path] = r.lastmod;
   }
 
   let template = fs.readFileSync(indexPath, 'utf8');
@@ -125,7 +130,7 @@ async function main() {
   }
 
   try {
-    writeSitemap(ROUTES);
+    writeSitemap(ROUTES, ROUTE_LASTMOD);
   } catch (err) {
     // Never let a sitemap hiccup undo the page pre-rendering above.
     console.warn('[prerender] sitemap generation skipped:', err && err.message);
@@ -137,7 +142,7 @@ async function main() {
 // added to learnContent.js appears automatically on the next deploy. This
 // overwrites the static public/sitemap.xml that CRA already copied verbatim
 // into the build output.
-function writeSitemap(routes) {
+function writeSitemap(routes, lastmodByRoute = {}) {
   const today = new Date().toISOString().slice(0, 10);
   const priority = (route) => {
     if (route === '/') return '1.0';
@@ -153,7 +158,7 @@ function writeSitemap(routes) {
   };
   const urls = routes.map((route) => `  <url>
     <loc>${SITE}${route}</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${lastmodByRoute[route] || today}</lastmod>
     <changefreq>${changefreq(route)}</changefreq>
     <priority>${priority(route)}</priority>
   </url>`).join('\n');
