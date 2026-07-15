@@ -94,7 +94,7 @@ export const ARTICLES = [
         ],
       },
     ],
-    related: ['income-statement', 'balance-sheet', 'cash-flow-statement'],
+    related: ['income-statement', 'balance-sheet', 'cash-flow-statement', 'financial-statement-preparation'],
   },
   {
     slug: 'profit-vs-cash',
@@ -497,6 +497,91 @@ export const ARTICLES = [
       },
     ],
     related: ['financial-statements-explained', 'common-mistakes', 'how-statements-connect'],
+  },
+  {
+    slug: 'financial-statement-preparation',
+    category: 'foundations',
+    icon: 'Layers',
+    title: 'Financial Statement Preparation: A Step-by-Step Guide',
+    dek: 'Financial statement preparation, step by step: turn raw records into an income statement, balance sheet, and cash flow statement that actually reconcile.',
+    readTime: 6,
+    level: 'Beginner',
+    updated: 'July 2026',
+    takeaways: [
+      'Preparation has a fixed order: gather your data, build the income statement, then the balance sheet, then the cash flow statement, then reconcile all three.',
+      'The three statements share numbers on purpose. Net income from the income statement feeds equity on the balance sheet and the cash flow statement.',
+      'A statement that doesn’t reconcile (the balance sheet doesn’t balance, or cash doesn’t match the bank) means a real error, not a rounding issue.',
+      'Manual preparation in a spreadsheet works, but every one of those links has to be built and re-checked by hand each period.',
+    ],
+    sections: [
+      {
+        id: 'what-it-is',
+        title: 'What "preparing a financial statement" actually means',
+        blocks: [
+          { t: 'p', c: 'Preparing a financial statement isn’t writing a report from scratch. It’s a mechanical process: pull the underlying transactions, sort them into the right buckets, and let the structure of each statement do the rest. Get the order right and the numbers mostly assemble themselves; get it wrong and you’ll spend hours chasing a balance sheet that won’t balance.' },
+          { t: 'p', c: 'There are five steps, always in this order: **gather your data, build the income statement, build the balance sheet, build the cash flow statement, then reconcile all three against each other.**' },
+        ],
+      },
+      {
+        id: 'step-1',
+        title: 'Step 1: Gather your financial data',
+        blocks: [
+          { t: 'p', c: 'Before any statement exists, you need the raw material: every transaction for the period, sorted and categorized. For most small businesses that means:' },
+          { t: 'ul', items: [
+            '**Bank and credit card statements** for the full period, reconciled so nothing is missing or double-counted.',
+            '**Sales records or invoices**, including anything sold but not yet paid for (this becomes accounts receivable).',
+            '**Bills and expenses**, including anything owed but not yet paid (accounts payable).',
+            '**Payroll records**, loan statements, and any asset purchases (equipment, property) made during the period.',
+          ] },
+          { t: 'callout', tone: 'tip', title: 'Categorize as you go', c: 'Tag every transaction with a category (revenue, COGS, rent, payroll, and so on) as it happens rather than at period-end. It turns a day of reconstruction into a few minutes of review.' },
+        ],
+      },
+      {
+        id: 'step-2',
+        title: 'Step 2: Build the income statement first',
+        blocks: [
+          { t: 'p', c: 'Start here because its bottom line, **net income**, feeds directly into the other two statements. List revenue earned in the period, subtract the direct cost of delivering it to get gross profit, subtract operating expenses to get operating income, then subtract interest and tax to land on net income.' },
+          { t: 'viz', viz: 'income' },
+        ],
+      },
+      {
+        id: 'step-3',
+        title: 'Step 3: Build the balance sheet',
+        blocks: [
+          { t: 'p', c: 'List everything the business owns (assets) on one side, and everything it owes plus the owners’ stake (liabilities and equity) on the other, as of the last day of the period. The net income you just calculated flows into **retained earnings**, inside equity — this is the first link between statements.' },
+          { t: 'viz', viz: 'balance' },
+        ],
+      },
+      {
+        id: 'step-4',
+        title: 'Step 4: Build the cash flow statement',
+        blocks: [
+          { t: 'p', c: 'Start from net income again, then adjust it back to real cash: add back non-cash charges, subtract cash tied up in unpaid invoices or growing inventory, then layer in cash from investing (equipment, loans made) and financing (loans taken, owner contributions). The result should explain exactly why your bank balance changed the way it did.' },
+          { t: 'viz', viz: 'cashflow' },
+        ],
+      },
+      {
+        id: 'step-5',
+        title: 'Step 5: Reconcile all three',
+        blocks: [
+          { t: 'p', c: 'This is the step most people skip, and the one that catches every real mistake. Three checks, every time:' },
+          { t: 'ol', items: [
+            'The balance sheet **actually balances**: assets equal liabilities plus equity, to the cent.',
+            'The **ending cash** on the cash flow statement matches the **cash balance** on the balance sheet.',
+            'The **net income** on the income statement is the same number that flowed into retained earnings.',
+          ] },
+          { t: 'callout', tone: 'warn', title: 'If it doesn’t reconcile, don’t round it away', c: 'A balance sheet that’s off by any amount, even a small one, means a transaction was recorded once instead of twice, or a link between statements was built wrong. Find the source rather than forcing the numbers to match.' },
+        ],
+      },
+      {
+        id: 'manual-vs-automated',
+        title: 'Manual preparation vs. letting software build it',
+        blocks: [
+          { t: 'p', c: 'Doing this in a spreadsheet is entirely possible; it’s also where most of the errors above come from. Every link between the three statements, net income into equity, ending cash into the balance sheet, has to be wired with a formula and re-checked whenever a number changes upstream. Automated preparation keeps those links intact by construction: change one assumption and all three statements update and stay reconciled, because the connections were never manual in the first place.' },
+        ],
+      },
+    ],
+    related: ['financial-statements-explained', 'how-statements-connect', 'common-mistakes'],
   },
 ];
 
