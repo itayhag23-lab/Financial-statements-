@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 
 // Koala Pro — the paid plan that unlocks the AI features (AI Advisor +
 // Build-from-description). Everything else in the app stays free forever.
@@ -39,6 +39,7 @@ const FREE = { plan: 'free', status: null, aiCreditsUsed: 0, currentPeriodEnd: n
 // Reads the signed-in user's subscription row. Returns a normalized object, or
 // null when there's no Supabase (local-only mode) or no signed-in user.
 export async function fetchSubscription() {
+  const supabase = await getSupabase();
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -77,6 +78,7 @@ export function canUseAI(sub) {
 // ── Checkout + billing portal (redirect flows) ──────────────────────────────
 
 async function authedFetch(path, body) {
+  const supabase = await getSupabase();
   if (!supabase) throw new Error('Sign in required.');
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;

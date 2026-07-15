@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured, getSupabase } from '../lib/supabase';
 import { capture, identify, reset as analyticsReset, page } from '../lib/analytics';
 
 const AuthCtx = createContext(null);
@@ -19,20 +19,30 @@ function withTimeout(promise, ms = AUTH_TIMEOUT_MS) {
 
 // undefined = still loading, null = signed out, object = signed in user
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(supabase ? undefined : null);
+  const [user, setUser] = useState(isSupabaseConfigured ? undefined : null);
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    if (!isSupabaseConfigured) return;
+    // The client is imported dynamically, so both the session check and the
+    // auth-change subscription are set up once it resolves. `cancelled` guards
+    // against the effect being torn down before the import completes, and
+    // `unsub` is filled in only after the subscription actually exists.
+    let cancelled = false;
+    let unsub = () => {};
+    getSupabase().then((supabase) => {
+      if (!supabase || cancelled) return;
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!cancelled) setUser(session?.user ?? null);
+      });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u) identify(u.id, { email: u.email });
+        if (event === 'SIGNED_OUT') analyticsReset();
+      });
+      unsub = () => subscription.unsubscribe();
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u) identify(u.id, { email: u.email });
-      if (event === 'SIGNED_OUT') analyticsReset();
-    });
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; unsub(); };
   }, []);
 
   return <AuthCtx.Provider value={user}>{children}</AuthCtx.Provider>;
@@ -41,6 +51,7 @@ export function AuthProvider({ children }) {
 export const useAuth = () => useContext(AuthCtx);
 
 export async function signInWithEmail(email, password) {
+  const supabase = await getSupabase();
   if (!supabase) throw new Error('Auth not configured');
   const { error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
   if (error) throw error;
@@ -50,6 +61,7 @@ export async function signInWithEmail(email, password) {
 // Returns true if the account is signed in immediately (no email confirmation
 // required), false if Supabase is waiting on a confirmation-link click.
 export async function signUpWithEmail(email, password) {
+  const supabase = await getSupabase();
   if (!supabase) throw new Error('Auth not configured');
   const { data, error } = await withTimeout(supabase.auth.signUp({ email, password }));
   if (error) throw error;
@@ -70,6 +82,7 @@ export async function signUpWithEmail(email, password) {
 }
 
 export async function signInWithGoogle() {
+  const supabase = await getSupabase();
   if (!supabase) throw new Error('Auth not configured');
   capture('auth_initiated', { method: 'google' });
   // Flag the pending OAuth so PostAuthRedirect (see App.jsx) can route the
@@ -97,6 +110,7 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
+  const supabase = await getSupabase();
   if (!supabase) return;
   capture('auth_signed_out');
   await supabase.auth.signOut();
@@ -121,6 +135,7 @@ function clearLocalKoalaData() {
 // just authenticate the request, then sign out and wipe local data so the
 // browser is left in a clean signed-out state.
 export async function deleteAccount() {
+  const supabase = await getSupabase();
   if (!supabase) throw new Error('Auth not configured');
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { FONTS } from '../brand/theme';
 import { Logo } from '../brand/Logo';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '../contexts/AuthContext';
 
 const P = {
@@ -98,7 +98,7 @@ export default function AuthPage() {
 
   // If Supabase isn't configured, skip straight to app
   useEffect(() => {
-    if (!supabase) navigate('/app', { replace: true });
+    if (!isSupabaseConfigured) navigate('/app', { replace: true });
   }, [navigate]);
 
   const handleSubmit = async (e) => {

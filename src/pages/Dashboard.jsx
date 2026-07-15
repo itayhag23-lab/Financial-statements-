@@ -9,7 +9,7 @@ import { FONTS, C } from '../brand/theme';
 import { Logo } from '../brand/Logo';
 import { listProjects, deleteProject, duplicateProject, genId, saveProject } from '../lib/persistence';
 import { useAuth, deleteAccount } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 import ContactForm from '../components/ContactForm';
 import PricingModal from '../components/ui/PricingModal';
 import UserMenu from '../components/nav/UserMenu';
@@ -172,7 +172,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Redirect to auth if not signed in (and supabase is configured)
-    if (supabase && user === null) {
+    if (isSupabaseConfigured && user === null) {
       navigate('/auth', { replace: true });
       return;
     }
@@ -180,7 +180,7 @@ export default function Dashboard() {
 
     loadProjects();
     checkLocalProjects();
-    if (supabase) fetchSubscription().then(setSubscription).catch(() => {});
+    if (isSupabaseConfigured) fetchSubscription().then(setSubscription).catch(() => {});
   }, [user]); // eslint-disable-line
 
   const loadProjects = useCallback(async () => {
@@ -286,7 +286,7 @@ export default function Dashboard() {
             >
               <GraduationCap size={14} /> <span className="hidden sm:inline">Learn</span>
             </Link>
-            {supabase && user && !isPro(subscription) && (
+            {isSupabaseConfigured && user && !isPro(subscription) && (
               <button
                 onClick={() => setShowPricing(true)}
                 aria-label="Upgrade to Pro"
@@ -307,7 +307,7 @@ export default function Dashboard() {
                 });
               }}
               onDeleteAccount={() => { setShowDeleteAccount(true); setDeleteConfirm(''); setDeleteError(''); }}
-              canDelete={!!(supabase && user)}
+              canDelete={!!(isSupabaseConfigured && user)}
             />
           </div>
         </div>
@@ -341,7 +341,7 @@ export default function Dashboard() {
         </div>
 
         {/* Import local banner */}
-        {supabase && user && localCount > 0 && (
+        {isSupabaseConfigured && user && localCount > 0 && (
           <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ ...body, fontSize: 14, fontWeight: 600, color: '#059669' }}>You have {localCount} model{localCount > 1 ? 's' : ''} saved in this browser</div>

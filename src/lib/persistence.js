@@ -5,7 +5,7 @@
 // across devices. Share links become truly cross-device when Supabase
 // is active.
 
-import { supabase } from './supabase';
+import { getSupabase } from './supabase';
 
 const PREFIX   = 'koala:v1';
 const IDX_KEY  = `${PREFIX}:projects`;
@@ -42,6 +42,7 @@ export function hasSeenStatements101() { return safeGet(STMT_KEY) === true; }
 export function markStatements101Seen() { safeSet(STMT_KEY, true); }
 
 async function getSession() {
+  const supabase = await getSupabase();
   if (!supabase) return null;
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,6 +71,7 @@ export async function saveProject(id, doc) {
   const session = await getSession();
   if (session?.user) {
     try {
+      const supabase = await getSupabase();
       await supabase.from('projects').upsert({
         id,
         user_id:            session.user.id,
@@ -97,6 +99,7 @@ export async function loadProject(id) {
   const session = await getSession();
   if (session?.user) {
     try {
+      const supabase = await getSupabase();
       const { data, error } = await supabase
         .from('projects')
         .select('*')
@@ -134,6 +137,7 @@ export async function listProjects() {
   const session = await getSession();
   if (session?.user) {
     try {
+      const supabase = await getSupabase();
       const { data, error } = await supabase
         .from('projects')
         .select('id, name, sector_key, region_key, currency_key, enabled_statements, created_at, updated_at')
@@ -170,6 +174,7 @@ export async function deleteProject(id) {
   const session = await getSession();
   if (session?.user) {
     try {
+      const supabase = await getSupabase();
       await supabase.from('projects').delete().eq('id', id).eq('user_id', session.user.id);
     } catch (e) {
       console.warn('[koala] cloud delete failed:', e.message);
@@ -197,6 +202,7 @@ export async function saveShare(id, doc) {
 
   const session = await getSession();
   try {
+    const supabase = await getSupabase();
     await supabase?.from('shares').upsert({
       id,
       user_id:       session?.user?.id || null,
@@ -215,6 +221,7 @@ export async function saveShare(id, doc) {
 export async function loadShare(id) {
   if (!id) return null;
 
+  const supabase = await getSupabase();
   if (supabase) {
     try {
       const { data, error } = await supabase

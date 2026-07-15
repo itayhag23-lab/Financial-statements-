@@ -15,13 +15,14 @@ import ProductTour from './components/ui/ProductTour';
 import StatementsPrimer from './components/ui/StatementsPrimer';
 import ProUpgradeModal from './components/ui/PricingModal';
 import { fetchSubscription, canUseAI, isPro, remainingFreeCredits, openBillingPortal, AI_PAYWALL_ENABLED, FREE_AI_CREDITS } from './lib/subscription';
-import { supabase } from './lib/supabase';
+import { getSupabase } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 
 // /api/chat now requires a signed-in Supabase session — attach the access
 // token so the AI features (model generation + advisor chat) keep working.
 async function authedJSONHeaders(){
 const headers={'Content-Type':'application/json'};
+const supabase=await getSupabase();
 if(supabase){
 try{const{data:{session}}=await supabase.auth.getSession();if(session?.access_token)headers.Authorization='Bearer '+session.access_token;}catch{}
 }
