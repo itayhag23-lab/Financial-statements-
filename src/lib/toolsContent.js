@@ -73,6 +73,67 @@ export const TOOLS = [
       },
     ],
   },
+  {
+    slug: 'automated-financial-statement-generator',
+    name: 'Automated Financial Statement Generator',
+    metaTitle: 'Automated Financial Statement Generator | Build in Minutes | Koala Statements',
+    metaDescription:
+      'Generate a full 3-statement financial forecast automatically — income statement, balance sheet, and cash flow — from a plain-English description. Free, no signup.',
+    // No calculator widget: this is a feature/product page pointing straight
+    // at the AI builder, not a standalone interactive tool like the others.
+    component: null,
+    tagline: 'Describe your business. AI builds the financial statement.',
+    intro:
+      'Building a financial statement by hand means wiring formulas across three linked tabs and hoping nothing breaks when an assumption changes. This generator does it automatically: describe your business in a sentence, and AI assembles a fully linked income statement, balance sheet, and cash flow — editable line by line from there.',
+    faqs: [
+      {
+        q: 'How does an automated financial statement generator work?',
+        a: 'You describe your business — what it sells, rough revenue and costs — in plain English. AI translates that into a linked income statement, balance sheet, and cash flow statement, using reasonable default assumptions you can then edit directly.',
+      },
+      {
+        q: 'Is an automated financial statement accurate enough for investors or lenders?',
+        a: 'The generated statements are fully editable and follow standard accounting structure, so once you refine the assumptions to match your actual numbers, they hold up for investor updates, loan applications, and internal planning.',
+      },
+      {
+        q: 'Can I export the automated financial statement to Excel?',
+        a: 'Yes — every generated statement can be exported to a formula-ready Excel file at any time.',
+      },
+    ],
+    featureList: [
+      'AI-generated 3-statement forecast from a plain-English description',
+      'Linked income statement, balance sheet, and cash flow',
+      'Editable assumptions',
+      'Export to Excel',
+    ],
+    keywords: 'automated financial statement, automated financial statement generator, financial statement automation',
+  },
+  {
+    slug: 'export-financial-statement-to-excel',
+    name: 'Export Financial Statements to Excel',
+    metaTitle: 'Export Financial Statements to Excel Instantly | Koala Statements',
+    metaDescription:
+      'Build your financial statements online, then export to Excel instantly — editable, formula-ready spreadsheets. No manual formatting required.',
+    component: null,
+    tagline: 'From on-screen model to editable spreadsheet in one click.',
+    intro:
+      'Most financial statement tools lock your numbers in a proprietary app. Here, every statement you build — income statement, balance sheet, or cash flow — exports to a real, formula-ready Excel file, so you can keep working offline, share it with an accountant, or drop it into a data room.',
+    faqs: [
+      {
+        q: 'Can I export a financial statement to Excel for free?',
+        a: 'Yes — build your financial statement online and export it to Excel at no cost, with formulas intact rather than pasted-in values.',
+      },
+      {
+        q: 'Does the Excel export keep the formulas linked?',
+        a: 'Yes, the exported file keeps the same formula relationships between the income statement, balance sheet, and cash flow, so changing an input still recalculates the rest of the sheet.',
+      },
+    ],
+    featureList: [
+      'One-click export to Excel',
+      'Formula-ready spreadsheet, not flattened values',
+      'Works for any generated income statement, balance sheet, or cash flow',
+    ],
+    keywords: 'export financial statement to excel, financial statement excel export, download financial statement excel',
+  },
 ];
 
 export const getTool = (slug) => TOOLS.find((t) => t.slug === slug) || null;

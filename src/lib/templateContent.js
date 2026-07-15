@@ -226,6 +226,96 @@ export const TEMPLATES = [
       },
     ],
   },
+  {
+    slug: 'personal-financial-statement',
+    industry: 'Personal',
+    title: 'Personal Financial Statement Template',
+    metaTitle: 'Personal Financial Statement Template (Free, Automated) | Koala Statements',
+    metaDescription:
+      'Build a personal financial statement online — net worth and monthly cash flow, calculated automatically. Free personal financial statement template, no spreadsheet required.',
+    tagline: 'Net worth and monthly cash flow, tracked automatically.',
+    intro:
+      'A personal financial statement is your net worth (assets minus liabilities) plus your monthly cash flow (income minus expenses) in one place. This template builds both automatically — list what you own and owe, what comes in and goes out, and it does the math and keeps it current.',
+    included: [
+      'Assets: cash, investments, retirement accounts, property, vehicles',
+      'Liabilities: mortgage, loans, credit cards, other debt',
+      'Automatic net worth calculation (assets − liabilities)',
+      'Monthly cash flow: income vs. expenses by category',
+      'Export to Excel any time',
+    ],
+    drivers: [
+      { label: 'Savings rate', typical: '15–20%', note: 'Of after-tax income, a common target' },
+      { label: 'Emergency fund', typical: '3–6 months', note: 'Of essential expenses, held in cash' },
+      { label: 'Debt-to-income', typical: '< 36%', note: 'Total monthly debt payments ÷ gross income' },
+      { label: 'Liquid net worth', typical: 'Varies', note: 'Net worth excluding home equity + retirement' },
+    ],
+    aiSeed:
+      'Build a personal financial statement for me. Track my net worth from my assets (cash, investments, retirement accounts, property) minus my liabilities (mortgage, loans, credit cards), and build a monthly cash flow view of my income versus expenses by category.',
+    featureList: [
+      'Automated net worth calculation',
+      'Monthly cash flow tracking',
+      'Export to Excel',
+      'No signup required to start',
+    ],
+    keywords: 'personal financial statement, personal financial statement template, net worth statement, personal balance sheet',
+    faqs: [
+      {
+        q: 'What is included in a personal financial statement?',
+        a: 'A personal financial statement has two parts: a net worth statement (assets minus liabilities) and a cash flow statement (monthly income minus expenses). Together they show what you own, what you owe, and how money moves each month.',
+      },
+      {
+        q: 'How often should I update my personal financial statement?',
+        a: 'Monthly is typical for cash flow; net worth is often reviewed monthly or quarterly since assets like investments and property values change more slowly.',
+      },
+      {
+        q: 'Can I export my personal financial statement to Excel?',
+        a: 'Yes — build it online and export a formula-ready Excel file at any time, so you can keep working offline or share it with a lender or advisor.',
+      },
+    ],
+  },
+  {
+    slug: 'startup-financial-statement-generator',
+    industry: 'Startup',
+    title: 'Startup Financial Statement Generator',
+    metaTitle: 'Startup Financial Statement Generator | 3-Statement Forecasts | Koala Statements',
+    metaDescription:
+      'Generate investor-ready financial statements for your startup automatically — income statement, balance sheet, and cash flow forecast in minutes.',
+    tagline: 'Investor-ready statements, generated from a one-line description.',
+    intro:
+      'Investors and lenders expect a full 3-statement financial picture, not a single spreadsheet tab. Describe your startup in a sentence and this generator builds a linked income statement, balance sheet, and cash flow forecast — ready to edit, present, or attach to a raise.',
+    included: [
+      'Income statement built from your revenue and cost assumptions',
+      'Balance sheet that stays in balance as assumptions change',
+      'Cash flow statement showing runway and burn',
+      'Editable line-by-line after AI generates the first draft',
+      'Export to Excel for investor updates or data rooms',
+    ],
+    drivers: [
+      { label: 'Runway', typical: '12–18 months', note: 'After a typical raise' },
+      { label: 'Burn multiple', typical: '< 2×', note: 'Net burn ÷ net new ARR' },
+      { label: 'Gross margin', typical: '60–85%', note: 'Varies by business model' },
+      { label: 'MoM growth (early stage)', typical: '10–20%', note: 'Common early-traction benchmark' },
+    ],
+    aiSeed:
+      'Build a 3-statement financial statement for my early-stage startup — a linked income statement, balance sheet, and cash flow forecast. Start from reasonable assumptions for revenue growth, gross margin, operating expenses, and cash so I can see runway, and I will adjust the numbers from there.',
+    featureList: [
+      'AI-generated 3-statement forecast from a plain-English description',
+      'Linked income statement, balance sheet, and cash flow',
+      'Editable assumptions',
+      'Export to Excel',
+    ],
+    keywords: 'startup financial statement generator, startup financial statement, startup financial model, investor-ready financial statements',
+    faqs: [
+      {
+        q: 'What financial statements does a startup need for investors?',
+        a: 'Most investors expect a 3-statement model: an income statement (P&L), a balance sheet, and a cash flow statement, linked together so a change in one flows through the others.',
+      },
+      {
+        q: 'How fast can I generate a startup financial statement?',
+        a: 'Describe your business — revenue model, rough growth rate, and costs — in a sentence, and a full 3-statement draft is generated in about 60 seconds. You then edit any assumption directly.',
+      },
+    ],
+  },
 ];
 
 export const getTemplate = (slug) => TEMPLATES.find((t) => t.slug === slug) || null;

@@ -27,6 +27,33 @@ export const faqSchema = (faqs = []) =>
       }
     : null;
 
+// SoftwareApplication schema for a Templates/Tools page. Centralized here so
+// pages just pass their content-library fields (name, url, description,
+// featureList, keywords) — the schema shape stays consistent automatically as
+// new template/tool entries are added, with no per-page hand-rolling.
+export const softwareApplicationSchema = ({
+  name,
+  url,
+  description,
+  featureList = [],
+  keywords,
+  applicationCategory = 'FinanceApplication',
+} = {}) =>
+  name
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name,
+        url,
+        description,
+        applicationCategory,
+        operatingSystem: 'Web',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        ...(featureList.length ? { featureList } : {}),
+        ...(keywords ? { keywords } : {}),
+      }
+    : null;
+
 // Breadcrumb schema from [{name, url}] items (absolute URLs).
 export const breadcrumbSchema = (items = []) =>
   items.length

@@ -56,11 +56,12 @@ export default function TemplatesPage() {
             <LayoutTemplate size={14} /> Model templates
           </div>
           <h1 style={{ ...disp, fontSize: 'clamp(28px, 4.4vw, 38px)', fontWeight: 800, color: C.ink, margin: '0 0 10px', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-            Financial model templates, by industry
+            Financial statement templates, by industry
           </h1>
           <p style={{ ...body, fontSize: 15.5, lineHeight: 1.6, color: C.ink2, maxWidth: 640, margin: 0 }}>
-            Start from a model built for your business. Pick your industry, see the drivers and benchmarks that
-            matter, then let AI assemble a complete, investor-ready 3-statement model in about 60 seconds — free.
+            Start from a financial statement template built for your business or situation. Pick one, see the
+            drivers and benchmarks that matter, then let AI assemble a complete, investor-ready 3-statement
+            model in about 60 seconds — free.
           </p>
         </Wrap>
       </div>

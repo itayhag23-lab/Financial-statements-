@@ -4,7 +4,7 @@ import { Check, ChevronRight } from 'lucide-react';
 import { C, FONTS } from '../brand/theme';
 import TopNav from '../components/nav/TopNav';
 import BuildCTA from '../components/growth/BuildCTA';
-import JsonLd, { faqSchema, breadcrumbSchema } from '../components/growth/JsonLd';
+import JsonLd, { faqSchema, breadcrumbSchema, softwareApplicationSchema } from '../components/growth/JsonLd';
 import { getTemplate, TEMPLATES } from '../lib/templateContent';
 
 const disp = { fontFamily: FONTS.display };
@@ -25,6 +25,13 @@ export default function TemplatePage() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
       <TopNav />
+      <JsonLd data={softwareApplicationSchema({
+        name: t.title,
+        url: `${SITE}/templates/${t.slug}`,
+        description: t.metaDescription,
+        featureList: t.featureList,
+        keywords: t.keywords,
+      })} />
       <JsonLd data={faqSchema(t.faqs)} />
       <JsonLd data={breadcrumbSchema([
         { name: 'Home', url: `${SITE}/` },

@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { C, FONTS } from '../brand/theme';
 import TopNav from '../components/nav/TopNav';
 import BuildCTA from '../components/growth/BuildCTA';
-import JsonLd, { faqSchema, breadcrumbSchema } from '../components/growth/JsonLd';
+import JsonLd, { faqSchema, breadcrumbSchema, softwareApplicationSchema } from '../components/growth/JsonLd';
 import { getTool, TOOLS } from '../lib/toolsContent';
 import RunwayCalculator from '../components/tools/RunwayCalculator';
 import BurnRateCalculator from '../components/tools/BurnRateCalculator';
@@ -39,6 +39,13 @@ export default function ToolPage() {
   return (
     <div style={{ minHeight: '100vh', background: C.bg }}>
       <TopNav />
+      <JsonLd data={softwareApplicationSchema({
+        name: t.name,
+        url: `${SITE}/tools/${t.slug}`,
+        description: t.metaDescription,
+        featureList: t.featureList,
+        keywords: t.keywords,
+      })} />
       <JsonLd data={faqSchema(t.faqs)} />
       <JsonLd data={breadcrumbSchema([
         { name: 'Home', url: `${SITE}/` },
@@ -62,17 +69,21 @@ export default function ToolPage() {
         <p style={{ ...body, fontSize: 16.5, lineHeight: 1.6, color: C.ink2, margin: 0 }}>{t.intro}</p>
       </Wrap>
 
-      {/* Calculator */}
-      <Wrap style={{ padding: '24px 24px 0' }}>
-        <div style={{ background: C.bgWarm, border: `1px solid ${C.border}`, borderRadius: 18, padding: '22px 22px' }}>
-          {Calc ? <Calc /> : null}
-        </div>
-        {t.formula && (
-          <div style={{ ...body, fontSize: 13, color: C.muted, marginTop: 14, padding: '10px 14px', background: C.surfaceAlt, border: `1px solid ${C.borderSoft}`, borderRadius: 10 }}>
-            <strong style={{ color: C.ink2 }}>Formula:</strong> {t.formula}
+      {/* Calculator (feature-only tool pages have no widget, e.g. the
+          automated-generator and export-to-Excel pages, so this whole block
+          is skipped rather than rendering an empty box) */}
+      {Calc && (
+        <Wrap style={{ padding: '24px 24px 0' }}>
+          <div style={{ background: C.bgWarm, border: `1px solid ${C.border}`, borderRadius: 18, padding: '22px 22px' }}>
+            <Calc />
           </div>
-        )}
-      </Wrap>
+          {t.formula && (
+            <div style={{ ...body, fontSize: 13, color: C.muted, marginTop: 14, padding: '10px 14px', background: C.surfaceAlt, border: `1px solid ${C.borderSoft}`, borderRadius: 10 }}>
+              <strong style={{ color: C.ink2 }}>Formula:</strong> {t.formula}
+            </div>
+          )}
+        </Wrap>
+      )}
 
       {/* Turn it into a model */}
       <Wrap style={{ padding: '32px 24px 0' }}>

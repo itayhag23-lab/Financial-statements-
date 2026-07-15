@@ -50,9 +50,9 @@ export const learnRoutes = [
 export const templateRoutes = [
   {
     path: '/templates',
-    title: 'Financial Model Templates by Industry (Free) | Koala Statements',
+    title: 'Financial Statement Templates by Industry (Free) | Koala Statements',
     description:
-      'Free financial model templates for SaaS, e-commerce, marketplace, agency, restaurant, and subscription businesses. Pick your industry and AI builds a full 3-statement model.',
+      'Free financial statement templates for SaaS, e-commerce, marketplace, agency, restaurant, subscription, personal finance, and startup businesses. Pick one and AI builds the full 3-statement forecast.',
   },
   ...TEMPLATES.map((t) => ({
     path: `/templates/${t.slug}`,
