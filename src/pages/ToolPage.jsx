@@ -92,8 +92,9 @@ export default function ToolPage() {
             Want the full picture?
           </div>
           <p style={{ ...body, fontSize: 14.5, color: C.ink2, margin: '0 0 18px', lineHeight: 1.55 }}>
-            A single number is a snapshot. Build a complete 3-statement model to see how runway and profit change
-            as you grow — described in a sentence, assembled by AI, editable line by line.
+            {Calc
+              ? 'A single number is a snapshot. Build a complete 3-statement model to see how runway and profit change as you grow — described in a sentence, assembled by AI, editable line by line.'
+              : 'Describe your business in a sentence and AI assembles a complete, linked 3-statement model — editable line by line from there.'}
           </p>
           <BuildCTA seed={seed} primaryLabel="Build a full model with AI" source={`tool:${t.slug}`} />
         </div>
