@@ -28,7 +28,17 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: `Missing Lemon Squeezy variant id for the ${interval}ly plan.` });
   }
 
-  const base = (typeof returnUrl === 'string' && returnUrl) || `https://${req.headers.host}/app`;
+  // Only honor a caller-supplied returnUrl if it points back at our own origin —
+  // otherwise the post-payment redirect becomes an open-redirect vector (a
+  // crafted checkout could bounce the buyer to an attacker's lookalike page).
+  const selfOrigin = `https://${req.headers.host}`;
+  let base = `${selfOrigin}/app`;
+  if (typeof returnUrl === 'string' && returnUrl) {
+    try {
+      const u = new URL(returnUrl, selfOrigin);
+      if (u.origin === selfOrigin) base = u.href;
+    } catch { /* malformed returnUrl → fall back to the default */ }
+  }
 
   try {
     const result = await lsRequest('POST', '/checkouts', {

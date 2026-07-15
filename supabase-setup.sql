@@ -42,10 +42,12 @@ CREATE POLICY "Shares are publicly readable"
   ON shares FOR SELECT
   USING (true);
 
--- Only authenticated users can create shares
+-- Authenticated users can create shares, but only attributed to themselves
+-- (binding user_id to auth.uid() stops a caller from creating a share under
+-- someone else's id via a direct API call).
 CREATE POLICY "Authenticated users can create shares"
   ON shares FOR INSERT
-  WITH CHECK (auth.uid() IS NOT NULL);
+  WITH CHECK (auth.uid() = user_id);
 
 -- Users can delete their own shares
 CREATE POLICY "Users can delete own shares"
