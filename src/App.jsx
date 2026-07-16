@@ -26,6 +26,9 @@ const FinancialModelBuilder = lazy(() => import('./FinancialModelBuilder'));
 const SharedReport           = lazy(() => import('./pages/SharedReport'));
 const AuthPage               = lazy(() => import('./pages/AuthPage'));
 const Dashboard              = lazy(() => import('./pages/Dashboard'));
+// Standalone marketing experiment — self-contained page with its own branding,
+// kept lazy so the main bundle doesn't pay for it.
+const EnergyLandingPage      = lazy(() => import('./pages/EnergyLandingPage'));
 
 // Captured ONCE at module load — before Supabase's async `detectSessionInUrl`
 // clears the auth params from the URL. An OAuth (Google) round-trip lands the
@@ -130,6 +133,7 @@ export default function App() {
         <Route path="/app"        element={<AppRoute />} />
         <Route path="/app/:projectId" element={<AppRoute />} />
         <Route path="/r/:shareId" element={<SharedReportRoute />} />
+        <Route path="/energy"     element={<Suspense fallback={<Loading />}><EnergyLandingPage /></Suspense>} />
         <Route path="/privacy"    element={<PrivacyPage />} />
         <Route path="/terms"      element={<TermsPage />} />
         <Route path="*"           element={<Navigate to="/" replace />} />
