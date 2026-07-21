@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { FONTS } from '../brand/theme';
-import { Logo } from '../brand/Logo';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '../contexts/AuthContext';
 
@@ -151,7 +150,7 @@ export default function AuthPage() {
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}><Logo size={38} color={P.ink} accent={P.accent} /></Link>
+          <Link to="/" style={{ textDecoration: 'none', display: 'inline-block' }}><img src="/signin-photo.jpeg" alt="Logo" style={{ height: 96, width: 'auto', borderRadius: 12 }} /></Link>
           <div style={{ ...disp, fontSize: 22, fontWeight: 700, color: P.ink, marginTop: 20, letterSpacing: '-0.02em' }}>
             {mode === 'signin' ? 'Welcome back' : 'Create your account'}
           </div>
