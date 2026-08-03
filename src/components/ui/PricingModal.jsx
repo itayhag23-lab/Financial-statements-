@@ -20,7 +20,7 @@ export default function PricingModal({ open, onClose, reason, creditsLeft }) {
 
   const upgrade = async () => {
     setBusy(true); setErr(null);
-    try { await startCheckout('month'); }
+    try { await startCheckout(); }
     catch (e) { setErr(e.message || 'Could not start checkout.'); setBusy(false); }
   };
 
