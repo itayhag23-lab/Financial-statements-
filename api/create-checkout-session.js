@@ -20,12 +20,10 @@ module.exports = async function handler(req, res) {
   const user = await getAuthedUser(req);
   if (!user) return res.status(401).json({ error: 'Sign in required.' });
 
-  const { interval = 'month', returnUrl } = req.body || {};
-  const variantId = interval === 'year'
-    ? process.env.LEMONSQUEEZY_VARIANT_YEARLY
-    : process.env.LEMONSQUEEZY_VARIANT_MONTHLY;
+  const { returnUrl } = req.body || {};
+  const variantId = process.env.LEMONSQUEEZY_VARIANT_ID;
   if (!variantId) {
-    return res.status(500).json({ error: `Missing Lemon Squeezy variant id for the ${interval}ly plan.` });
+    return res.status(500).json({ error: 'Billing is not configured yet (LEMONSQUEEZY_VARIANT_ID missing).' });
   }
 
   // Only honor a caller-supplied returnUrl if it points back at our own origin —

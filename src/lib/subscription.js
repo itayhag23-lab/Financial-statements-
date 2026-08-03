@@ -16,9 +16,9 @@ export const AI_PAYWALL_ENABLED = process.env.REACT_APP_BILLING_ENABLED === '1';
 // Free signed-in users get a taste of the AI before the upgrade prompt.
 export const FREE_AI_CREDITS = 3;
 
-// Prices are display-only here (the real charge amount lives in the Stripe Price
-// object referenced by STRIPE_PRICE_MONTHLY on the server). Keep in sync with
-// your Stripe dashboard. Koala Pro is a single monthly plan.
+// Prices are display-only here (the real charge amount lives in the Lemon
+// Squeezy variant referenced by LEMONSQUEEZY_VARIANT_ID on the server). Keep
+// in sync with your Lemon Squeezy dashboard. Koala Pro is a single monthly plan.
 export const PRICING = {
   currency: 'USD',
   symbol: '$',
@@ -94,10 +94,9 @@ async function authedFetch(path, body) {
   return json;
 }
 
-// Kicks off Stripe Checkout for the chosen interval and redirects the browser.
-export async function startCheckout(interval = 'month') {
+// Kicks off Lemon Squeezy Checkout and redirects the browser.
+export async function startCheckout() {
   const { url } = await authedFetch('/api/create-checkout-session', {
-    interval,
     returnUrl: window.location.origin + window.location.pathname,
   });
   if (url) window.location.assign(url);

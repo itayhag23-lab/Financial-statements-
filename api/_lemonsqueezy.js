@@ -59,14 +59,6 @@ async function getAuthedUser(req) {
   return data.user;
 }
 
-// Which plan interval a variant id corresponds to (from env).
-function intervalForVariant(variantId) {
-  const v = String(variantId);
-  if (v === String(process.env.LEMONSQUEEZY_VARIANT_YEARLY)) return 'year';
-  if (v === String(process.env.LEMONSQUEEZY_VARIANT_MONTHLY)) return 'month';
-  return null;
-}
-
 // Maps a Lemon Squeezy subscription object → our subscriptions row shape.
 // (The stripe_* column names are reused as generic provider ids.)
 function rowFromSubscription(sub) {
@@ -75,7 +67,7 @@ function rowFromSubscription(sub) {
   return {
     plan: active ? 'pro' : 'free',
     status: a.status || null,
-    interval: intervalForVariant(a.variant_id),
+    interval: 'month',
     stripe_subscription_id: String(sub.id),
     stripe_customer_id: a.customer_id != null ? String(a.customer_id) : null,
     current_period_end: a.renews_at || a.ends_at || null,
@@ -101,7 +93,6 @@ module.exports = {
   lsRequest,
   serviceClient,
   getAuthedUser,
-  intervalForVariant,
   rowFromSubscription,
   verifySignature,
 };
