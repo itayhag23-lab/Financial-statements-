@@ -47,6 +47,14 @@ function Loading() {
   );
 }
 
+// Renders in place of the marketing homepage when this load is a Google OAuth
+// callback landing on "/" — without this, LandingPage flashes on screen for a
+// frame before PostAuthRedirect's effect navigates on to /dashboard.
+function HomeRoute() {
+  if (IS_OAUTH_CALLBACK) return <Loading />;
+  return <LandingPage />;
+}
+
 function AppRoute() {
   const { projectId } = useParams();
   return (
@@ -118,7 +126,7 @@ export default function App() {
       <PageTracker />
       <PostAuthRedirect />
       <Routes>
-        <Route path="/"           element={<LandingPage />} />
+        <Route path="/"           element={<HomeRoute />} />
         <Route path="/auth"       element={<Suspense fallback={<Loading />}><AuthPage /></Suspense>} />
         <Route path="/dashboard"  element={<Suspense fallback={<Loading />}><Dashboard /></Suspense>} />
         <Route path="/learn"      element={<LearnPage />} />
